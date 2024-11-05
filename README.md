@@ -71,7 +71,7 @@ GET {baseUrl}/attachment/my-document.docx
 
 ### Front Channel Embeds (FCEs)
 
-Front channel embeds are akin to "iframes" that can be embedded in the dialog frontend. The FCEs are loaded using a GET request, using a dialog token and the content is returned is markdown, which then the frontend should map to HTML and render.
+Front channel embeds are akin to "iframes" that can be embedded in the dialog frontend. The FCEs are loaded using a GET request, using a dialog token and the content is returned is markdown, which then the frontend should map to HTML and render. An option to return HTML directly also exists, by setting the `html` query parameter to `true`.
 
 The endpoint expects a dialog token to be provided in the `Authorization: Bearer` header. If the token is missing, the request will be rejected with a 403 Forbidden response. This endpoints supports CORS pre-flights, and allows all origins and methods.
 
@@ -79,7 +79,7 @@ No parameters are supported for this endpoint.
 
 Example:
 ```
-GET {baseUrl}/fce
+GET {baseUrl}/fce?html=false
 ```
 
 ### Current limitations
