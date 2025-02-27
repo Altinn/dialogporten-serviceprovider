@@ -1,4 +1,4 @@
-using Digdir.BDB.Dialogporten.ServiceProvider.Clients;
+using Altinn.ApiClients.Dialogporten.Features.V1;
 using Digdir.BDB.Dialogporten.ServiceProvider.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
@@ -12,11 +12,11 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 [EnableCors("AllowedOriginsPolicy")]
 public class WriteGuiActionController : Controller
 {
-    private readonly IDialogporten _dialogporten;
+    private readonly IServiceownerApi _dialogporten;
     private readonly IBackgroundTaskQueue _taskQueue;
 
     public WriteGuiActionController(
-        IDialogporten dialogporten,
+        IServiceownerApi dialogporten,
         IBackgroundTaskQueue taskQueue)
     {
         _dialogporten = dialogporten;
@@ -25,20 +25,20 @@ public class WriteGuiActionController : Controller
 
     [HttpPost]
     public async Task<IActionResult> Post(
-        [FromQuery]string xacmlaction = "write",
-        [FromQuery]bool queueInBackground = false,
-        [FromQuery]bool addActivity = false,
-        [FromQuery]bool addTransmission = false,
-        [FromQuery]bool addAttachment = false,
-        [FromQuery]bool setDialogGuiActionsToDeleteOnly = false,
-        [FromQuery]DialogStatus_Values? setStatusTo = null)
+        [FromQuery] string xacmlaction = "write",
+        [FromQuery] bool queueInBackground = false,
+        [FromQuery] bool addActivity = false,
+        [FromQuery] bool addTransmission = false,
+        [FromQuery] bool addAttachment = false,
+        [FromQuery] bool setDialogGuiActionsToDeleteOnly = false,
+        [FromQuery] DialogsEntities_DialogStatus? setStatusTo = null)
     {
         if (!IsAuthorized(xacmlaction))
         {
             return Forbid();
         }
 
-        var operations = new List<Operation>();
+        var operations = new List<JsonPatchOperations_Operation>();
 
         if (addActivity)
         {
@@ -66,14 +66,14 @@ public class WriteGuiActionController : Controller
         }
 
         return await PerformMaybeBackgroundOperation(queueInBackground, () =>
-            _dialogporten.Patch(GetDialogId(), operations, null, CancellationToken.None));
+            _dialogporten.V1ServiceOwnerDialogsPatchDialog(GetDialogId(), operations, null, CancellationToken.None));
 
     }
 
     [HttpDelete]
     public async Task<IActionResult> Delete(
-        [FromQuery]string xacmlaction = "write",
-        [FromQuery]bool queueInBackground = false)
+        [FromQuery] string xacmlaction = "write",
+        [FromQuery] bool queueInBackground = false)
     {
 
         if (!IsAuthorized(xacmlaction))
@@ -82,32 +82,40 @@ public class WriteGuiActionController : Controller
         }
 
         return await PerformMaybeBackgroundOperation(queueInBackground, () =>
-            _dialogporten.DeleteDialog(GetDialogId(), null, CancellationToken.None));
+            _dialogporten.V1ServiceOwnerDialogsDeleteDialog(GetDialogId(), null, CancellationToken.None));
     }
 
-    private Operation GetReplaceGuiActionsOp()
+    private JsonPatchOperations_Operation GetReplaceGuiActionsOp()
     {
-        return new Operation
+        return new JsonPatchOperations_Operation
         {
             Op = "replace",
             Path = "/guiActions",
-            Value = new List<UpdateDialogDialogGuiActionDto>
+            // Value = new List<UpdateDialogDialogGuiActionDto>
+            Value = new List<V1ServiceOwnerDialogsCommandsUpdate_GuiAction>
             {
                 new()
                 {
                     Action = "write",
                     IsDeleteDialogAction = true,
-                    HttpMethod = HttpVerb_Values.DELETE,
-                    Title = new List<LocalizationDto> { new() { LanguageCode = "en", Value = "Delete dialog" } },
+                    HttpMethod = Http_HttpVerb.DELETE,
+                    Title = new List<V1CommonLocalizations_Localization>
+                    {
+                        new()
+                        {
+                            LanguageCode = "en",
+                            Value = "Delete dialog"
+                        }
+                    },
                     Url = GetActionUrl(typeof(WriteGuiActionController), nameof(Delete))
                 }
             }
         };
     }
 
-    private static Operation GetReplaceStatusOp(DialogStatus_Values setStatusTo)
+    private static JsonPatchOperations_Operation GetReplaceStatusOp(DialogsEntities_DialogStatus setStatusTo)
     {
-        return new Operation
+        return new JsonPatchOperations_Operation
         {
             Op = "replace",
             Path = "/status",
@@ -115,67 +123,76 @@ public class WriteGuiActionController : Controller
         };
     }
 
-    private Operation GetAddAttachmentOp()
+    private JsonPatchOperations_Operation GetAddAttachmentOp()
     {
-        return new Operation
+        return new JsonPatchOperations_Operation
         {
             Op = "add",
             Path = "/attachments/-",
-            Value = new UpdateDialogDialogAttachmentDto
+            // Value = new UpdateDialogDialogAttachmentDto
+            Value = new V1ServiceOwnerDialogsCommandsUpdate_Attachment
             {
-                DisplayName = new List<LocalizationDto>
+                DisplayName = new List<V1CommonLocalizations_Localization>
                 {
                     new()
                     {
-                        LanguageCode = "en", Value = "Attachment added by dialogporten-serviceprovider"
+                        LanguageCode = "en",
+                        Value = "Attachment added by dialogporten-serviceprovider"
                     }
                 },
-                Urls = new List<UpdateDialogDialogAttachmentUrlDto>
+                Urls = new List<V1ServiceOwnerDialogsCommandsUpdate_AttachmentUrl>
                 {
-                    new ()
+                    new()
                     {
-                        ConsumerType = AttachmentUrlConsumerType_Values.Gui,
+                        ConsumerType = Attachments_AttachmentUrlConsumerType.Gui,
                         MediaType = "application/pdf",
-                        Url = GetActionUrl(typeof(AttachmentController), nameof(AttachmentController.Get), new { fileName = "document.pdf" })
+                        Url = GetActionUrl(typeof(AttachmentController), nameof(AttachmentController.Get), new
+                        {
+                            fileName = "document.pdf"
+                        })
                     }
                 }
             }
         };
     }
 
-    private Operation GetAddTransmissionOp()
+    private JsonPatchOperations_Operation GetAddTransmissionOp()
     {
-        return new Operation
+        return new JsonPatchOperations_Operation
         {
             Op = "add",
             Path = "/transmissions/-",
-            Value = new UpdateDialogDialogTransmissionDto
+            Value = new V1ServiceOwnerDialogsCommandsUpdate_Transmission
             {
-                Type = DialogTransmissionType_Values.Information,
-                Sender = new UpdateDialogDialogTransmissionSenderActorDto
+                Type = DialogsEntitiesTransmissions_DialogTransmissionType.Information,
+                Sender = new V1ServiceOwnerCommonActors_Actor
                 {
-                    ActorType = ActorType_Values.PartyRepresentative,
+                    ActorType = Actors_ActorType.PartyRepresentative,
                     ActorId = GetActorId()
                 },
-                Content = new UpdateDialogDialogTransmissionContentDto
+                Content = new V1ServiceOwnerDialogsCommandsUpdate_TransmissionContent
                 {
-                    Title = new ContentValueDto
+                    Title = new V1CommonContent_ContentValue
                     {
-                        MediaType = "text/plain", Value = new List<LocalizationDto>
+                        MediaType = "text/plain",
+                        Value = new List<V1CommonLocalizations_Localization>
                         {
                             new()
                             {
-                                LanguageCode = "en", Value = "Transmission title added by dialogporten-serviceprovider"
+                                LanguageCode = "en",
+                                Value = "Transmission title added by dialogporten-serviceprovider"
                             }
                         }
                     },
-                    Summary = new ContentValueDto
+                    Summary = new V1CommonContent_ContentValue
                     {
-                        MediaType = "text/plain", Value = new List<LocalizationDto>
+                        MediaType = "text/plain",
+                        Value = new List<V1CommonLocalizations_Localization>
                         {
                             new()
                             {
-                                LanguageCode = "en", Value = "Transmission summary added by dialogporten-serviceprovider"
+                                LanguageCode = "en",
+                                Value = "Transmission summary added by dialogporten-serviceprovider"
                             }
                         }
                     },
@@ -184,23 +201,27 @@ public class WriteGuiActionController : Controller
         };
     }
 
-    private Operation GetAddActivityOp()
+    private JsonPatchOperations_Operation GetAddActivityOp()
     {
-        return new Operation
+        return new JsonPatchOperations_Operation
         {
             Op = "add",
             Path = "/activities/-",
-            Value = new UpdateDialogDialogActivityDto
+            Value = new V1ServiceOwnerDialogsCommandsUpdate_Activity
             {
-                Type = DialogActivityType_Values.Information,
-                PerformedBy = new UpdateDialogDialogActivityPerformedByActorDto
+                Type = DialogsEntitiesActivities_DialogActivityType.Information,
+                PerformedBy = new V1ServiceOwnerCommonActors_Actor
                 {
-                    ActorType = ActorType_Values.PartyRepresentative,
+                    ActorType = Actors_ActorType.PartyRepresentative,
                     ActorId = GetActorId()
                 },
-                Description = new List<LocalizationDto>
+                Description = new List<V1CommonLocalizations_Localization>
                 {
-                    new() { LanguageCode = "en", Value = "Activity added by dialogporten-serviceprovider" }
+                    new()
+                    {
+                        LanguageCode = "en",
+                        Value = "Activity added by dialogporten-serviceprovider"
+                    }
                 }
             }
         };

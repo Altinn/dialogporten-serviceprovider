@@ -1,15 +1,16 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Altinn.ApiClients.Dialogporten;
 using Digdir.BDB.Dialogporten.ServiceProvider.Auth;
 using Digdir.BDB.Dialogporten.ServiceProvider.Clients;
 using Digdir.BDB.Dialogporten.ServiceProvider.Services;
-using Refit;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddUserSecrets<Program>();
 
 builder.Services.AddControllers();
 
+var dialogportenSettings = builder.Configuration
+    .GetSection("DialogportenSettings")
+    .Get<DialogportenSettings>()!;
 builder.Services
     .AddEndpointsApiExplorer()
     .AddSwaggerGen()
@@ -33,26 +34,27 @@ builder.Services
                 .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
         });
     })
-    .AddRefitClient<IDialogporten>(_ => new RefitSettings
-    {
-        ContentSerializer = new SystemTextJsonContentSerializer(new JsonSerializerOptions
-        {
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-
-            PropertyNameCaseInsensitive = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters = {
-                new ObjectToInferredTypesConverter(),
-                new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
-            }
-        })
-    })
-    .ConfigureHttpClient(configuration =>
-    {
-        configuration.BaseAddress = new Uri(builder.Configuration["Dialogporten:BaseUrl"]!);
-    })
-    .AddHttpMessageHandler<ConsoleLoggingMessageHandler>()
-    .ConfigurePrimaryHttpMessageHandler<TokenGeneratorMessageHandler>();
+    .AddDialogportenClient(dialogportenSettings);
+// .AddRefitClient<IDialogporten>(_ => new RefitSettings
+// {
+//     ContentSerializer = new SystemTextJsonContentSerializer(new JsonSerializerOptions
+//     {
+//         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+//
+//         PropertyNameCaseInsensitive = true,
+//         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+//         Converters = {
+//             new ObjectToInferredTypesConverter(),
+//             new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
+//         }
+//     })
+// })
+// .ConfigureHttpClient(configuration =>
+// {
+//     configuration.BaseAddress = new Uri(builder.Configuration["Dialogporten:BaseUrl"]!);
+// })
+// .AddHttpMessageHandler<ConsoleLoggingMessageHandler>()
+// .ConfigurePrimaryHttpMessageHandler<TokenGeneratorMessageHandler>();
 
 var app = builder.Build();
 
