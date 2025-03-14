@@ -6,7 +6,7 @@ using Digdir.BDB.Dialogporten.ServiceProvider.Components.Pages;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider;
 
-public class Mapper
+public static class Mapper
 {
     public static T? Map<T>(Dictionary<string, object?> data) where T : class, new()
     {
@@ -24,18 +24,19 @@ public class Mapper
             {
                 case string stringValue:
                     ParseString(destination, fieldInfo, stringValue);
-                    Console.WriteLine(fieldInfo.Name + " : " + stringValue);
+                    Console.WriteLine($"{fieldInfo.Name} : {stringValue}");
                     break;
                 case int intValue:
                     fieldInfo.SetValue(destination, intValue);
-                    Console.WriteLine(fieldInfo.Name + " : " + intValue);
+                    Console.WriteLine($"{fieldInfo.Name} : {intValue}");
                     break;
                 case Guid guidValue:
                     fieldInfo.SetValue(destination, guidValue);
-                    Console.WriteLine(fieldInfo.Name + " : " + guidValue);
+                    Console.WriteLine($"{fieldInfo.Name} : {guidValue}");
                     break;
                 default:
-                    Console.WriteLine(fieldInfo.Name + " : " + value?.GetType());
+                    Console.WriteLine($"{fieldInfo.Name} type({value?.GetType()}) : {value}");
+
                     break;
             }
         }
