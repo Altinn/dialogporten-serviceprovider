@@ -6,6 +6,14 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider;
 
 public static class Mapper
 {
+    // Amund Note:
+    //  * [ ] Siden Mapper er stateless skal den også være thread safe
+    //  * [ ] Vurder Wrapper class istedet for object i Dict
+    //      * [ ] i.e Record(object value, Type type).
+    //            Kan gjøre parsing av Dict lettere siden Blazor vet hvilken type den er og kan fylle in rett
+    //  * [ ] Finnes det mappere som gjør dette for meg allerede?
+    //  * [ ] Feil håndtering? Return null? return default? throw?
+
     public static T? Map<T>(Dictionary<string, object?> data) where T : class, new()
     {
         var destination = new T();
@@ -76,7 +84,7 @@ public static class Mapper
         propertyInfo.SetValue(destination, propertyInfo.PropertyType.IsEnum ? Enum.Parse(propertyInfo.PropertyType, stringValue) : stringValue);
     }
 
-
+    // Amund: Old shi
     // Må caste alle object til rett type først. Kansje der er lurt å lage en egen type som kan takle dette istedet for "object" 
     // class Foo {
     // object Value;
