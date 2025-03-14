@@ -1,8 +1,6 @@
-using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.Json.Serialization;
-using Altinn.ApiClients.Dialogporten.Features.V1;
-using Digdir.BDB.Dialogporten.ServiceProvider.Components.Pages;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider;
 
@@ -13,9 +11,10 @@ public static class Mapper
         var destination = new T();
         var destinationType = typeof(T);
         var propertyInfos = destinationType.GetProperties();
+        var fieldSet = false;
         foreach (var fieldInfo in propertyInfos)
         {
-            if (TryGetValue(data, fieldInfo, out var value))
+            if (!TryGetValue(data, fieldInfo, out var value))
             {
                 continue;
             }
@@ -25,48 +24,51 @@ public static class Mapper
                 case string stringValue:
                     ParseString(destination, fieldInfo, stringValue);
                     Console.WriteLine($"{fieldInfo.Name} : {stringValue}");
+                    fieldSet = true;
                     break;
                 case int intValue:
                     fieldInfo.SetValue(destination, intValue);
                     Console.WriteLine($"{fieldInfo.Name} : {intValue}");
+                    fieldSet = true;
                     break;
                 case Guid guidValue:
                     fieldInfo.SetValue(destination, guidValue);
                     Console.WriteLine($"{fieldInfo.Name} : {guidValue}");
+                    fieldSet = true;
                     break;
                 default:
                     Console.WriteLine($"{fieldInfo.Name} type({value?.GetType()}) : {value}");
-
                     break;
             }
         }
-        return destination;
+        return fieldSet ? destination : null;
     }
-    private static bool TryGetValue(Dictionary<string, object?> data, PropertyInfo fieldInfo, out object? value)
+    private static bool TryGetValue(Dictionary<string, object?> data, PropertyInfo fieldInfo, [NotNullWhen(true)] out object? value)
     {
         value = null;
         // Only want field with [JsonPropertyName("...")]
         var customAttributeData = fieldInfo.CustomAttributes.FirstOrDefault();
         if (customAttributeData == null)
         {
-            return true;
+            return false;
         }
 
         // Check if attribute is correct
         var attributeType = customAttributeData.AttributeType;
         if (attributeType != typeof(JsonPropertyNameAttribute))
         {
-            return true;
+            return false;
         }
 
         // Try to get the value of the attribute from the Data dict
         var customAttributeTypedArgument = customAttributeData.ConstructorArguments.FirstOrDefault().Value as string;
         if (!data.TryGetValue(customAttributeTypedArgument!.Trim('"'), out value))
         {
-            return true;
+            return false;
         }
 
-        return false;
+        return value is not null;
+
     }
     private static void ParseString<T>(T destination, PropertyInfo? propertyInfo, string stringValue) where T : class
     {
