@@ -10,8 +10,8 @@ set -e
 
 # Check if the correct number of arguments are provided
 if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 <Dialogporten_OpenAPI_Spec_URL>"
-    exit 1
+	echo "Usage: $0 <Dialogporten_OpenAPI_Spec_URL>"
+	exit 1
 fi
 
 # Assign arguments to variables
@@ -27,11 +27,11 @@ FINAL_SCHEMA_DIR="json_schema"
 FINAL_SCHEMA_FILE="schema.json"
 
 # Check for required commands
-for cmd in curl jq swagger-cli openapi2jsonschema; do
-    if ! command -v "$cmd" &> /dev/null; then
-        echo "Error: '$cmd' command not found. Please install it before running this script."
-        exit 1
-    fi
+for cmd in curl jq swagger-cli pip3 install openapi2jsonschema; do
+	if ! command -v "$cmd" &>/dev/null; then
+		echo "Error: '$cmd' command not found. Please install it before running this script."
+		exit 1
+	fi
 done
 
 # Step 1: Download the OpenAPI specification
@@ -40,7 +40,7 @@ curl -sSL "$OPENAPI_URL" -o "$OPENAPI_FILE"
 
 # Step 2: Remove the "subParties" property from "AuthorizedPartyDto"
 echo "Removing 'subParties' property from 'AuthorizedPartyDto'..."
-jq 'del(.components.schemas.AuthorizedPartyDto.properties.subParties)' "$OPENAPI_FILE" > "$MODIFIED_OPENAPI_FILE"
+jq 'del(.components.schemas.V1EndUserPartiesQueriesGet_AuthorizedParty.properties.subParties)' "$OPENAPI_FILE" >"$MODIFIED_OPENAPI_FILE"
 
 # Step 3: Dereference the modified OpenAPI specification
 echo "Dereferencing OpenAPI specification..."
@@ -51,7 +51,9 @@ echo "Dereferenced OpenAPI specification saved to $BUNDLED_OPENAPI_FILE."
 # Step 4: Convert the entire dereferenced OpenAPI spec to JSON Schema and output to a directory
 echo "Converting entire OpenAPI spec to JSON Schema..."
 mkdir -p "$FINAL_SCHEMA_DIR"
-openapi2jsonschema --clean --output "$FINAL_SCHEMA_DIR" --input "$BUNDLED_OPENAPI_FILE" >/dev/null
+openapi2jsonschema --output "$FINAL_SCHEMA_DIR" --input "$BUNDLED_OPENAPI_FILE" >/dev/null
+mkdir -p test
+node test.js "$BUNDLED_OPENAPI_FILE" test
 
 echo "Converted JSON Schema files saved to $FINAL_SCHEMA_DIR."
 
@@ -59,6 +61,23 @@ echo "Converted JSON Schema files saved to $FINAL_SCHEMA_DIR."
 find . -name "*$TARGET_FILE" -exec mv {} $FINAL_SCHEMA_FILE \;
 
 # Step 6: Remove superfluous oneOfs
+for filename in test/*.json; do
+	jq 'walk(if type == "object" and .oneOf then
+        if (.oneOf | length) == 1 then
+            .oneOf[0]
+        else
+            .
+        end
+    else
+        .
+    end)' $filename >$filename.tmp
+done
+
+rm -rf test/*.json
+
+for filename in test/*.tmp; do
+mv $filename.tmp $filename
+done
 jq 'walk(if type == "object" and .oneOf then
         if (.oneOf | length) == 1 then
             .oneOf[0]
@@ -67,7 +86,7 @@ jq 'walk(if type == "object" and .oneOf then
         end
     else
         .
-    end)' $FINAL_SCHEMA_FILE > $FINAL_SCHEMA_FILE.tmp
+    end)' $FINAL_SCHEMA_FILE >$FINAL_SCHEMA_FILE.tmp
 
 echo "Schema '$SCHEMA_NAME' extracted and saved to $FINAL_SCHEMA_FILE."
 
@@ -77,4 +96,3 @@ rm -rf *.json $FINAL_SCHEMA_DIR
 mv $FINAL_SCHEMA_FILE.tmp $FINAL_SCHEMA_FILE
 
 echo "Process completed successfully."
-

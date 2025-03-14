@@ -1,12 +1,16 @@
 using Altinn.ApiClients.Dialogporten;
 using Digdir.BDB.Dialogporten.ServiceProvider.Auth;
 using Digdir.BDB.Dialogporten.ServiceProvider.Clients;
+using Digdir.BDB.Dialogporten.ServiceProvider.Components;
 using Digdir.BDB.Dialogporten.ServiceProvider.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddUserSecrets<Program>();
 
 builder.Services.AddControllers();
+
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
 
 var dialogportenSettings = builder.Configuration
     .GetSection("DialogportenSettings")
@@ -61,11 +65,17 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+
+app.MapStaticAssets();
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
+
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors("AllowedOriginsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseAntiforgery();
 app.MapControllers();
 
 await app.RunAsync();

@@ -5,35 +5,142 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-      <UserSecretsId>cc40a47d-a09e-4b68-bb88-8da04fd2cd39</UserSecretsId>
-      <AssemblyName>Digdir.BDB.Dialogporten.ServiceProvider</AssemblyName>
-      <RootNamespace>Digdir.BDB.Dialogporten.ServiceProvider</RootNamespace>
-  </PropertyGroup>
+        <UserSecretsId>cc40a47d-a09e-4b68-bb88-8da04fd2cd39</UserSecretsId>
+        <AssemblyName>Digdir.BDB.Dialogporten.ServiceProvider</AssemblyName>
+        <RootNamespace>Digdir.BDB.Dialogporten.ServiceProvider</RootNamespace>
+    </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Altinn.ApiClients.Dialogporten" Version="1.56.1" />
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.2.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.8" />
-        <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.8" />
-        <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.0.2" />
-        <PackageReference Include="Refit.HttpClientFactory" Version="8.0.0" />
-        <PackageReference Include="ScottBrady.IdentityModel" Version="4.0.0" />
-        <PackageReference Include="ScottBrady.IdentityModel.AspNetCore" Version="2.1.0" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+        <PackageReference Include="Altinn.ApiClients.Dialogporten" Version="1.56.1"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.2.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.8"/>
+        <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.8"/>
+        <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.0.2"/>
+        <PackageReference Include="Refit.HttpClientFactory" Version="8.0.0"/>
+        <PackageReference Include="ScottBrady.IdentityModel" Version="4.0.0"/>
+        <PackageReference Include="ScottBrady.IdentityModel.AspNetCore" Version="2.1.0"/>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Attachments\sample.docx">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Attachments\sample.pdf">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Attachments\sample.zip">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+        <None Update="Attachments\sample.docx">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Attachments\sample.pdf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Attachments\sample.zip">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-activity-to-a-dialogs-activity-history-POST-201-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-activity-to-a-dialogs-activity-history-POST-204-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-activity-to-a-dialogs-activity-history-POST-400-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-activity-to-a-dialogs-activity-history-POST-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-activity-to-a-dialogs-activity-history-POST-403-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-activity-to-a-dialogs-activity-history-POST-404-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-activity-to-a-dialogs-activity-history-POST-410-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-activity-to-a-dialogs-activity-history-POST-412-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-activity-to-a-dialogs-activity-history-POST-422-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-activity-to-a-dialogs-activity-history-POST-request-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-transmission-to-a-dialog-POST-201-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-transmission-to-a-dialog-POST-204-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-transmission-to-a-dialog-POST-400-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-transmission-to-a-dialog-POST-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-transmission-to-a-dialog-POST-403-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-transmission-to-a-dialog-POST-404-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-transmission-to-a-dialog-POST-410-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-transmission-to-a-dialog-POST-412-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-transmission-to-a-dialog-POST-422-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\adds-a-transmission-to-a-dialog-POST-request-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\creates-a-new-dialog-POST-201-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\creates-a-new-dialog-POST-204-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\creates-a-new-dialog-POST-400-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\creates-a-new-dialog-POST-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\creates-a-new-dialog-POST-403-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\creates-a-new-dialog-POST-409-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\creates-a-new-dialog-POST-422-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\deletes-a-dialog-DELETE-204-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\deletes-a-dialog-DELETE-400-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\deletes-a-dialog-DELETE-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\deletes-a-dialog-DELETE-403-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\deletes-a-dialog-DELETE-404-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\deletes-a-dialog-DELETE-410-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\deletes-a-dialog-DELETE-412-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-list-of-dialog-activities-GET-200-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-list-of-dialog-activities-GET-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-list-of-dialog-activities-GET-403-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-list-of-dialog-activities-GET-404-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-list-of-dialog-transmissions-GET-200-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-list-of-dialog-transmissions-GET-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-list-of-dialog-transmissions-GET-403-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-list-of-dialog-transmissions-GET-404-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-list-of-dialog-transmissions-GET-410-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-list-of-dialogs-GET-200-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-list-of-dialogs-GET-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-activity-GET-200-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-activity-GET-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-activity-GET-403-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-activity-GET-404-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-activity-GET-410-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-GET-200-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-GET-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-GET-403-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-GET-404-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-seen-log-record-GET-200-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-seen-log-record-GET-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-seen-log-record-GET-403-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-seen-log-record-GET-404-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-seen-log-record-GET-410-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-transmission-GET-200-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-transmission-GET-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-transmission-GET-403-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-transmission-GET-404-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-a-single-dialog-transmission-GET-410-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-all-seen-log-records-for-a-dialog-GET-200-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-all-seen-log-records-for-a-dialog-GET-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-all-seen-log-records-for-a-dialog-GET-403-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-all-seen-log-records-for-a-dialog-GET-404-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-all-seen-log-records-for-a-dialog-GET-410-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-the-json-web-key-set-(jwks)-containing-the-public-keys-used-to-verify-dialog-token-signatures-GET-200-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-the-list-of-authorized-parties-for-the-end-user-GET-200-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-the-list-of-authorized-parties-for-the-end-user-GET-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-the-list-of-authorized-parties-for-the-end-user-GET-403-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\gets-the-oauth-2.0-metadata-for-automatic-configuration-of-clients-verifying-dialog-tokens-GET-200-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\patch-a-single-dialog-PATCH-204-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\patch-a-single-dialog-PATCH-400-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\patch-a-single-dialog-PATCH-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\patch-a-single-dialog-PATCH-403-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\patch-a-single-dialog-PATCH-404-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\patch-a-single-dialog-PATCH-410-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\patch-a-single-dialog-PATCH-412-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\patch-a-single-dialog-PATCH-422-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\patch-a-single-dialog-PATCH-request-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\permanently-deletes-a-dialog-POST-204-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\permanently-deletes-a-dialog-POST-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\permanently-deletes-a-dialog-POST-403-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\permanently-deletes-a-dialog-POST-404-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\permanently-deletes-a-dialog-POST-412-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\replaces-a-dialog-PUT-204-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\replaces-a-dialog-PUT-400-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\replaces-a-dialog-PUT-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\replaces-a-dialog-PUT-403-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\replaces-a-dialog-PUT-404-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\replaces-a-dialog-PUT-410-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\replaces-a-dialog-PUT-412-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\replaces-a-dialog-PUT-422-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\replaces-a-dialog-PUT-request-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\restore-a-dialog-POST-204-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\restore-a-dialog-POST-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\restore-a-dialog-POST-403-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\restore-a-dialog-POST-404-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\restore-a-dialog-POST-412-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\returns-a-boolean-value-based-on-conditions-used-to-determine-if-a-notification-is-to-be-sent-GET-200-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\returns-a-boolean-value-based-on-conditions-used-to-determine-if-a-notification-is-to-be-sent-GET-401-response-schema.json" />
+      <_ContentIncludedByDefault Remove="tools\json_schema\returns-a-boolean-value-based-on-conditions-used-to-determine-if-a-notification-is-to-be-sent-GET-403-response-schema.json" />
+    </ItemGroup>
 </Project>

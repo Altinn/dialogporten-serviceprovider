@@ -5,3 +5,4 @@ riderModule.iml
 /_ReSharper.Caches/
 .idea
 /Digdir.BDB.Dialogporten.ServiceProvider.sln.DotSettings.user
+/tools/node_modules/*

@@ -1,0 +1,44 @@
+@page "/Dialog"
+@using System.Text
+@using System.Text.Json
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@rendermode InteractiveServer
+<h3>Dialog</h3>
+
+@{
+}
+<form onsubmit="@(() => Console.WriteLine("hei"))">
+    <FieldRecordComp Data="@Data" FieldRecords="@Fields"/>
+    <div>
+        <button type="submit" class="btn btn-primary">
+            Submit
+        </button>
+        <button class="btn btn-primary" onclick="@(() => DebugButton())">
+            Debug
+        </button>
+    </div>
+</form>
+
+@code {
+
+    protected override void OnParametersSet()
+    {
+        var bytes = Encoding.UTF8.GetBytes(Json);
+        var utf8Reader = new Utf8JsonReader(bytes);
+        var jsonElement = JsonElement.ParseValue(ref utf8Reader);
+        Properties = jsonElement.GetProperty("properties");
+        Fields ??= FieldParser.ParseFields(Properties);
+    }
+    private Dictionary<string, object?> Data { get; set; } = new();
+
+    private void DebugButton()
+    {
+        Console.WriteLine(Data);
+        var dialog = Mapper.Map<V1ServiceOwnerDialogsCommandsCreate_Dialog>(Data);
+        Console.WriteLine(dialog?.Progress);
+    }
+    private static IEnumerable<FieldRecord>? Fields { get; set; }
+    private JsonElement Properties { get; set; }
+    // private string Json = File.ReadAllText("jsonFiles/V1ServiceOwnerDialogsCreate_Dialog.json");
+    private string Json = File.ReadAllText("jsonFiles/full.json");
+}

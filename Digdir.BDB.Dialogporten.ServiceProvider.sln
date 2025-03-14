@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Digdir.BDB.Dialogporten.ServiceProvider", "Digdir.BDB.Dialogporten.ServiceProvider.csproj", "{C7F90CBE-72A4-4A94-9361-9B41D26D35ED}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Digdir.DBD.Dialogporten.ServiceProvider.Unit.Tests", "..\tests\dialogporten-serviceprovider\Digdir.DBD.Dialogporten.ServiceProvider.Unit.Tests\Digdir.DBD.Dialogporten.ServiceProvider.Unit.Tests.csproj", "{79393865-B45D-4E94-8EE9-CA9BAD119376}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{C7F90CBE-72A4-4A94-9361-9B41D26D35ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C7F90CBE-72A4-4A94-9361-9B41D26D35ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C7F90CBE-72A4-4A94-9361-9B41D26D35ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79393865-B45D-4E94-8EE9-CA9BAD119376}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79393865-B45D-4E94-8EE9-CA9BAD119376}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79393865-B45D-4E94-8EE9-CA9BAD119376}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79393865-B45D-4E94-8EE9-CA9BAD119376}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

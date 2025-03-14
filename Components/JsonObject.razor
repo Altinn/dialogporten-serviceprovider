@@ -1,0 +1,28 @@
+@rendermode InteractiveServer
+<div style="padding: 10px; border: 1px solid; background-color: white">
+    <h4>@Fields.PropertyName</h4>
+    @{
+        var temp = (Dictionary<string, object?>)Data[Fields.PropertyName];
+        <FieldRecordComp Data="@temp"
+                         FieldRecords="@Fields.Properties"/>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public required FieldRecord.ObjectRecord Fields { get; set; }
+
+
+    [Parameter]
+    public required Dictionary<string, object> Data { get; set; }
+
+    private Dictionary<string, object> Value { get; set; }
+
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Value = new Dictionary<string, object>();
+        Data.TryAdd(Fields.PropertyName, Value);
+    }
+}

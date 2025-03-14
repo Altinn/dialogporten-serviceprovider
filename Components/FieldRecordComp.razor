@@ -1,0 +1,49 @@
+@rendermode InteractiveServer
+@{
+    if (FieldRecords != null)
+    {
+        foreach (var item in FieldRecords)
+        {
+            Render(item);
+        }
+    }
+    else if (Field != null)
+    {
+        Render(Field);
+    }
+
+    void Render(FieldRecord field)
+    {
+        switch (field)
+        {
+            case FieldRecord.IntRecord record:
+                <JsonInteger Data="@Data" Values="@record"/>
+                break;
+            case FieldRecord.StringRecord record:
+                <JsonString Data="@Data" Values="@record"/>
+                break;
+            case FieldRecord.EnumRecord record:
+                <JsonEnum Data="@Data" Values="@record"/>
+                break;
+            case FieldRecord.ObjectRecord record:
+                <JsonObject Data="@Data" Fields="@record"/>
+                break;
+            case FieldRecord.ArrayRecord record:
+                <JsonArray Data="@Data" Fields="@record"/>
+                break;
+            case FieldRecord.DateTimeRecord record:
+                <JsonDateTime Data="@Data" Values="@record"></JsonDateTime>
+                break;
+            case FieldRecord.GuidRecord record:
+                <JsonGuid Data="@Data" Values="@record"/>
+                break;
+        }
+    }
+}
+
+@code {
+    [Parameter] public IEnumerable<FieldRecord>? FieldRecords { get; set; }
+    [Parameter] public FieldRecord? Field { get; set; }
+    [Parameter] public required Dictionary<string, object?> Data { get; set; }
+
+}

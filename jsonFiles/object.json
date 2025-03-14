@@ -1,0 +1,29 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "A self-defined UUIDv7 may be provided in order to support idempotent creation of dialogs. If not provided, a new UUIDv7 will be generated.",
+      "format": "guid"
+    },
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inner Id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "A self-defsefined UUIDv7 may be provided in order to support idempotent creation of dialogs. If not provided, a new UUIDv7 will be generated.",
+          "format": "guid"
+        }
+      }
+    }
+  },
+  "$schema": "http://json-schema.org/draft-04/schema#"
+}
