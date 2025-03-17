@@ -29,7 +29,7 @@
         Properties = jsonElement.GetProperty("properties");
         Fields ??= FieldParser.ParseFields(Properties);
     }
-    private Dictionary<string, object?> Data { get; set; } = new();
+    private Dictionary<string, object?> Data { get; set; } = new(StringComparer.InvariantCultureIgnoreCase);
 
     private void DebugButton()
     {

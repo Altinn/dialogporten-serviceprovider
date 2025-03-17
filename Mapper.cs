@@ -14,40 +14,58 @@ public static class Mapper
     //  * [ ] Finnes det mappere som gjør dette for meg allerede?
     //  * [ ] Feil håndtering? Return null? return default? throw?
 
+    private static object? FooBar(PropertyInfo fieldInfo, List<Dictionary<string, object?>> collection)
+    {
+        if (!fieldInfo.PropertyType.IsGenericType)
+        {
+            return null;
+        }
+        var genericArguments = fieldInfo.PropertyType.GetGenericArguments().FirstOrDefault();
+        var foo = collection.Select(o => Map(genericArguments!, o)).ToList();
+        return foo.Count == 0 ? null : foo;
+
+    }
+
     public static T? Map<T>(Dictionary<string, object?> data) where T : class, new()
     {
-        var destination = new T();
-        var destinationType = typeof(T);
+        return (T?)Map(typeof(T), data);
+    }
+    private static object? Map(Type destinationType, Dictionary<string, object?> data)
+    {
+        var destination = Activator.CreateInstance(destinationType);
         var propertyInfos = destinationType.GetProperties();
         var fieldSet = false;
         foreach (var fieldInfo in propertyInfos)
         {
+
             if (!TryGetValue(data, fieldInfo, out var value))
             {
                 continue;
             }
 
-            switch (value)
+            if (value.GetType() == fieldInfo.PropertyType)
             {
-                case string stringValue:
-                    ParseString(destination, fieldInfo, stringValue);
-                    Console.WriteLine($"{fieldInfo.Name} : {stringValue}");
-                    fieldSet = true;
-                    break;
-                case int intValue:
-                    fieldInfo.SetValue(destination, intValue);
-                    Console.WriteLine($"{fieldInfo.Name} : {intValue}");
-                    fieldSet = true;
-                    break;
-                case Guid guidValue:
-                    fieldInfo.SetValue(destination, guidValue);
-                    Console.WriteLine($"{fieldInfo.Name} : {guidValue}");
-                    fieldSet = true;
-                    break;
-                default:
-                    Console.WriteLine($"{fieldInfo.Name} type({value?.GetType()}) : {value}");
-                    break;
+                fieldInfo.SetValue(destination, value);
+                fieldSet = true;
+                continue;
             }
+            var temp = value switch
+            {
+                string stringValue when fieldInfo.PropertyType.IsEnum => Enum.Parse(fieldInfo.PropertyType, stringValue),
+                Dictionary<string, object?> objects => Map(fieldInfo.PropertyType, objects),
+                List<Dictionary<string, object?>> collection => FooBar(fieldInfo, collection),
+                _ => null,
+            };
+
+            if (temp is null)
+            {
+                Console.WriteLine($"Can't map {value} to type {fieldInfo.PropertyType} for field {fieldInfo.Name} on type {destinationType}");
+                continue;
+            }
+
+            fieldInfo.SetValue(destination, temp);
+            fieldSet = true;
+
         }
         return fieldSet ? destination : null;
     }
@@ -55,22 +73,15 @@ public static class Mapper
     {
         value = null;
         // Only want field with [JsonPropertyName("...")]
-        var customAttributeData = fieldInfo.CustomAttributes.FirstOrDefault();
+        var customAttributeData = fieldInfo.GetCustomAttribute<JsonPropertyNameAttribute>();
         if (customAttributeData == null)
         {
             return false;
         }
 
-        // Check if attribute is correct
-        var attributeType = customAttributeData.AttributeType;
-        if (attributeType != typeof(JsonPropertyNameAttribute))
-        {
-            return false;
-        }
-
         // Try to get the value of the attribute from the Data dict
-        var customAttributeTypedArgument = customAttributeData.ConstructorArguments.FirstOrDefault().Value as string;
-        if (!data.TryGetValue(customAttributeTypedArgument!.Trim('"'), out value))
+        var customAttributeTypedArgument = customAttributeData.Name;
+        if (!data.TryGetValue(customAttributeTypedArgument, out value))
         {
             return false;
         }
