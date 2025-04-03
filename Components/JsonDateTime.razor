@@ -3,6 +3,7 @@
     <label>@Values.PropertyName</label>
     <p>@Values.Description</p>
     <InputDate bind-Value="@Value"
+               required="@IsRequired"
                Type="InputDateType.DateTimeLocal"
                TValue="DateTimeOffset"
                ValueExpression="@(() => Value)"
@@ -19,13 +20,12 @@
     [Parameter]
     public required FieldRecord.DateTimeRecord Values { get; set; }
 
-    [Parameter]
-    public bool IsRequired { get; set; }
+    private bool IsRequired { get; set; }
 
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        Value = DateTime.Now;
-        Data.TryAdd(Values.PropertyName, Value);
+        IsRequired = !Values.IsNullable;
+        Data.TryAdd(Values.PropertyName, null);
     }
 }

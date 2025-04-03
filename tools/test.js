@@ -1,7 +1,7 @@
 const fs = require("fs");
 const {openapiSchemaToJsonSchema: toJsonSchema} = require("@openapi-contrib/openapi-schema-to-json-schema");
 
-if (process.argv.length !== 4){
+if (process.argv.length !== 4) {
     console.log("hei");
     console.log(process.argv.length)
     return 0;
@@ -25,7 +25,9 @@ Object.entries(openapiSpec.paths).forEach(([path, methods]) => {
             if (content["application/json"] && content["application/json"].schema) {
                 convertedSchemas[operation.operationId] = {
                     operationId: operation.operationId, // Preserve operationId
-                    schema: toJsonSchema(content["application/json"].schema),
+                    schema: toJsonSchema(content["application/json"].schema, {
+                        keepNotSupported: ["nullable"]
+                    }),
                 };
             }
         }

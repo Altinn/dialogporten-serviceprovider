@@ -2,6 +2,7 @@
     <label>@Values.PropertyName</label>
     <p>@Values.Description</p>
     <InputSelect bind-Value="@Value"
+                 required="@IsRequired"
                  TValue="string"
                  ValueExpression="@(() => Value)"
                  ValueChanged="@(v => Data[Values.PropertyName] = v)">
@@ -14,7 +15,7 @@
 <br>
 
 @code {
-    private string Value { get; set; }
+    private string Value { get; set; } = "";
 
     [Parameter]
     public required Dictionary<string, object?> Data { get; set; }

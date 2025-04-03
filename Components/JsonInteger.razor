@@ -5,6 +5,7 @@
     <p>@Values.Description</p>
     <InputNumber min="@Values.Min"
                  max="@Values.Max"
+                 required="@IsRequired"
                  TValue="int"
                  ValueExpression="@(() => Value)"
                  bind-Value="@(Value)"
@@ -16,8 +17,7 @@
     [Parameter]
     public required FieldRecord.IntRecord Values { get; set; }
 
-    [Parameter]
-    public bool IsRequired { get; set; }
+    private bool IsRequired { get; set; }
 
     [Parameter]
     public required Dictionary<string, object> Data
@@ -31,6 +31,7 @@
     {
         base.OnInitialized();
         Value = 0;
+        IsRequired = !Values.IsNullable;
         Data.TryAdd(Values.PropertyName, 0);
     }
 

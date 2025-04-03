@@ -9,8 +9,8 @@ public static class FieldParser
     public static IEnumerable<FieldRecord> ParseFields(JsonElement jsonElement)
     {
         return jsonElement.EnumerateObject()
-            .Select<JsonProperty, FieldRecord>(jsonProperty => ParseField(jsonProperty)!)
-            .ToList();
+                          .Select<JsonProperty, FieldRecord>(jsonProperty => ParseField(jsonProperty)!)
+                          .ToList();
     }
     private static FieldRecord? ParseField(JsonProperty jsonProperty)
     {
@@ -45,11 +45,11 @@ public static class FieldParser
             case FieldTypes.Array:
                 {
                     var itemFormat = ParseFields(jsonElement.GetProperty("items").GetProperty("properties")).ToArray();
-                    return new FieldRecord.ArrayRecord(propertyName, desc.GetString()!, itemFormat);
+                    return new FieldRecord.ArrayRecord(propertyName, desc.GetString()!, itemFormat, isNullable);
                 }
             case FieldTypes.Object:
                 {
-                    return new FieldRecord.ObjectRecord(propertyName, ParseFields(jsonElement.GetProperty("properties")));
+                    return new FieldRecord.ObjectRecord(propertyName, ParseFields(jsonElement.GetProperty("properties")), isNullable);
                 }
             case FieldTypes.None:
                 break;
@@ -82,8 +82,8 @@ public static class FieldParser
         if (jsonElement.TryGetProperty("enum", out var values))
         {
             enumValues = values.EnumerateArray()
-                .Select(x => x.GetString()!)
-                .ToArray();
+                               .Select(x => x.GetString()!)
+                               .ToArray();
             fieldType = FieldTypes.Enum;
             return true;
         }
@@ -92,9 +92,9 @@ public static class FieldParser
         if (type.ValueKind == JsonValueKind.Array)
         {
             types = type.EnumerateArray()
-                .Where(jsonElement =>
-                    jsonElement.ValueKind == JsonValueKind.String)
-                .Select(x => x.GetString()).ToArray();
+                        .Where(element =>
+                            element.ValueKind == JsonValueKind.String)
+                        .Select(x => x.GetString()!).ToArray();
 
             if (types.Contains("null"))
             {

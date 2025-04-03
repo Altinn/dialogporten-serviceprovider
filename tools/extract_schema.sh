@@ -61,23 +61,7 @@ echo "Converted JSON Schema files saved to $FINAL_SCHEMA_DIR."
 find . -name "*$TARGET_FILE" -exec mv {} $FINAL_SCHEMA_FILE \;
 
 # Step 6: Remove superfluous oneOfs
-for filename in test/*.json; do
-	jq 'walk(if type == "object" and .oneOf then
-        if (.oneOf | length) == 1 then
-            .oneOf[0]
-        else
-            .
-        end
-    else
-        .
-    end)' $filename >$filename.tmp
-done
 
-rm -rf test/*.json
-
-for filename in test/*.tmp; do
-mv $filename.tmp $filename
-done
 jq 'walk(if type == "object" and .oneOf then
         if (.oneOf | length) == 1 then
             .oneOf[0]

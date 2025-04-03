@@ -52,7 +52,7 @@ public static class Mapper
             {
                 string stringValue when fieldInfo.PropertyType.IsEnum => Enum.Parse(fieldInfo.PropertyType, stringValue),
                 Dictionary<string, object?> objects => Map(fieldInfo.PropertyType, objects),
-                List<Dictionary<string, object?>> collection => FooBar(fieldInfo, collection),
+                // List<Dictionary<string, object?>> collection => FooBar(fieldInfo, collection),
                 _ => null,
             };
 

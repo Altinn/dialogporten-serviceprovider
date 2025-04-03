@@ -1,0 +1,140 @@
+{
+  "operationId": "V1ServiceOwnerDialogActivitiesCreate_DialogActivity",
+  "schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "The UUDIv7 of the action may be provided to support idempotent additions to the list of activities.\nIf not supplied, a new UUIDv7 will be generated.",
+        "format": "guid",
+        "nullable": true
+      },
+      "createdAt": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "If supplied, overrides the creating date and time for the transmission.\nIf not supplied, the current date /time will be used.",
+        "format": "date-time",
+        "nullable": true
+      },
+      "extendedType": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "Arbitrary URI/URN describing a service-specific transmission type.",
+        "format": "uri",
+        "nullable": true
+      },
+      "type": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "DialogCreated",
+          "DialogClosed",
+          "Information",
+          "TransmissionOpened",
+          "PaymentMade",
+          "SignatureProvided",
+          "DialogOpened",
+          "DialogDeleted",
+          "DialogRestored",
+          "SentToSigning",
+          "SentToFormFill",
+          "SentToSendIn",
+          "SentToPayment",
+          "FormSubmitted",
+          "FormSaved"
+        ],
+        "enum": [
+          "DialogCreated",
+          "DialogClosed",
+          "Information",
+          "TransmissionOpened",
+          "PaymentMade",
+          "SignatureProvided",
+          "DialogOpened",
+          "DialogDeleted",
+          "DialogRestored",
+          "SentToSigning",
+          "SentToFormFill",
+          "SentToSendIn",
+          "SentToPayment",
+          "FormSubmitted",
+          "FormSaved"
+        ]
+      },
+      "transmissionId": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "If the activity is related to a particular transmission, this field will contain the transmission identifier.\nMust be present in the request body.",
+        "format": "guid",
+        "nullable": true
+      },
+      "performedBy": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "actorType": {
+            "type": "string",
+            "description": "",
+            "x-enumNames": [
+              "PartyRepresentative",
+              "ServiceOwner"
+            ],
+            "enum": [
+              "PartyRepresentative",
+              "ServiceOwner"
+            ]
+          },
+          "actorName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The name of the actor.",
+            "nullable": true
+          },
+          "actorId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The identifier (national identity number or organization number) of the actor.",
+            "nullable": true
+          }
+        }
+      },
+      "description": {
+        "type": [
+          "array",
+          "null"
+        ],
+        "description": "Unstructured text describing the activity. Only set if the activity type is \"Information\".",
+        "nullable": true,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "The localized text (or URL if a front-channel embed)."
+            },
+            "languageCode": {
+              "type": "string",
+              "description": "The language code of the localization in ISO 639-1 format."
+            }
+          }
+        }
+      }
+    },
+    "$schema": "http://json-schema.org/draft-04/schema#"
+  }
+}
