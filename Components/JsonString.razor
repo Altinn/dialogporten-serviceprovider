@@ -3,24 +3,24 @@
     <p>@Values.Description</p>
     @{
         <InputText
-                        required="@IsRequired"
-                        bind-Value="@Value"
-                        Value="@Value"
-                        ValueExpression="@(() => Value)"
-                        ValueChanged="@(v =>
-                                      {
-                                          if (string.IsNullOrEmpty(v))
-                                          {
-                                              Data[Values.PropertyName] = null;
-                                              Value = null;
-                                          }
-                                          else
-                                          {
-                                              Data[Values.PropertyName] = v;
-                                              Value = v;
-                                          }
+            required="@IsRequired"
+            bind-Value="@Value"
+            Value="@Value"
+            ValueExpression="@(() => Value)"
+            ValueChanged="@(v =>
+                          {
+                              if (string.IsNullOrEmpty(v))
+                              {
+                                  Data[Values.PropertyName] = null;
+                                  Value = null;
+                              }
+                              else
+                              {
+                                  Data[Values.PropertyName] = v;
+                                  Value = v;
+                              }
 
-                                      })"
+                          })"
         />
     }
 </div>

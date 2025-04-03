@@ -3,14 +3,14 @@
     <p>@Values.Description</p>
     @{
         <InputText
-                        required="@IsRequired"
-                        bind-Value="@Value"
-                        ValueExpression="@(() => Value)"
-                        ValueChanged="@(v => Data[Values.PropertyName] = Guid.TryParse(v, out var guid)
-                                                      ? guid
-                                                      : IsRequired
-                                                                      ? null
-                                                                      : Guid.Empty)"
+            required="@IsRequired"
+            bind-Value="@Value"
+            ValueExpression="@(() => Value)"
+            ValueChanged="@(v => Data[Values.PropertyName] = Guid.TryParse(v, out var guid)
+                              ? guid
+                              : IsRequired
+                                  ? null
+                                  : Guid.Empty)"
         />
         <p>@IsRequired</p>
         if (IsRequired && Data[Values.PropertyName] is null)

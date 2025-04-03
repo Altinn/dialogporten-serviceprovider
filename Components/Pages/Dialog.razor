@@ -37,13 +37,12 @@
                         {
                             <p>@_response.StatusCode @((int)_response.StatusCode)</p>
                             <br/>
-                            var message = _response.IsSuccessStatusCode switch
-                            {
-                                            true => _response.Content,
-                                            false => _response.Error.Content
-                            };
 
-                            @message
+                            @(_response.IsSuccessStatusCode switch
+                            {
+                                true => _response.Content,
+                                false => _response.Error.Content
+                            })
 
                         }
                     </div>
@@ -79,14 +78,14 @@
             Formatting.Indented,
             new JsonSerializerSettings
             {
-                            NullValueHandling = NullValueHandling.Ignore
+                NullValueHandling = NullValueHandling.Ignore
             }
         );
 
         var createDialogCommand = JsonConvert.DeserializeObject<V1ServiceOwnerDialogsCommandsCreate_Dialog>(serializeObject,
             new JsonSerializerSettings
             {
-                            NullValueHandling = NullValueHandling.Ignore
+                NullValueHandling = NullValueHandling.Ignore
             }
         );
         // Console.WriteLine(dialog?.Progress);
