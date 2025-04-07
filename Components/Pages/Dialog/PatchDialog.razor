@@ -1,0 +1,93 @@
+@page "/Dialog/Patch"
+@using System.Text
+@using System.Text.Json
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@using Newtonsoft.Json
+@inject IServiceownerApi ServiceOwnerApi
+@rendermode InteractiveServer
+<h3>Patch Dialog</h3>
+<form method="post" onsubmit="@Submit" @formname="patch-dialog">
+    <FieldRecordComp Data="@Data" FieldRecords="@Fields"/>
+    <div>
+        <button type="submit" class="btn btn-primary">
+            Submit
+        </button>
+    </div>
+</form>
+
+@if (_showPopUp)
+{
+    <PopUpMessage Header="@_header" Message="@_message" OnClick="@(() => _showPopUp = false)"></PopUpMessage>
+}
+
+@code {
+
+    private readonly string _json = File.ReadAllText("jsonFiles/V1ServiceOwnerDialogsPatchDialog.json");
+    private bool _showPopUp;
+    private string? _header;
+    private string? _message;
+
+    private static IEnumerable<FieldRecord> Fields { get; set; } = [];
+
+    private Dictionary<string, object?> Data { get; set; } = new(StringComparer.InvariantCultureIgnoreCase);
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        var bytes = Encoding.UTF8.GetBytes(_json);
+        var utf8Reader = new Utf8JsonReader(bytes);
+        var jsonElement = JsonElement.ParseValue(ref utf8Reader);
+        var properties = jsonElement;
+        if (Fields.Any())
+        {
+            return;
+        }
+        IEnumerable<FieldRecord.GuidRecord> oi = [new("id", "Guid", false)];
+        var temp = FieldParser.ParseFields(properties);
+        Fields = oi.Concat(temp)!;
+
+    }
+
+
+    private async Task Submit()
+    {
+
+        _message = null;
+        _header = null;
+        var serializeObject = JsonConvert.SerializeObject(
+            Data["schema"],
+            new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            }
+        );
+
+        var patchDocument = JsonConvert.DeserializeObject
+        <IEnumerable
+            <JsonPatchOperations_Operation>>(serializeObject,
+            new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            }
+        );
+
+        var id = Data["id"] is Guid ? (Guid)Data["id"]! : Guid.Empty;
+        var response = await ServiceOwnerApi.V1ServiceOwnerDialogsPatchDialog(
+            id,
+            patchDocument!,
+            null,
+            CancellationToken.None);
+        Console.WriteLine(response.StatusCode);
+
+        _header = $"{response.StatusCode} {(int)response.StatusCode}";
+        if (!response.IsSuccessStatusCode)
+        {
+            _message = response.Error.Content;
+        }
+
+
+        _showPopUp = true;
+
+    }
+}

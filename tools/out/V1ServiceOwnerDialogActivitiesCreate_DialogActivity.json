@@ -10,8 +10,7 @@
           "null"
         ],
         "description": "The UUDIv7 of the action may be provided to support idempotent additions to the list of activities.\nIf not supplied, a new UUIDv7 will be generated.",
-        "format": "guid",
-        "nullable": true
+        "format": "guid"
       },
       "createdAt": {
         "type": [
@@ -19,8 +18,7 @@
           "null"
         ],
         "description": "If supplied, overrides the creating date and time for the transmission.\nIf not supplied, the current date /time will be used.",
-        "format": "date-time",
-        "nullable": true
+        "format": "date-time"
       },
       "extendedType": {
         "type": [
@@ -28,8 +26,7 @@
           "null"
         ],
         "description": "Arbitrary URI/URN describing a service-specific transmission type.",
-        "format": "uri",
-        "nullable": true
+        "format": "uri"
       },
       "type": {
         "type": "string",
@@ -75,8 +72,7 @@
           "null"
         ],
         "description": "If the activity is related to a particular transmission, this field will contain the transmission identifier.\nMust be present in the request body.",
-        "format": "guid",
-        "nullable": true
+        "format": "guid"
       },
       "performedBy": {
         "type": "object",
@@ -99,16 +95,14 @@
               "string",
               "null"
             ],
-            "description": "The name of the actor.",
-            "nullable": true
+            "description": "The name of the actor."
           },
           "actorId": {
             "type": [
               "string",
               "null"
             ],
-            "description": "The identifier (national identity number or organization number) of the actor.",
-            "nullable": true
+            "description": "The identifier (national identity number or organization number) of the actor."
           }
         }
       },
@@ -118,7 +112,6 @@
           "null"
         ],
         "description": "Unstructured text describing the activity. Only set if the activity type is \"Information\".",
-        "nullable": true,
         "items": {
           "type": "object",
           "additionalProperties": false,

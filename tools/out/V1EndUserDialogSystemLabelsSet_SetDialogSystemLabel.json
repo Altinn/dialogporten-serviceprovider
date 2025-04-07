@@ -23,8 +23,7 @@
           "string",
           "null"
         ],
-        "format": "guid",
-        "nullable": true
+        "format": "guid"
       }
     },
     "$schema": "http://json-schema.org/draft-04/schema#"

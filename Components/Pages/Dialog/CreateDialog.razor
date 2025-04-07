@@ -1,4 +1,4 @@
-@page "/Dialog"
+@page "/Dialog/Create"
 @using System.Text
 @using System.Text.Json
 @using Altinn.ApiClients.Dialogporten.Features.V1
@@ -25,30 +25,12 @@
 @{
     if (_showPopUp)
     {
-        <div tabindex="-1" class="modal" role="dialog" style="display:block">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>response</h3>
-                        <button onclick="@ClosePopUp">Close</button>
-                    </div>
-                    <div class="modal-body">
-                        @if (_response != null)
-                        {
-                            <p>@_response.StatusCode @((int)_response.StatusCode)</p>
-                            <br/>
-
-                            @(_response.IsSuccessStatusCode switch
-                            {
-                                true => _response.Content,
-                                false => _response.Error.Content
-                            })
-
-                        }
-                    </div>
-                </div>
-            </div>
-        </div>
+        if (_response is not null)
+        {
+            var header = $"{_response.StatusCode} {(int)_response.StatusCode}";
+            var message = _response.IsSuccessStatusCode ? _response.Content : _response.Error.Content;
+            <PopUpMessage Header="@header" Message="@message" OnClick="@(() => _showPopUp = false)"></PopUpMessage>
+        }
     }
 }
 
@@ -60,8 +42,7 @@
         var bytes = Encoding.UTF8.GetBytes(_json);
         var utf8Reader = new Utf8JsonReader(bytes);
         var jsonElement = JsonElement.ParseValue(ref utf8Reader);
-        Properties = jsonElement.GetProperty("properties");
-        Fields ??= FieldParser.ParseFields(Properties);
+        Fields ??= FieldParser.ParseFields(jsonElement.GetProperty("properties"));
     }
     private Dictionary<string, object?> Data { get; set; } = new(StringComparer.InvariantCultureIgnoreCase);
 
@@ -75,7 +56,6 @@
         // var dialog = Mapper.Map<V1ServiceOwnerDialogsCommandsCreate_Dialog>(Data);
         var serializeObject = JsonConvert.SerializeObject(
             Data,
-            Formatting.Indented,
             new JsonSerializerSettings
             {
                 NullValueHandling = NullValueHandling.Ignore
@@ -99,7 +79,6 @@
     }
     private IApiResponse<string>? _response;
     private static IEnumerable<FieldRecord>? Fields { get; set; }
-    private JsonElement Properties { get; set; }
     // private string Json = File.ReadAllText("jsonFiles/V1ServiceOwnerDialogsCreate_Dialog.json");
     private readonly string _json = File.ReadAllText("jsonFiles/schema.json");
 }

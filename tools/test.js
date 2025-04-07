@@ -25,9 +25,7 @@ Object.entries(openapiSpec.paths).forEach(([path, methods]) => {
             if (content["application/json"] && content["application/json"].schema) {
                 convertedSchemas[operation.operationId] = {
                     operationId: operation.operationId, // Preserve operationId
-                    schema: toJsonSchema(content["application/json"].schema, {
-                        keepNotSupported: ["nullable"]
-                    }),
+                    schema: toJsonSchema(content["application/json"].schema),
                 };
             }
         }

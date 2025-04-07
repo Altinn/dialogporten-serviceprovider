@@ -11,7 +11,6 @@
         ],
         "description": "Advisory indicator of progress, represented as 1-100 percentage value. 100% representing a dialog that has come\nto a natural completion (successful or not).",
         "format": "int32",
-        "nullable": true,
         "minimum": -2147483648,
         "maximum": 2147483647
       },
@@ -20,16 +19,14 @@
           "string",
           "null"
         ],
-        "description": "Arbitrary string with a service-specific indicator of status, typically used to indicate a fine-grained state of\nthe dialog to further specify the \"status\" enum.",
-        "nullable": true
+        "description": "Arbitrary string with a service-specific indicator of status, typically used to indicate a fine-grained state of\nthe dialog to further specify the \"status\" enum."
       },
       "externalReference": {
         "type": [
           "string",
           "null"
         ],
-        "description": "Arbitrary string with a service-specific reference to an external system or service.",
-        "nullable": true
+        "description": "Arbitrary string with a service-specific reference to an external system or service."
       },
       "visibleFrom": {
         "type": [
@@ -37,8 +34,7 @@
           "null"
         ],
         "description": "The timestamp when the dialog should be made visible for authorized end users. If not provided, the dialog will be\nimmediately available.",
-        "format": "date-time",
-        "nullable": true
+        "format": "date-time"
       },
       "dueAt": {
         "type": [
@@ -46,24 +42,21 @@
           "null"
         ],
         "description": "The due date for the dialog. Dialogs past due date might be marked as such in frontends but will still be available.",
-        "format": "date-time",
-        "nullable": true
+        "format": "date-time"
       },
       "process": {
         "type": [
           "string",
           "null"
         ],
-        "description": "Optional process identifier used to indicate a business process this dialog belongs to.",
-        "nullable": true
+        "description": "Optional process identifier used to indicate a business process this dialog belongs to."
       },
       "precedingProcess": {
         "type": [
           "string",
           "null"
         ],
-        "description": "Optional preceding process identifier to indicate the business process that preceded the process indicated in the \"Process\" field. Cannot be set without also \"Process\" being set.",
-        "nullable": true
+        "description": "Optional preceding process identifier to indicate the business process that preceded the process indicated in the \"Process\" field. Cannot be set without also \"Process\" being set."
       },
       "expiresAt": {
         "type": [
@@ -71,8 +64,7 @@
           "null"
         ],
         "description": "The expiration date for the dialog. This is the last date when the dialog is available for the end user.\n            \nAfter this date is passed, the dialog will be considered expired and no longer available for the end user in any\nAPI. If not supplied, the dialog will be considered to never expire. This field can be changed after creation.",
-        "format": "date-time",
-        "nullable": true
+        "format": "date-time"
       },
       "status": {
         "type": "string",
@@ -108,7 +100,6 @@
                   "null"
                 ],
                 "description": "A list of localizations for the content.",
-                "nullable": true,
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
@@ -140,7 +131,6 @@
                   "null"
                 ],
                 "description": "A list of localizations for the content.",
-                "nullable": true,
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
@@ -172,7 +162,6 @@
                   "null"
                 ],
                 "description": "A list of localizations for the content.",
-                "nullable": true,
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
@@ -204,7 +193,6 @@
                   "null"
                 ],
                 "description": "A list of localizations for the content.",
-                "nullable": true,
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
@@ -236,7 +224,6 @@
                   "null"
                 ],
                 "description": "A list of localizations for the content.",
-                "nullable": true,
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
@@ -268,7 +255,6 @@
                   "null"
                 ],
                 "description": "A list of localizations for the content.",
-                "nullable": true,
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
@@ -300,7 +286,6 @@
                   "null"
                 ],
                 "description": "A list of localizations for the content.",
-                "nullable": true,
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
@@ -332,7 +317,6 @@
                   "null"
                 ],
                 "description": "A list of localizations for the content.",
-                "nullable": true,
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
@@ -362,7 +346,6 @@
           "null"
         ],
         "description": "A list of words (tags) that will be used in dialog search queries. Not visible in end-user DTO.",
-        "nullable": true,
         "items": {
           "type": "object",
           "additionalProperties": false,
@@ -380,7 +363,6 @@
           "null"
         ],
         "description": "The attachments associated with the dialog (on an aggregate level).",
-        "nullable": true,
         "items": {
           "type": "object",
           "additionalProperties": false,
@@ -391,8 +373,7 @@
                 "null"
               ],
               "description": "A self-defined UUIDv7 may be provided to support idempotent additions of attachments. If not provided, a new UUIDv7 will be generated.",
-              "format": "guid",
-              "nullable": true
+              "format": "guid"
             },
             "displayName": {
               "type": [
@@ -400,7 +381,6 @@
                 "null"
               ],
               "description": "The display name of the attachment that should be used in GUIs.",
-              "nullable": true,
               "items": {
                 "type": "object",
                 "additionalProperties": false,
@@ -422,7 +402,6 @@
                 "null"
               ],
               "description": "The URLs associated with the attachment, each referring to a different representation of the attachment.",
-              "nullable": true,
               "items": {
                 "type": "object",
                 "additionalProperties": false,
@@ -433,8 +412,7 @@
                       "null"
                     ],
                     "description": "A UUIDv7 used for merging existing data, unknown IDs will be ignored as this entity does not support user-defined IDs.",
-                    "format": "guid",
-                    "nullable": true
+                    "format": "guid"
                   },
                   "url": {
                     "type": "string",
@@ -446,8 +424,7 @@
                       "string",
                       "null"
                     ],
-                    "description": "The media type of the attachment.",
-                    "nullable": true
+                    "description": "The media type of the attachment."
                   },
                   "consumerType": {
                     "type": "string",
@@ -473,7 +450,6 @@
           "null"
         ],
         "description": "The immutable list of transmissions associated with the dialog. When updating via PUT, any transmissions\nadded here will be appended to the existing list of transmissions.",
-        "nullable": true,
         "items": {
           "type": "object",
           "additionalProperties": false,
@@ -484,8 +460,7 @@
                 "null"
               ],
               "description": "The UUDIv7 of the action may be provided to support idempotent additions to the list of transmissions.\nIf not supplied, a new UUIDv7 will be generated.",
-              "format": "guid",
-              "nullable": true
+              "format": "guid"
             },
             "createdAt": {
               "type": "string",
@@ -497,8 +472,7 @@
                 "string",
                 "null"
               ],
-              "description": "Contains an authorization resource attributeId, that can used in custom authorization rules in the XACML service\npolicy, which by default is the policy belonging to the service referred to by \"serviceResource\" in the dialog.\n            \nCan also be used to refer to other service policies.",
-              "nullable": true
+              "description": "Contains an authorization resource attributeId, that can used in custom authorization rules in the XACML service\npolicy, which by default is the policy belonging to the service referred to by \"serviceResource\" in the dialog.\n            \nCan also be used to refer to other service policies."
             },
             "extendedType": {
               "type": [
@@ -506,8 +480,7 @@
                 "null"
               ],
               "description": "Arbitrary URI/URN describing a service-specific transmission type.\n            \nRefer to the service-specific documentation provided by the service owner for details (if in use).",
-              "format": "uri",
-              "nullable": true
+              "format": "uri"
             },
             "relatedTransmissionId": {
               "type": [
@@ -515,8 +488,7 @@
                 "null"
               ],
               "description": "Reference to any other transmission that this transmission is related to.",
-              "format": "guid",
-              "nullable": true
+              "format": "guid"
             },
             "type": {
               "type": "string",
@@ -563,16 +535,14 @@
                     "string",
                     "null"
                   ],
-                  "description": "The name of the actor.",
-                  "nullable": true
+                  "description": "The name of the actor."
                 },
                 "actorId": {
                   "type": [
                     "string",
                     "null"
                   ],
-                  "description": "The identifier (national identity number or organization number) of the actor.",
-                  "nullable": true
+                  "description": "The identifier (national identity number or organization number) of the actor."
                 }
               }
             },
@@ -590,7 +560,6 @@
                         "null"
                       ],
                       "description": "A list of localizations for the content.",
-                      "nullable": true,
                       "items": {
                         "type": "object",
                         "additionalProperties": false,
@@ -622,7 +591,6 @@
                         "null"
                       ],
                       "description": "A list of localizations for the content.",
-                      "nullable": true,
                       "items": {
                         "type": "object",
                         "additionalProperties": false,
@@ -654,7 +622,6 @@
                         "null"
                       ],
                       "description": "A list of localizations for the content.",
-                      "nullable": true,
                       "items": {
                         "type": "object",
                         "additionalProperties": false,
@@ -684,7 +651,6 @@
                 "null"
               ],
               "description": "The transmission-level attachments.",
-              "nullable": true,
               "items": {
                 "type": "object",
                 "additionalProperties": false,
@@ -695,8 +661,7 @@
                       "null"
                     ],
                     "description": "A self-defined UUIDv7 may be provided to support idempotent additions of transmission attachments. If not provided, a new UUIDv7 will be generated.",
-                    "format": "guid",
-                    "nullable": true
+                    "format": "guid"
                   },
                   "displayName": {
                     "type": [
@@ -704,7 +669,6 @@
                       "null"
                     ],
                     "description": "The display name of the attachment that should be used in GUIs.",
-                    "nullable": true,
                     "items": {
                       "type": "object",
                       "additionalProperties": false,
@@ -726,7 +690,6 @@
                       "null"
                     ],
                     "description": "The URLs associated with the attachment, each referring to a different representation of the attachment.",
-                    "nullable": true,
                     "items": {
                       "type": "object",
                       "additionalProperties": false,
@@ -741,8 +704,7 @@
                             "string",
                             "null"
                           ],
-                          "description": "The media type of the attachment.",
-                          "nullable": true
+                          "description": "The media type of the attachment."
                         },
                         "consumerType": {
                           "type": "string",
@@ -771,7 +733,6 @@
           "null"
         ],
         "description": "The GUI actions associated with the dialog. Should be used in browser-based interactive frontends.",
-        "nullable": true,
         "items": {
           "type": "object",
           "additionalProperties": false,
@@ -782,8 +743,7 @@
                 "null"
               ],
               "description": "A self-defined UUIDv7 may be provided to support idempotent additions of Gui Actions. If not provided, a new UUIDv7 will be generated.",
-              "format": "guid",
-              "nullable": true
+              "format": "guid"
             },
             "action": {
               "type": "string",
@@ -799,8 +759,7 @@
                 "string",
                 "null"
               ],
-              "description": "Contains an authorization resource attributeId, that can used in custom authorization rules in the XACML service\npolicy, which by default is the policy belonging to the service referred to by \"serviceResource\" in the dialog.\n            \nCan also be used to refer to other service policies.",
-              "nullable": true
+              "description": "Contains an authorization resource attributeId, that can used in custom authorization rules in the XACML service\npolicy, which by default is the policy belonging to the service referred to by \"serviceResource\" in the dialog.\n            \nCan also be used to refer to other service policies."
             },
             "isDeleteDialogAction": {
               "type": "boolean",
@@ -852,7 +811,6 @@
                 "null"
               ],
               "description": "The title of the action, this should be short and in verb form. Must be text/plain.",
-              "nullable": true,
               "items": {
                 "type": "object",
                 "additionalProperties": false,
@@ -874,7 +832,6 @@
                 "null"
               ],
               "description": "If there should be a prompt asking the user for confirmation before the action is executed,\nthis field should contain the prompt text.",
-              "nullable": true,
               "items": {
                 "type": "object",
                 "additionalProperties": false,
@@ -899,7 +856,6 @@
           "null"
         ],
         "description": "The API actions associated with the dialog. Should be used in specialized, non-browser-based integrations.",
-        "nullable": true,
         "items": {
           "type": "object",
           "additionalProperties": false,
@@ -910,8 +866,7 @@
                 "null"
               ],
               "description": "A self-defined UUIDv7 may be provided to support idempotent additions of Api Actions. If not provided, a new UUIDv7 will be generated.",
-              "format": "guid",
-              "nullable": true
+              "format": "guid"
             },
             "action": {
               "type": "string",
@@ -922,16 +877,14 @@
                 "string",
                 "null"
               ],
-              "description": "Contains an authorization resource attributeId, that can used in custom authorization rules in the XACML service\npolicy, which by default is the policy belonging to the service referred to by \"serviceResource\" in the dialog.\n            \nCan also be used to refer to other service policies.",
-              "nullable": true
+              "description": "Contains an authorization resource attributeId, that can used in custom authorization rules in the XACML service\npolicy, which by default is the policy belonging to the service referred to by \"serviceResource\" in the dialog.\n            \nCan also be used to refer to other service policies."
             },
             "name": {
               "type": [
                 "string",
                 "null"
               ],
-              "description": "The logical name of the operation the API action refers to.",
-              "nullable": true
+              "description": "The logical name of the operation the API action refers to."
             },
             "endpoints": {
               "type": [
@@ -939,7 +892,6 @@
                 "null"
               ],
               "description": "The endpoints associated with the action.",
-              "nullable": true,
               "items": {
                 "type": "object",
                 "additionalProperties": false,
@@ -950,16 +902,14 @@
                       "null"
                     ],
                     "description": "A UUIDv7 used for merging existing data, unknown IDs will be ignored as this entity does not support user-defined IDs.",
-                    "format": "guid",
-                    "nullable": true
+                    "format": "guid"
                   },
                   "version": {
                     "type": [
                       "string",
                       "null"
                     ],
-                    "description": "Arbitrary string indicating the version of the endpoint.",
-                    "nullable": true
+                    "description": "Arbitrary string indicating the version of the endpoint."
                   },
                   "url": {
                     "type": "string",
@@ -998,8 +948,7 @@
                       "null"
                     ],
                     "description": "Link to documentation for the endpoint, providing documentation for integrators. Should be a URL to a\nhuman-readable page.",
-                    "format": "uri",
-                    "nullable": true
+                    "format": "uri"
                   },
                   "requestSchema": {
                     "type": [
@@ -1007,8 +956,7 @@
                       "null"
                     ],
                     "description": "Link to the request schema for the endpoint. Used to provide documentation for integrators.\nDialogporten will not validate information on this endpoint.",
-                    "format": "uri",
-                    "nullable": true
+                    "format": "uri"
                   },
                   "responseSchema": {
                     "type": [
@@ -1016,8 +964,7 @@
                       "null"
                     ],
                     "description": "Link to the response schema for the endpoint. Used to provide documentation for integrators.\nDialogporten will not validate information on this endpoint.",
-                    "format": "uri",
-                    "nullable": true
+                    "format": "uri"
                   },
                   "deprecated": {
                     "type": "boolean",
@@ -1029,8 +976,7 @@
                       "null"
                     ],
                     "description": "Date and time when the endpoint will no longer function. Only set if the endpoint is deprecated. Dialogporten\nwill not enforce this date.",
-                    "format": "date-time",
-                    "nullable": true
+                    "format": "date-time"
                   }
                 }
               }
@@ -1044,7 +990,6 @@
           "null"
         ],
         "description": "An immutable list of activities associated with the dialog. When updating via PUT, any activities added here\nwill be appended to the existing list of activities.",
-        "nullable": true,
         "items": {
           "type": "object",
           "additionalProperties": false,
@@ -1055,8 +1000,7 @@
                 "null"
               ],
               "description": "The UUDIv7 of the action may be provided to support idempotent additions to the list of activities.\nIf not supplied, a new UUIDv7 will be generated.",
-              "format": "guid",
-              "nullable": true
+              "format": "guid"
             },
             "createdAt": {
               "type": [
@@ -1064,8 +1008,7 @@
                 "null"
               ],
               "description": "If supplied, overrides the creating date and time for the transmission.\nIf not supplied, the current date /time will be used.",
-              "format": "date-time",
-              "nullable": true
+              "format": "date-time"
             },
             "extendedType": {
               "type": [
@@ -1073,8 +1016,7 @@
                 "null"
               ],
               "description": "Arbitrary URI/URN describing a service-specific transmission type.",
-              "format": "uri",
-              "nullable": true
+              "format": "uri"
             },
             "type": {
               "type": "string",
@@ -1120,8 +1062,7 @@
                 "null"
               ],
               "description": "If the activity is related to a particular transmission, this field will contain the transmission identifier.\nMust be present in the request body.",
-              "format": "guid",
-              "nullable": true
+              "format": "guid"
             },
             "performedBy": {
               "type": "object",
@@ -1144,16 +1085,14 @@
                     "string",
                     "null"
                   ],
-                  "description": "The name of the actor.",
-                  "nullable": true
+                  "description": "The name of the actor."
                 },
                 "actorId": {
                   "type": [
                     "string",
                     "null"
                   ],
-                  "description": "The identifier (national identity number or organization number) of the actor.",
-                  "nullable": true
+                  "description": "The identifier (national identity number or organization number) of the actor."
                 }
               }
             },
@@ -1163,7 +1102,6 @@
                 "null"
               ],
               "description": "Unstructured text describing the activity. Only set if the activity type is \"Information\".",
-              "nullable": true,
               "items": {
                 "type": "object",
                 "additionalProperties": false,

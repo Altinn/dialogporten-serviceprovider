@@ -10,8 +10,7 @@
           "null"
         ],
         "description": "The UUDIv7 of the action may be provided to support idempotent additions to the list of transmissions.\nIf not supplied, a new UUIDv7 will be generated.",
-        "format": "guid",
-        "nullable": true
+        "format": "guid"
       },
       "createdAt": {
         "type": "string",
@@ -23,8 +22,7 @@
           "string",
           "null"
         ],
-        "description": "Contains an authorization resource attributeId, that can used in custom authorization rules in the XACML service\npolicy, which by default is the policy belonging to the service referred to by \"serviceResource\" in the dialog.\n            \nCan also be used to refer to other service policies.",
-        "nullable": true
+        "description": "Contains an authorization resource attributeId, that can used in custom authorization rules in the XACML service\npolicy, which by default is the policy belonging to the service referred to by \"serviceResource\" in the dialog.\n            \nCan also be used to refer to other service policies."
       },
       "extendedType": {
         "type": [
@@ -32,8 +30,7 @@
           "null"
         ],
         "description": "Arbitrary URI/URN describing a service-specific transmission type.\n            \nRefer to the service-specific documentation provided by the service owner for details (if in use).",
-        "format": "uri",
-        "nullable": true
+        "format": "uri"
       },
       "relatedTransmissionId": {
         "type": [
@@ -41,8 +38,7 @@
           "null"
         ],
         "description": "Reference to any other transmission that this transmission is related to.",
-        "format": "guid",
-        "nullable": true
+        "format": "guid"
       },
       "type": {
         "type": "string",
@@ -89,16 +85,14 @@
               "string",
               "null"
             ],
-            "description": "The name of the actor.",
-            "nullable": true
+            "description": "The name of the actor."
           },
           "actorId": {
             "type": [
               "string",
               "null"
             ],
-            "description": "The identifier (national identity number or organization number) of the actor.",
-            "nullable": true
+            "description": "The identifier (national identity number or organization number) of the actor."
           }
         }
       },
@@ -116,7 +110,6 @@
                   "null"
                 ],
                 "description": "A list of localizations for the content.",
-                "nullable": true,
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
@@ -148,7 +141,6 @@
                   "null"
                 ],
                 "description": "A list of localizations for the content.",
-                "nullable": true,
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
@@ -180,7 +172,6 @@
                   "null"
                 ],
                 "description": "A list of localizations for the content.",
-                "nullable": true,
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
@@ -210,7 +201,6 @@
           "null"
         ],
         "description": "The transmission-level attachments.",
-        "nullable": true,
         "items": {
           "type": "object",
           "additionalProperties": false,
@@ -221,8 +211,7 @@
                 "null"
               ],
               "description": "A self-defined UUIDv7 may be provided to support idempotent additions of transmission attachments. If not provided, a new UUIDv7 will be generated.",
-              "format": "guid",
-              "nullable": true
+              "format": "guid"
             },
             "displayName": {
               "type": [
@@ -230,7 +219,6 @@
                 "null"
               ],
               "description": "The display name of the attachment that should be used in GUIs.",
-              "nullable": true,
               "items": {
                 "type": "object",
                 "additionalProperties": false,
@@ -252,7 +240,6 @@
                 "null"
               ],
               "description": "The URLs associated with the attachment, each referring to a different representation of the attachment.",
-              "nullable": true,
               "items": {
                 "type": "object",
                 "additionalProperties": false,
@@ -267,8 +254,7 @@
                       "string",
                       "null"
                     ],
-                    "description": "The media type of the attachment.",
-                    "nullable": true
+                    "description": "The media type of the attachment."
                   },
                   "consumerType": {
                     "type": "string",

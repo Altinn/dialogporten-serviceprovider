@@ -6,10 +6,10 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider;
 
 public static class FieldParser
 {
-    public static IEnumerable<FieldRecord> ParseFields(JsonElement jsonElement)
+    public static IEnumerable<FieldRecord?> ParseFields(JsonElement jsonElement)
     {
         return jsonElement.EnumerateObject()
-                          .Select<JsonProperty, FieldRecord>(jsonProperty => ParseField(jsonProperty)!)
+                          .Select<JsonProperty, FieldRecord?>(jsonProperty => ParseField(jsonProperty))
                           .ToList();
     }
     private static FieldRecord? ParseField(JsonProperty jsonProperty)
@@ -23,34 +23,42 @@ public static class FieldParser
         }
 
         jsonElement.TryGetFormat(out var format);
-        jsonElement.TryGetProperty("description", out var desc);
+        var desc = "";
+        if (jsonElement.TryGetProperty("description", out var descElement))
+        {
+            desc = descElement.GetString()!;
+        }
 
         switch (fieldType)
         {
             case FieldTypes.Enum when enumValues != null:
-                return new FieldRecord.EnumRecord(propertyName, desc.GetString()!, isNullable, enumValues);
+                return new FieldRecord.EnumRecord(propertyName, desc, isNullable, enumValues);
             case FieldTypes.String:
                 return format switch
                 {
-                    "date-time" => new FieldRecord.DateTimeRecord(propertyName, desc.GetString()!, isNullable),
-                    "guid" => new FieldRecord.GuidRecord(propertyName, desc.GetString()!, isNullable),
-                    _ => new FieldRecord.StringRecord(propertyName, desc.GetString()!, isNullable, format)
+                    "date-time" => new FieldRecord.DateTimeRecord(propertyName, desc, isNullable),
+                    "guid" => new FieldRecord.GuidRecord(propertyName, desc, isNullable),
+                    _ => new FieldRecord.StringRecord(propertyName, desc, isNullable, format)
                 };
             case FieldTypes.Integer:
                 {
                     var min = jsonElement.GetProperty("minimum").GetInt32();
                     var max = jsonElement.GetProperty("maximum").GetInt32();
-                    return new FieldRecord.IntRecord(propertyName, desc.GetString()!, isNullable, min, max, format);
+                    return new FieldRecord.IntRecord(propertyName, desc, isNullable, min, max, format);
                 }
             case FieldTypes.Array:
                 {
                     var itemFormat = ParseFields(jsonElement.GetProperty("items").GetProperty("properties")).ToArray();
-                    return new FieldRecord.ArrayRecord(propertyName, desc.GetString()!, itemFormat, isNullable);
+                    return new FieldRecord.ArrayRecord(propertyName, desc, itemFormat, isNullable);
                 }
             case FieldTypes.Object:
                 {
                     return new FieldRecord.ObjectRecord(propertyName, ParseFields(jsonElement.GetProperty("properties")), isNullable);
                 }
+
+            case FieldTypes.TextArea:
+                return new FieldRecord.TextAreaRecord(propertyName, desc, isNullable);
+                break;
             case FieldTypes.None:
                 break;
             default:
@@ -70,13 +78,15 @@ public static class FieldParser
 
         if (jsonElement.ValueKind == JsonValueKind.String)
         {
-            fieldType = jsonElement.ValueKind == JsonValueKind.Object ? FieldTypes.Object : FieldTypes.None;
+            fieldType = FieldTypes.None;
             isNullable = false;
             return fieldType != FieldTypes.None;
         }
         if (!jsonElement.TryGetProperty("type", out var type))
         {
-            return false;
+            fieldType = FieldTypes.TextArea;
+            isNullable = true;
+            return true;
         }
 
         if (jsonElement.TryGetProperty("enum", out var values))
@@ -149,6 +159,7 @@ public static class FieldParser
         Integer,
         Enum,
         Object,
-        Array
+        Array,
+        TextArea
     }
 }
