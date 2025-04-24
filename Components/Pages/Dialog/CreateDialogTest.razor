@@ -1,0 +1,150 @@
+@page "/CreateDialogTest"
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@rendermode InteractiveServer
+<h3>CreateDialogTest</h3>
+
+<EditForm Model="CreateDialog" OnValidSubmit=@(() => { Console.WriteLine("hei" + CreateDialog.Id); })
+          FormName="CreateDialogTest">
+    <DataAnnotationsValidator/>
+    <ValidationSummary/>
+    <div>
+        <label>Id</label>
+        <InputGuid @bind-Value="@CreateDialog.Id"></InputGuid>
+    </div>
+
+    <div>
+        <label>Idempotent Key</label>
+        <InputText @bind-Value="@CreateDialog.IdempotentKey"></InputText>
+    </div>
+
+    <div>
+        <label>Service Resource</label>
+        <InputText @bind-Value="@CreateDialog.ServiceResource"></InputText>
+    </div>
+
+    <div>
+        <label>Party</label>
+        <InputText @bind-Value="@CreateDialog.Party"></InputText>
+    </div>
+
+    <div>
+        <label>Progress</label>
+        <InputNumber @bind-Value="@CreateDialog.Progress"></InputNumber>
+    </div>
+
+    <div>
+        <label for="extendedStatus">Extended Status</label>
+        <InputText id="extendedStatus" @bind-Value="@CreateDialog.ExtendedStatus"></InputText>
+    </div>
+
+    <div>
+        <label for="externalReference">External Reference</label>
+        <InputText id="externalReference" @bind-Value="@CreateDialog.ExternalReference"></InputText>
+    </div>
+
+    <div>
+        <label for="visibleFrom">Visible From</label>
+        <InputDate id="visibleFrom" @bind-Value="@CreateDialog.VisibleFrom"></InputDate>
+    </div>
+
+    <div>
+        <label for="dueAt">Due At</label>
+        <InputDate id="dueAt" @bind-Value="@CreateDialog.DueAt"></InputDate>
+    </div>
+
+    <div>
+        <label for="process">Process</label>
+        <InputText id="process" @bind-Value="@CreateDialog.Process"></InputText>
+    </div>
+
+    <div>
+        <label for="precedingProcess">Preceding Process</label>
+        <InputText id="precedingProcess" @bind-Value="@CreateDialog.PrecedingProcess"></InputText>
+    </div>
+
+    <div>
+        <label for="expiresAt">Expires At</label>
+        <InputDate id="expiresAt" @bind-Value="@CreateDialog.ExpiresAt"></InputDate>
+    </div>
+
+    <div>
+        <label for="createdAt">Created At</label>
+        <InputDate id="createdAt" @bind-Value="@CreateDialog.CreatedAt"></InputDate>
+    </div>
+
+    <div>
+        <label for="updatedAt">Updated At</label>
+        <InputDate id="updatedAt" @bind-Value="@CreateDialog.UpdatedAt"></InputDate>
+    </div>
+
+    <div>
+        <label for="status">Status</label>
+        <InputSelect id="status" @bind-Value="@CreateDialog.Status">
+            @foreach (var status in Enum.GetValues<DialogsEntities_DialogStatus>())
+            {
+                <option value="@status">@status</option>
+            }
+        </InputSelect>
+    </div>
+
+    <div>
+        <label for="systemLabel">System Label:</label>
+        <InputSelect id="systemLabel" @bind-Value="@CreateDialog.SystemLabel">
+            @foreach (var label in Enum.GetValues<DialogEndUserContextsEntities_SystemLabel>())
+            {
+                <option value="@label">@label</option>
+            }
+        </InputSelect>
+    </div>
+    <div>
+        <label for="">Content</label>
+        <EditContent Content="@CreateDialog.Content" ContentChanged="content => CreateDialog.Content = content"/>
+    </div>
+
+
+    <button type="submit">Submit
+    </button>
+</EditForm>
+
+@code {
+    V1ServiceOwnerDialogsCommandsCreate_Dialog CreateDialog { get; set; } = new();
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        CreateDialog.Content = new V1ServiceOwnerDialogsCommandsCreate_Content
+        {
+            Title = new V1CommonContent_ContentValue
+            {
+                Value = []
+            },
+            NonSensitiveTitle = new V1CommonContent_ContentValue
+            {
+                Value = []
+            },
+            Summary = new V1CommonContent_ContentValue
+            {
+                Value = []
+            },
+            NonSensitiveSummary = new V1CommonContent_ContentValue
+            {
+                Value = []
+            },
+            SenderName = new V1CommonContent_ContentValue
+            {
+                Value = []
+            },
+            AdditionalInfo = new V1CommonContent_ContentValue
+            {
+                Value = []
+            },
+            ExtendedStatus = new V1CommonContent_ContentValue
+            {
+                Value = []
+            },
+            MainContentReference = new V1CommonContent_ContentValue
+            {
+                Value = []
+            }
+        };
+    }
+}

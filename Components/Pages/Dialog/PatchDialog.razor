@@ -35,16 +35,16 @@
     {
         base.OnParametersSet();
 
-        var bytes = Encoding.UTF8.GetBytes(_json);
-        var utf8Reader = new Utf8JsonReader(bytes);
-        var jsonElement = JsonElement.ParseValue(ref utf8Reader);
-        var properties = jsonElement;
         if (Fields.Any())
         {
             return;
         }
+
+        var bytes = Encoding.UTF8.GetBytes(_json);
+        var utf8Reader = new Utf8JsonReader(bytes);
+        var jsonElement = JsonElement.ParseValue(ref utf8Reader);
         IEnumerable<FieldRecord.GuidRecord> oi = [new("id", "Guid", false)];
-        var temp = FieldParser.ParseFields(properties);
+        var temp = FieldParser.ParseFields(jsonElement);
         Fields = oi.Concat(temp)!;
 
     }

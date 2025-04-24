@@ -1,0 +1,70 @@
+@using Altinn.ApiClients.Dialogporten.Features.V1
+<fieldset>
+    <legend>Edit Content Value</legend>
+
+    <div>
+        <label for="mediaType">Media Type:</label>
+        <InputText id="mediaType" @bind-Value="ContentValue.MediaType"/>
+    </div>
+
+    <div>
+        <label>Localizations:</label>
+        <table>
+            <thead>
+            <tr>
+                <th>Language Code</th>
+                <th>Text</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var localization in ContentValue.Value)
+            {
+                <tr>
+                    <td>
+                        <InputText @bind-Value="localization.LanguageCode" placeholder="Language Code"/>
+                    </td>
+                    <td>
+                        <InputText @bind-Value="localization.Value" placeholder="Localized Value"/>
+                    </td>
+                    <td>
+                        <button type="button" @onclick="() => RemoveLocalization(localization)">Remove</button>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+
+        <div>
+            <button type="button" @onclick="AddLocalization">Add Localization</button>
+        </div>
+    </div>
+</fieldset>
+
+@code {
+    [Parameter]
+    public required V1CommonContent_ContentValue ContentValue { get; set; }
+
+    [Parameter]
+    public EventCallback<V1CommonContent_ContentValue> ContentValueChanged { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        ContentValue = new V1CommonContent_ContentValue
+        {
+            Value = new List<V1CommonLocalizations_Localization>()
+        };
+    }
+    private void AddLocalization()
+    {
+        ContentValue.Value.Add(new V1CommonLocalizations_Localization { LanguageCode = "", Value = "" });
+        ContentValueChanged.InvokeAsync(ContentValue);
+    }
+
+    private void RemoveLocalization(V1CommonLocalizations_Localization localization)
+    {
+        ContentValue.Value.Remove(localization);
+        ContentValueChanged.InvokeAsync(ContentValue);
+    }
+}
