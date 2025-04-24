@@ -1,0 +1,67 @@
+@using Altinn.ApiClients.Dialogporten.Features.V1
+<div>
+    <label for=""></label>
+    <table>
+        <thead>
+        <tr>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var url in Value)
+        {
+            <tr>
+                <label>URL</label>
+                <td></td>
+                <label>Media Type</label>
+                <td>
+                    <InputText @bind-Value="@url.MediaType"></InputText>
+                </td>
+                <td>
+
+                    <div>
+                        <label>Consumer Type</label>
+                        <InputSelect @bind-Value="@url.ConsumerType">
+                            @foreach (var label in Enum.GetValues<Attachments_AttachmentUrlConsumerType>())
+                            {
+                                <option value="@label">@label</option>
+                            }
+                        </InputSelect>
+                    </div>
+                </td>
+                <td>
+                    <button @onclick="() => RemoveAttachmentUrl(url)">Remove url</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <div>
+        <button @onclick="AddAttachmentUrl">Add URL</button>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public required ICollection<V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl> Value { get; set; }
+
+    [Parameter]
+    public EventCallback<ICollection<V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl>> ValueChanged { get; set; }
+
+    private void AddAttachmentUrl()
+    {
+        Value.Add(new V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl());
+        ValueChanged.InvokeAsync(Value);
+    }
+
+    private void RemoveAttachmentUrl(V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl url)
+    {
+        Value.Remove(url);
+        ValueChanged.InvokeAsync(Value);
+    }
+
+}

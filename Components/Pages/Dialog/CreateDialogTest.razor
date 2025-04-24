@@ -96,10 +96,27 @@
             }
         </InputSelect>
     </div>
+
     <div>
         <label for="">Content</label>
         <EditContent Content="@CreateDialog.Content" ContentChanged="content => CreateDialog.Content = content"/>
     </div>
+
+    <fieldset>
+        <legend>Attachment</legend>
+        @foreach (var attachment in CreateDialog.Attachments)
+        {
+            <InputGuid @bind-Value="@attachment.Id"/>
+            <InputAttachmentUrl
+                Value="@attachment.Urls"
+                ValueChanged="url => attachment.Urls = url"></InputAttachmentUrl>
+            <InputLocalization
+                Value="attachment.DisplayName"
+                ContentValueChanged="displayName => attachment.DisplayName = displayName"/>
+            <button @onclick="() => RemoveAttachment(attachment)">Remove</button>
+        }
+        <button @onclick="AddAttachment">Add Attachment</button>
+    </fieldset>
 
 
     <button type="submit">Submit
@@ -146,5 +163,20 @@
                 Value = []
             }
         };
+        CreateDialog.Attachments = [];
     }
+    private void AddAttachment()
+    {
+        CreateDialog.Attachments.Add(new V1ServiceOwnerDialogsCommandsCreate_Attachment
+        {
+            Id = null,
+            DisplayName = [],
+            Urls = []
+        });
+    }
+    private void RemoveAttachment(V1ServiceOwnerDialogsCommandsCreate_Attachment attachment)
+    {
+        CreateDialog.Attachments.Remove(attachment);
+    }
+
 }

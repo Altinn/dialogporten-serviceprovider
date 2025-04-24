@@ -1,0 +1,56 @@
+@using Altinn.ApiClients.Dialogporten.Features.V1
+<div>
+    <label>localizations:</label>
+    <table>
+        <thead>
+        @if (Value.Any())
+        {
+            <tr>
+                <th>Language Code</th>
+                <th>Text</th>
+                <th>Actions</th>
+            </tr>
+        }
+        </thead>
+        <tbody>
+        @foreach (var localization in Value)
+        {
+            <tr>
+                <td>
+                    <InputText @bind-Value="localization.LanguageCode" placeholder="Language Code"/>
+                </td>
+                <td>
+                    <InputText @bind-Value="localization.Value" placeholder="Localized Value"/>
+                </td>
+                <td>
+                    <button type="button" @onclick="() => RemoveLocalization(localization)">Remove</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    <div>
+        <button type="button" @onclick="AddLocalization">Add Localization</button>
+    </div>
+</div>
+
+@code{
+    [Parameter]
+    public required ICollection<V1CommonLocalizations_Localization> Value { get; set; }
+
+    [Parameter]
+    public EventCallback<ICollection<V1CommonLocalizations_Localization>> ContentValueChanged { get; set; }
+
+    private void AddLocalization()
+    {
+        Value.Add(new V1CommonLocalizations_Localization { LanguageCode = "", Value = "" });
+        ContentValueChanged.InvokeAsync(Value);
+    }
+
+    private void RemoveLocalization(V1CommonLocalizations_Localization localization)
+    {
+        Value.Remove(localization);
+        ContentValueChanged.InvokeAsync(Value);
+    }
+}
