@@ -170,6 +170,58 @@
         <button type="button" @onclick="AddAttachment">Add Attachment</button>
     </fieldset>
 
+    <fieldset>
+        <legend>Transmission</legend>
+        <table>
+            @foreach (var transmission in CreateDialog.Transmissions)
+            {
+                <tr>
+                    <td>
+                        <InputGuid @bind-Value="transmission.Id"/>
+                        <ValidationMessage For="() => transmission.Id"/>
+                    </td>
+
+                    <td>
+                        <InputDate @bind-Value="@transmission.CreatedAt"/>
+                        <ValidationMessage For="() => transmission.CreatedAt"/>
+                    </td>
+
+                    <td>
+                        <InputText @bind-Value="@transmission.AuthorizationAttribute"/>
+                        <ValidationMessage For="()=> transmission.AuthorizationAttribute"/>
+                    </td>
+
+                    <td>
+                        <InputUri @bind-Value="@transmission.ExtendedType"></InputUri>
+                        <ValidationMessage For="() => transmission.ExtendedType"/>
+                    </td>
+
+                    <td>
+                        <InputSelect @bind-Value="@transmission.Type">
+                            @foreach (var type in Enum.GetValues<DialogsEntitiesTransmissions_DialogTransmissionType>())
+                            {
+                                <option value="@type">@type</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => transmission.Type)"/>
+                    </td>
+
+                    <td>
+                        <!-- Sender -->
+                    </td>
+
+                    <td>
+                        <!-- transmission content-->
+                    </td>
+
+                    <td>
+                        <!-- collection Transmission attachment -->
+                    </td>
+                </tr>
+            }
+        </table>
+    </fieldset>
+
 
     <button type="submit">Submit</button>
 </EditForm>
