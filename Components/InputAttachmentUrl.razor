@@ -1,4 +1,6 @@
+@using System.Security.Policy
 @using Altinn.ApiClients.Dialogporten.Features.V1
+@using Microsoft.AspNetCore.Mvc.Routing
 <div>
     <label for=""></label>
     <table>
@@ -15,10 +17,14 @@
         {
             <tr>
                 <label>URL</label>
-                <td></td>
+                <td>
+                    <InputUri @bind-Value="url.Url"></InputUri>
+                    <ValidationMessage For="@(() => url.Url)"></ValidationMessage>
+                </td>
                 <label>Media Type</label>
                 <td>
                     <InputText @bind-Value="@url.MediaType"></InputText>
+                    <ValidationMessage For="@(() => url.MediaType)"></ValidationMessage>
                 </td>
                 <td>
 
@@ -30,6 +36,7 @@
                                 <option value="@label">@label</option>
                             }
                         </InputSelect>
+                        <ValidationMessage For="@(() => url.ConsumerType)"></ValidationMessage>
                     </div>
                 </td>
                 <td>

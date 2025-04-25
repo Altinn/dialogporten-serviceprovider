@@ -7,74 +7,89 @@
           FormName="CreateDialogTest">
     <DataAnnotationsValidator/>
     <ValidationSummary/>
+
     <div>
         <label>Id</label>
         <InputGuid @bind-Value="@CreateDialog.Id"></InputGuid>
+        <ValidationMessage For="@(() => CreateDialog.Id)" />
     </div>
 
     <div>
         <label>Idempotent Key</label>
         <InputText @bind-Value="@CreateDialog.IdempotentKey"></InputText>
+        <ValidationMessage For="@(() => CreateDialog.IdempotentKey)" />
     </div>
 
     <div>
         <label>Service Resource</label>
         <InputText @bind-Value="@CreateDialog.ServiceResource"></InputText>
+        <ValidationMessage For="@(() => CreateDialog.ServiceResource)" />
     </div>
 
     <div>
         <label>Party</label>
         <InputText @bind-Value="@CreateDialog.Party"></InputText>
+        <ValidationMessage For="@(() => CreateDialog.Party)" />
     </div>
 
     <div>
         <label>Progress</label>
         <InputNumber @bind-Value="@CreateDialog.Progress"></InputNumber>
+        <ValidationMessage For="@(() => CreateDialog.Progress)" />
     </div>
 
     <div>
         <label for="extendedStatus">Extended Status</label>
         <InputText id="extendedStatus" @bind-Value="@CreateDialog.ExtendedStatus"></InputText>
+        <ValidationMessage For="@(() => CreateDialog.ExtendedStatus)" />
     </div>
 
     <div>
         <label for="externalReference">External Reference</label>
         <InputText id="externalReference" @bind-Value="@CreateDialog.ExternalReference"></InputText>
+        <ValidationMessage For="@(() => CreateDialog.ExternalReference)" />
     </div>
 
     <div>
         <label for="visibleFrom">Visible From</label>
         <InputDate id="visibleFrom" @bind-Value="@CreateDialog.VisibleFrom"></InputDate>
+        <ValidationMessage For="@(() => CreateDialog.VisibleFrom)" />
     </div>
 
     <div>
         <label for="dueAt">Due At</label>
         <InputDate id="dueAt" @bind-Value="@CreateDialog.DueAt"></InputDate>
+        <ValidationMessage For="@(() => CreateDialog.DueAt)" />
     </div>
 
     <div>
         <label for="process">Process</label>
         <InputText id="process" @bind-Value="@CreateDialog.Process"></InputText>
+        <ValidationMessage For="@(() => CreateDialog.Process)" />
     </div>
 
     <div>
         <label for="precedingProcess">Preceding Process</label>
         <InputText id="precedingProcess" @bind-Value="@CreateDialog.PrecedingProcess"></InputText>
+        <ValidationMessage For="@(() => CreateDialog.PrecedingProcess)" />
     </div>
 
     <div>
         <label for="expiresAt">Expires At</label>
         <InputDate id="expiresAt" @bind-Value="@CreateDialog.ExpiresAt"></InputDate>
+        <ValidationMessage For="@(() => CreateDialog.ExpiresAt)" />
     </div>
 
     <div>
         <label for="createdAt">Created At</label>
         <InputDate id="createdAt" @bind-Value="@CreateDialog.CreatedAt"></InputDate>
+        <ValidationMessage For="@(() => CreateDialog.CreatedAt)" />
     </div>
 
     <div>
         <label for="updatedAt">Updated At</label>
         <InputDate id="updatedAt" @bind-Value="@CreateDialog.UpdatedAt"></InputDate>
+        <ValidationMessage For="@(() => CreateDialog.UpdatedAt)" />
     </div>
 
     <div>
@@ -85,6 +100,7 @@
                 <option value="@status">@status</option>
             }
         </InputSelect>
+        <ValidationMessage For="@(() => CreateDialog.Status)" />
     </div>
 
     <div>
@@ -95,11 +111,13 @@
                 <option value="@label">@label</option>
             }
         </InputSelect>
+        <ValidationMessage For="@(() => CreateDialog.SystemLabel)" />
     </div>
 
     <div>
         <label for="">Content</label>
         <EditContent Content="@CreateDialog.Content" ContentChanged="content => CreateDialog.Content = content"/>
+        <!-- Add a ValidationMessage if needed for Content -->
     </div>
 
     <fieldset>
@@ -107,20 +125,24 @@
         @foreach (var attachment in CreateDialog.Attachments)
         {
             <InputGuid @bind-Value="@attachment.Id"/>
+            <ValidationMessage For="@(() => attachment.Id)" />
+
             <InputAttachmentUrl
                 Value="@attachment.Urls"
                 ValueChanged="url => attachment.Urls = url"></InputAttachmentUrl>
+            <!-- Add validation for urls -->
+            
             <InputLocalization
                 Value="attachment.DisplayName"
                 ContentValueChanged="displayName => attachment.DisplayName = displayName"/>
-            <button @onclick="() => RemoveAttachment(attachment)">Remove</button>
+            <!-- Add validation for DisplayName if required -->
+
+            <button type="button" @onclick="() => RemoveAttachment(attachment)">Remove</button>
         }
-        <button @onclick="AddAttachment">Add Attachment</button>
+        <button type="button" @onclick="AddAttachment">Add Attachment</button>
     </fieldset>
 
-
-    <button type="submit">Submit
-    </button>
+    <button type="submit">Submit</button>
 </EditForm>
 
 @code {
@@ -174,6 +196,7 @@
             Urls = []
         });
     }
+
     private void RemoveAttachment(V1ServiceOwnerDialogsCommandsCreate_Attachment attachment)
     {
         CreateDialog.Attachments.Remove(attachment);
