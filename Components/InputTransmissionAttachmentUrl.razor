@@ -1,0 +1,78 @@
+@using System.Diagnostics.CodeAnalysis
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@inherits InputBase<ICollection<V1ServiceOwnerDialogsCommandsCreate_TransmissionAttachmentUrl>>
+<fieldset>
+    <table>
+
+        <thead>
+        <tr>
+            <th>URL</th>
+            <th>Media Type</th>
+            <th>Consumer Type</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        @foreach (var url in Value!)
+        {
+            <td>
+                <InputUri @bind-Value="@url.Url"/>
+                <ValidationMessage For="() => url.Url"/>
+            </td>
+
+            <td>
+                <InputText @bind-Value="@url.MediaType"/>
+                <ValidationMessage For="() => url.MediaType"/>
+            </td>
+
+            <td>
+                <InputSelect @bind-Value="@url.ConsumerType">
+                    @foreach (var type in Enum.GetValues<Attachments_AttachmentUrlConsumerType>())
+                    {
+                        <option value="@type">@type</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => url.ConsumerType)"/>
+            </td>
+
+            <td>
+                <button type="button" @onclick="() => RemoveUrl(url)">Remove</button>
+            </td>
+        }
+        </tbody>
+
+        <button type="button" @onclick="AddUrl">Add URL</button>
+    </table>
+</fieldset>
+
+@code {
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        Value ??= [];
+    }
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out ICollection<V1ServiceOwnerDialogsCommandsCreate_TransmissionAttachmentUrl> result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        throw new NotImplementedException();
+    }
+    private void RemoveUrl(V1ServiceOwnerDialogsCommandsCreate_TransmissionAttachmentUrl url)
+    {
+        if (Value is null) throw new InvalidOperationException();
+        Value.Remove(url);
+        ValueChanged.InvokeAsync(Value);
+    }
+
+    private void AddUrl()
+    {
+        if (Value is null) throw new InvalidOperationException();
+        Value.Add(new V1ServiceOwnerDialogsCommandsCreate_TransmissionAttachmentUrl
+        {
+            Url = null!,
+            MediaType = "",
+            ConsumerType = Attachments_AttachmentUrlConsumerType.Gui
+        });
+    }
+
+
+}
