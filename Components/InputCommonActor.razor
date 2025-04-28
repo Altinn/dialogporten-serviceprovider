@@ -1,0 +1,43 @@
+@inherits InputBase<V1ServiceOwnerCommonActors_Actor>
+@using System.Diagnostics.CodeAnalysis
+@using Altinn.ApiClients.Dialogporten.Features.V1
+<fieldset>
+
+    <div>
+        <label>Actor Type</label>
+        <InputSelect @bind-Value="@Value!.ActorType">
+            @foreach (var type in Enum.GetValues<Actors_ActorType>())
+            {
+                <option value="@type">@type</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => Value.ActorType)"/>
+
+        <label>Actor Name</label>
+        <InputText @bind-Value="@Value.ActorName"></InputText>
+        <ValidationMessage For="@(() => Value.ActorName)"></ValidationMessage>
+
+        <label>Actor Id</label>
+        <InputText @bind-Value="@Value.ActorId"></InputText>
+        <ValidationMessage For="@(() => Value.ActorId)"></ValidationMessage>
+    </div>
+</fieldset>
+
+@code {
+
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        Value ??= new V1ServiceOwnerCommonActors_Actor();
+        Value.ActorType = default;
+        Value.ActorId = "";
+        Value.ActorName = "";
+    }
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out V1ServiceOwnerCommonActors_Actor result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        result = CurrentValue ?? new V1ServiceOwnerCommonActors_Actor();
+        validationErrorMessage = "";
+        return true;
+    }
+}

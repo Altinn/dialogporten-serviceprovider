@@ -1,49 +1,51 @@
+@inherits InputBase<V1ServiceOwnerDialogsCommandsCreate_Content>
+@using System.Diagnostics.CodeAnalysis
 @using Altinn.ApiClients.Dialogporten.Features.V1
 <fieldset>
     <legend>Edit Content</legend>
 
     <div>
         <label>Title:</label>
-        <InputCommonContentValue ContentValue="@Content.Title" ContentValueChanged="ValueChanged"/>
+        <InputCommonContentValue @bind-Value="@Value!.Title"/>
     </div>
 
     <div>
         <label>Non-Sensitive Title:</label>
-        <InputCommonContentValue ContentValue="@Content.NonSensitiveTitle" ContentValueChanged="ValueChanged"/>
+        <InputCommonContentValue @bind-Value="@Value.NonSensitiveTitle"/>
     </div>
 
     <div>
         <label>Summary:</label>
-        <InputCommonContentValue ContentValue="@Content.Summary" ContentValueChanged="ValueChanged"/>
+        <InputCommonContentValue @bind-Value="@Value.Summary"/>
     </div>
 
     <div>
         <label>Non-Sensitive Summary:</label>
-        <InputCommonContentValue ContentValue="@Content.NonSensitiveSummary" ContentValueChanged="ValueChanged"/>
+        <InputCommonContentValue @bind-Value="@Value.NonSensitiveSummary"/>
     </div>
 
     <div>
         <label>Sender Name:</label>
-        <InputCommonContentValue ContentValue="@Content.SenderName" ContentValueChanged="ValueChanged"/>
+        <InputCommonContentValue @bind-Value="@Value.SenderName"/>
     </div>
 
     <div>
         <label>Additional Info:</label>
-        <InputCommonContentValue ContentValue="@Content.AdditionalInfo" ContentValueChanged="ValueChanged"/>
+        <InputCommonContentValue @bind-Value="@Value.AdditionalInfo"/>
     </div>
 
     <div>
         <label>Main Content Reference:</label>
-        <InputCommonContentValue ContentValue="@Content.MainContentReference" ContentValueChanged="ValueChanged"/>
+        <InputCommonContentValue @bind-Value="@Value.MainContentReference"/>
     </div>
 </fieldset>
 
 @code {
-    [Parameter]
-    public required V1ServiceOwnerDialogsCommandsCreate_Content Content { get; set; }
 
-    [Parameter]
-    public EventCallback<V1ServiceOwnerDialogsCommandsCreate_Content> ContentChanged { get; set; }
-
-    public void ValueChanged() => ContentChanged.InvokeAsync(Content);
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out V1ServiceOwnerDialogsCommandsCreate_Content result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        result = CurrentValue ?? new V1ServiceOwnerDialogsCommandsCreate_Content();
+        validationErrorMessage = "";
+        return true;
+    }
 }

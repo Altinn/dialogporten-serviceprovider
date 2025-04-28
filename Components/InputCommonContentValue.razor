@@ -1,34 +1,30 @@
+@inherits InputBase<V1CommonContent_ContentValue>
+@using System.Diagnostics.CodeAnalysis
 @using Altinn.ApiClients.Dialogporten.Features.V1
 <fieldset>
 
     <div>
         <label for="mediaType">Media Type:</label>
-        <InputText id="mediaType" @bind-Value="ContentValue.MediaType"/>
-        <InputLocalization
-            Value="@ContentValue.Value"
-            ContentValueChanged="OnLocalizationChanged"/>
+        <InputText id="mediaType" @bind-Value="Value!.MediaType"/>
+        <InputLocalization @bind-Value="@Value.Value"/>
     </div>
 
 </fieldset>
 
 @code {
-    [Parameter]
-    public required V1CommonContent_ContentValue ContentValue { get; set; }
-
-    [Parameter]
-    public EventCallback<V1CommonContent_ContentValue> ContentValueChanged { get; set; }
-
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        ContentValue = new V1CommonContent_ContentValue
+        Value = new V1CommonContent_ContentValue
         {
-            Value = new List<V1CommonLocalizations_Localization>()
+            Value = new List<V1CommonLocalizations_Localization>(),
+            MediaType = ""
         };
     }
-    private void OnLocalizationChanged(ICollection<V1CommonLocalizations_Localization> localization)
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out V1CommonContent_ContentValue result, [NotNullWhen(false)] out string? validationErrorMessage)
     {
-        ContentValue.Value = localization;
-        ContentValueChanged.InvokeAsync(ContentValue);
+        result = Value ?? new V1CommonContent_ContentValue();
+        validationErrorMessage = "";
+        return true;
     }
 }

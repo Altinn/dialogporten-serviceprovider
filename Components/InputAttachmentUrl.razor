@@ -1,6 +1,6 @@
-@using System.Security.Policy
+@inherits InputBase<ICollection<V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl>>
+@using System.Diagnostics.CodeAnalysis
 @using Altinn.ApiClients.Dialogporten.Features.V1
-@using Microsoft.AspNetCore.Mvc.Routing
 <div>
     <label for=""></label>
     <table>
@@ -13,7 +13,7 @@
         </tr>
         </thead>
         <tbody>
-        @foreach (var url in Value)
+        @foreach (var url in Value!)
         {
             <tr>
                 <label>URL</label>
@@ -53,22 +53,16 @@
 
 @code {
 
-    [Parameter]
-    public required ICollection<V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl> Value { get; set; }
-
-    [Parameter]
-    public EventCallback<ICollection<V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl>> ValueChanged { get; set; }
-
     private void AddAttachmentUrl()
     {
-        Value.Add(new V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl());
+        Value!.Add(new V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl());
         ValueChanged.InvokeAsync(Value);
     }
 
     private void RemoveAttachmentUrl(V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl url)
     {
-        Value.Remove(url);
+        Value!.Remove(url);
         ValueChanged.InvokeAsync(Value);
     }
-
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out ICollection<V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl> result, [NotNullWhen(false)] out string? validationErrorMessage) => throw new NotImplementedException();
 }

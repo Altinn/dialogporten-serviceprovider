@@ -1,9 +1,13 @@
 @page "/CreateDialogTest"
+@using System.IO.Pipes
 @using Altinn.ApiClients.Dialogporten.Features.V1
 @rendermode InteractiveServer
 <h3>CreateDialogTest</h3>
 
-<EditForm Model="CreateDialog" OnValidSubmit=@(() => { Console.WriteLine("hei" + CreateDialog.Id); })
+<EditForm Model="CreateDialog" OnValidSubmit=@(() =>
+{
+    Console.WriteLine("hei" + CreateDialog.Id);
+})
           FormName="CreateDialogTest">
     <DataAnnotationsValidator/>
     <ValidationSummary/>
@@ -116,7 +120,7 @@
 
     <div>
         <label>Content</label>
-        <EditContent Content="@CreateDialog.Content" ContentChanged="content => CreateDialog.Content = content"/>
+        <EditContent @bind-Value="@CreateDialog.Content"/>
     </div>
 
     <fieldset>
@@ -152,14 +156,10 @@
                         <ValidationMessage For="@(() => attachment.Id)"/>
                     </td>
                     <td>
-                        <InputAttachmentUrl
-                            Value="@attachment.Urls"
-                            ValueChanged="url => attachment.Urls = url"></InputAttachmentUrl>
+                        <InputAttachmentUrl @bind-Value="@attachment.Urls"/>
                     </td>
                     <td>
-                        <InputLocalization
-                            Value="attachment.DisplayName"
-                            ContentValueChanged="displayName => attachment.DisplayName = displayName"/>
+                        <InputLocalization @bind-Value="attachment.DisplayName"/>
                     </td>
                     <td>
                         <button type="button" @onclick="() => RemoveAttachment(attachment)">Remove</button>
@@ -188,14 +188,17 @@
 
                     <td>
                         <InputText @bind-Value="@transmission.AuthorizationAttribute"/>
-                        <ValidationMessage For="()=> transmission.AuthorizationAttribute"/>
+                        <ValidationMessage For="() => transmission.AuthorizationAttribute"/>
                     </td>
 
                     <td>
                         <InputUri @bind-Value="@transmission.ExtendedType"></InputUri>
                         <ValidationMessage For="() => transmission.ExtendedType"/>
                     </td>
-
+                    <td>
+                        <InputGuid @bind-Value="@transmission.RelatedTransmissionId"/>
+                        <ValidationMessage For="() => transmission.RelatedTransmissionId"/>
+                    </td>
                     <td>
                         <InputSelect @bind-Value="@transmission.Type">
                             @foreach (var type in Enum.GetValues<DialogsEntitiesTransmissions_DialogTransmissionType>())
@@ -207,21 +210,39 @@
                     </td>
 
                     <td>
-                        <!-- Sender -->
+                        <InputCommonActor @bind-Value="@transmission.Sender"></InputCommonActor>
+                        <ValidationMessage For="() => transmission.Sender"/>
                     </td>
 
                     <td>
-                        <!-- transmission content-->
+                        <fieldset>
+                            <label>Content Title</label>
+                            <InputCommonContentValue @bind-Value="@transmission.Content.Title"/>
+                            <ValidationMessage For="() => transmission.Content.Title"/>
+
+                            <label>Content Summary</label>
+                            <InputCommonContentValue @bind-Value="@transmission.Content.Summary"/>
+                            <ValidationMessage For="() => transmission.Content.Summary"/>
+
+                            <label>Content Reference</label>
+                            <InputCommonContentValue @bind-Value="@transmission.Content.ContentReference"/>
+                            <ValidationMessage For="() => transmission.Content.ContentReference"/>
+                        </fieldset>
+
                     </td>
 
                     <td>
                         <!-- collection Transmission attachment -->
                     </td>
+
+                    <td>
+                        <button type="button" @onclick="() => RemoveTransmission(transmission)">Remove</button>
+                    </td>
                 </tr>
             }
         </table>
+        <button type="button" @onclick="AddTransmission">Add Transmission</button>
     </fieldset>
-
 
     <button type="submit">Submit</button>
 </EditForm>
@@ -268,6 +289,7 @@
         };
         CreateDialog.Attachments = [];
         CreateDialog.SearchTags = [];
+        CreateDialog.Transmissions = [];
     }
     private void AddAttachment()
     {
@@ -283,5 +305,33 @@
     {
         CreateDialog.Attachments.Remove(attachment);
     }
+
+    private void AddTransmission()
+    {
+        CreateDialog.Transmissions.Add(new V1ServiceOwnerDialogsCommandsCreate_Transmission
+        {
+            Id = null,
+            CreatedAt = default,
+            AuthorizationAttribute = null!,
+            ExtendedType = null!,
+            RelatedTransmissionId = null,
+            Type = DialogsEntitiesTransmissions_DialogTransmissionType.Information,
+            Sender = new V1ServiceOwnerCommonActors_Actor(),
+            Content = new V1ServiceOwnerDialogsCommandsCreate_TransmissionContent
+            {
+                Title = new V1CommonContent_ContentValue(),
+                Summary = new V1CommonContent_ContentValue(),
+                ContentReference = new V1CommonContent_ContentValue()
+            },
+            Attachments = []
+        });
+        
+    }
+
+    private void RemoveTransmission(V1ServiceOwnerDialogsCommandsCreate_Transmission transmission)
+    {
+        CreateDialog.Transmissions.Remove(transmission);
+    }
+
 
 }
