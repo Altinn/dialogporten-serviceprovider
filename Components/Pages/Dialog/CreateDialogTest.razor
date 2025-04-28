@@ -1,7 +1,5 @@
 @page "/CreateDialogTest"
-@using System.Net.Mail
 @using Altinn.ApiClients.Dialogporten.Features.V1
-@using Digdir.BDB.Dialogporten.ServiceProvider.Controllers
 @rendermode InteractiveServer
 <h3>CreateDialogTest</h3>
 
@@ -238,7 +236,9 @@
                             <InputGuid @bind-Value="@attachment.Id"/>
                             <InputLocalization @bind-Value="@attachment.DisplayName"/>
                             <InputTransmissionAttachmentUrl @bind-Value="@attachment.Urls"/>
-                            <!--  buttons -->
+                            <button type="button"
+                                    @onclick="() => RemoveTransmissionAttachment(transmission, attachment)">Remove
+                            </button>
                         }
                     </td>
 
@@ -246,6 +246,10 @@
                         <button type="button" @onclick="() => RemoveTransmission(transmission)">Remove</button>
                     </td>
                 </tr>
+
+                <button type="button" @onclick="() => AddTransmissionAttachment(transmission)">Add Transmission
+                    Attachment
+                </button>
             }
         </table>
         <button type="button" @onclick="AddTransmission">Add Transmission</button>
@@ -353,4 +357,13 @@
     }
 
 
+    private static void RemoveTransmissionAttachment(V1ServiceOwnerDialogsCommandsCreate_Transmission transmission, V1ServiceOwnerDialogsCommandsCreate_TransmissionAttachment attachment)
+    {
+        transmission.Attachments.Remove(attachment);
+    }
+
+    private void AddTransmissionAttachment(V1ServiceOwnerDialogsCommandsCreate_Transmission transmission)
+    {
+        transmission.Attachments.Add(new V1ServiceOwnerDialogsCommandsCreate_TransmissionAttachment());
+    }
 }
