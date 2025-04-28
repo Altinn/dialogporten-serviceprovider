@@ -1,0 +1,46 @@
+@using System.Diagnostics.CodeAnalysis
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@inherits InputBase<ICollection<V1ServiceOwnerDialogsCommandsCreate_GuiAction>>
+
+<fieldset>
+    <table>
+        <tbody>
+        @foreach (var guiAction in Value!)
+        {
+            <tr>
+                <td>
+                    <InputGuid @bind-Value="@guiAction.Id"/>
+                    <ValidationMessage For="() => guiAction.Id"/>
+                </td>
+
+                <td>
+                    <InputText @bind-Value="@guiAction.Action"/>
+                    <ValidationMessage For="() => guiAction.Action"/>
+                </td>
+
+                <td>
+                    <InputUri @bind-Value="@guiAction.Url"/>
+                    <ValidationMessage For="() => guiAction.Url"/>
+                </td>
+
+                <td>
+                    <InputText @bind-Value="@guiAction.AuthorizationAttribute"/>
+                    <ValidationMessage For="() => guiAction.AuthorizationAttribute"/>
+                </td>
+
+                <td>
+                    <InputCheckbox @bind-Value="@guiAction.IsDeleteDialogAction"/>
+                    <ValidationMessage For="() => guiAction.IsDeleteDialogAction"/>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</fieldset>
+
+@code {
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out ICollection<V1ServiceOwnerDialogsCommandsCreate_GuiAction> result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        throw new NotImplementedException();
+    }
+}

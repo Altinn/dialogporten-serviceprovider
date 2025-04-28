@@ -233,6 +233,7 @@
                     <td>
                         @foreach (var attachment in transmission.Attachments)
                         {
+                            // Amund: Labels eller Td
                             <InputGuid @bind-Value="@attachment.Id"/>
                             <InputLocalization @bind-Value="@attachment.DisplayName"/>
                             <InputTransmissionAttachmentUrl @bind-Value="@attachment.Urls"/>
