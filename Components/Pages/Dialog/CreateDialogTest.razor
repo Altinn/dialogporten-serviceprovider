@@ -1,6 +1,7 @@
 @page "/CreateDialogTest"
-@using System.IO.Pipes
+@using System.Net.Mail
 @using Altinn.ApiClients.Dialogporten.Features.V1
+@using Digdir.BDB.Dialogporten.ServiceProvider.Controllers
 @rendermode InteractiveServer
 <h3>CreateDialogTest</h3>
 
@@ -232,7 +233,13 @@
                     </td>
 
                     <td>
-                        <!-- collection Transmission attachment -->
+                        @foreach (var attachment in transmission.Attachments)
+                        {
+                            <InputGuid @bind-Value="@attachment.Id"/>
+                            <InputLocalization @bind-Value="@attachment.DisplayName"/>
+                            <InputTransmissionAttachmentUrl @bind-Value="@attachment.Urls"/>
+                            <!--  buttons -->
+                        }
                     </td>
 
                     <td>
@@ -242,6 +249,18 @@
             }
         </table>
         <button type="button" @onclick="AddTransmission">Add Transmission</button>
+
+        <fieldset>
+            <!-- Gui actions -->
+        </fieldset>
+
+        <fieldset>
+            <!-- Api actions -->
+        </fieldset>
+
+        <fieldset>
+            <!-- Activities -->
+        </fieldset>
     </fieldset>
 
     <button type="submit">Submit</button>
@@ -325,7 +344,7 @@
             },
             Attachments = []
         });
-        
+
     }
 
     private void RemoveTransmission(V1ServiceOwnerDialogsCommandsCreate_Transmission transmission)
