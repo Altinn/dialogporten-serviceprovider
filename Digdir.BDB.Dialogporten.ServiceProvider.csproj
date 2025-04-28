@@ -37,4 +37,17 @@
         </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="tools\out\V1EndUserDialogSystemLabelsSet_SetDialogSystemLabel.json" />
+      <_ContentIncludedByDefault Remove="tools\out\V1ServiceOwnerDialogActivitiesCreate_DialogActivity.json" />
+      <_ContentIncludedByDefault Remove="tools\out\V1ServiceOwnerDialogsCreate_Dialog.json" />
+      <_ContentIncludedByDefault Remove="tools\out\V1ServiceOwnerDialogsPatchDialog.json" />
+      <_ContentIncludedByDefault Remove="tools\out\V1ServiceOwnerDialogsUpdate_Dialog.json" />
+      <_ContentIncludedByDefault Remove="tools\out\V1ServiceOwnerDialogTransmissionsCreate_DialogTransmission.json" />
+      <_ContentIncludedByDefault Remove="tools\schema.json" />
+      <_ContentIncludedByDefault Remove="tools\swagger.json" />
+      <_ContentIncludedByDefault Remove="tools\swagger2.json" />
+      <_ContentIncludedByDefault Remove="tools\swagger3.json" />
+    </ItemGroup>
+
 </Project>
