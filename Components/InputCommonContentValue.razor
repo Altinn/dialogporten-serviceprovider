@@ -12,10 +12,10 @@
 </fieldset>
 
 @code {
-    protected override void OnInitialized()
+    protected override void OnParametersSet()
     {
-        base.OnInitialized();
-        Value = new V1CommonContent_ContentValue
+        base.OnParametersSet();
+        Value ??= new V1CommonContent_ContentValue
         {
             Value = new List<V1CommonLocalizations_Localization>(),
             MediaType = ""
