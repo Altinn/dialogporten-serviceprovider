@@ -32,6 +32,36 @@
                     <InputCheckbox @bind-Value="@guiAction.IsDeleteDialogAction"/>
                     <ValidationMessage For="() => guiAction.IsDeleteDialogAction"/>
                 </td>
+
+                <td>
+                    <InputSelect @bind-Value="@guiAction.HttpMethod">
+                        @foreach (var type in Enum.GetValues<Http_HttpVerb>())
+                        {
+                            <option value="@type">@type</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => guiAction.HttpMethod)"/>
+                </td>
+
+                <td>
+                    <InputSelect @bind-Value="@guiAction.Priority">
+                        @foreach (var type in Enum.GetValues<DialogsEntitiesActions_DialogGuiActionPriority>())
+                        {
+                            <option value="@type">@type</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => guiAction.Priority)"/>
+                </td>
+
+                <td>
+                    <InputLocalization @bind-Value="@guiAction.Title"/>
+                    <ValidationMessage For="() => guiAction.Title"/>
+                </td>
+
+                <td>
+                    <InputLocalization @bind-Value="@guiAction.Prompt"/>
+                    <ValidationMessage For="() => guiAction.Prompt"/>
+                </td>
             </tr>
         }
         </tbody>
