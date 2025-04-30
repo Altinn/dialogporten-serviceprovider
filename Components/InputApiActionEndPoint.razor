@@ -1,0 +1,58 @@
+@using System.Diagnostics
+@using System.Diagnostics.CodeAnalysis
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@inherits InputBase<ICollection<V1ServiceOwnerDialogsCommandsCreate_ApiActionEndpoint>>
+@if (Value is null) throw new UnreachableException();
+<fieldset>
+    <table>
+        <tbody>
+        @foreach (var apiActionEndpoint in Value)
+        {
+            <td>
+                <InputText @bind-Value="@apiActionEndpoint.Version"/>
+            </td>
+
+            <td>
+                <InputGuid @bind-Value="@apiActionEndpoint.Url"/>
+            </td>
+
+            <td>
+
+            </td>
+
+            <td>
+
+            </td>
+
+            <td>
+
+            </td>
+
+            <td>
+
+            </td>
+
+            <td>
+
+            </td>
+
+            <td>
+
+            </td>
+        }
+        </tbody>
+    </table>
+</fieldset>
+
+@code {
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        Value ??= new List<V1ServiceOwnerDialogsCommandsCreate_ApiActionEndpoint>();
+    }
+
+    protected override bool TryParseValueFromString(string? value,
+        [MaybeNullWhen(false)] out ICollection<V1ServiceOwnerDialogsCommandsCreate_ApiActionEndpoint> result,
+        [NotNullWhen(false)] out string? validationErrorMessage) =>
+        throw new NotImplementedException();
+}
