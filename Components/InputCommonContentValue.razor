@@ -1,12 +1,13 @@
 @inherits InputBase<V1CommonContent_ContentValue>
+@using System.Diagnostics
 @using System.Diagnostics.CodeAnalysis
 @using Altinn.ApiClients.Dialogporten.Features.V1
 <fieldset>
-
+    @if (Value is null) throw new UnreachableException();
     <div>
-        <label for="mediaType">Media Type:</label>
-        <InputText id="mediaType" @bind-Value="Value!.MediaType"/>
-        <InputLocalization @bind-Value="@Value.Value"/>
+        <label>Media Type:</label>
+        <InputText AdditionalAttributes="@AdditionalAttributes" @bind-Value="Value.MediaType"/>
+        <InputLocalization AdditionalAttributes="@AdditionalAttributes" @bind-Value="@Value.Value"/>
     </div>
 
 </fieldset>
@@ -15,11 +16,20 @@
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
-        Value ??= new V1CommonContent_ContentValue
+        if (Value == null)
         {
-            Value = new List<V1CommonLocalizations_Localization>(),
-            MediaType = ""
-        };
+            Value = new V1CommonContent_ContentValue
+            {
+                Value = new List<V1CommonLocalizations_Localization>(),
+                MediaType = ""
+            };
+        }
+        else
+        {
+            // Ensure Value.Value is initialized if it's null
+            Value.Value ??= new List<V1CommonLocalizations_Localization>();
+        }
+
     }
     protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out V1CommonContent_ContentValue result, [NotNullWhen(false)] out string? validationErrorMessage)
     {
@@ -27,4 +37,5 @@
         validationErrorMessage = "";
         return true;
     }
+    
 }

@@ -40,6 +40,33 @@
 
 @code{
 
+    // private ValidationMessageStore? _messageStore;
+
+    // [CascadingParameter]
+    // private EditContext? CascadedEditContext2 { get; set; }
+
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        // if (CascadedEditContext2 == null)
+        // {
+        //     throw new InvalidOperationException($"{nameof(InputLocalization)} requires a cascading " +
+        //         $"parameter of type {nameof(EditContext)}. For example, you can use {nameof(InputLocalization)} " +
+        //         $"inside an {nameof(EditForm)}.");
+        // }
+
+
+        // Initialize the message store
+        // _messageStore = new ValidationMessageStore(CascadedEditContext2);
+
+        // Subscribe to field changes to re-validate when the value changes
+        // CascadedEditContext2.OnFieldChanged += HandleFieldChanged;
+        // Optional: Subscribe to validation requests for form-level validation triggers
+        // CascadedEditContext.OnValidationRequested += HandleValidationRequested;
+    }
+
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
@@ -52,6 +79,48 @@
         validationErrorMessage = "";
         return true;
     }
+
+    // private void HandleFieldChanged(object? sender, FieldChangedEventArgs e)
+    // {
+    //     // Check if the changed field is the one this component is bound to
+    //     if (e.FieldIdentifier.Equals(FieldIdentifier))
+    //     {
+    //         // ValidateValue(CurrentValue);
+    //     }
+    //     ValueChanged.InvokeAsync(Value);
+    //
+    // }
+
+    // private void ValidateValue(ICollection<V1CommonLocalizations_Localization>? value)
+    // {
+    //     if (CascadedEditContext2 == null || _messageStore == null) return; // Should not happen if OnInitialized worked
+    //
+    //     // 1. Clear previous custom messages for this field
+    //     _messageStore.Clear(FieldIdentifier);
+    //
+    //     // 2. Apply custom validation rule
+    //     if (value != null && !value.Any())
+    //     {
+    //         // 3. Add a custom error message if validation fails
+    //         _messageStore.Add(FieldIdentifier, "You must have at least 1");
+    //     }
+    //
+    //     // 4. Notify the EditContext that the validation state has changed
+    //     // This triggers ValidationMessage/ValidationSummary components to update
+    //     CascadedEditContext2.NotifyValidationStateChanged();
+    // }
+
+    // // Unsubscribe from events when the component is disposed
+    // protected override void Dispose(bool disposing)
+    // {
+    //     if (disposing && CascadedEditContext2 != null)
+    //     {
+    //         CascadedEditContext2.OnFieldChanged -= HandleFieldChanged;
+    //         // CascadedEditContext.OnValidationRequested -= HandleValidationRequested;
+    //     }
+    //     base.Dispose(disposing);
+    // }
+
 
     private void Add()
     {

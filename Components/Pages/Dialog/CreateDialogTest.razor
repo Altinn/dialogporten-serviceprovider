@@ -1,12 +1,10 @@
 @page "/CreateDialogTest"
 @using Altinn.ApiClients.Dialogporten.Features.V1
 @rendermode InteractiveServer
+@inject IServiceownerApi ServiceOwnerApi
 <h3>CreateDialogTest</h3>
 
-<EditForm Model="CreateDialog" OnValidSubmit=@(() =>
-{
-    Console.WriteLine("hei" + CreateDialog.Id);
-})
+<EditForm Model="CreateDialog" OnValidSubmit="@(() => Submit())"
           FormName="CreateDialogTest">
     <DataAnnotationsValidator/>
     <ValidationSummary/>
@@ -25,13 +23,14 @@
 
     <div>
         <label>Service Resource</label>
-        <InputText @bind-Value="@CreateDialog.ServiceResource"></InputText>
+        <InputText AdditionalAttributes="@_req"
+                   @bind-Value="@CreateDialog.ServiceResource"></InputText>
         <ValidationMessage For="@(() => CreateDialog.ServiceResource)"/>
     </div>
 
     <div>
         <label>Party</label>
-        <InputText @bind-Value="@CreateDialog.Party"></InputText>
+        <InputText AdditionalAttributes="@_req" @bind-Value="@CreateDialog.Party"></InputText>
         <ValidationMessage For="@(() => CreateDialog.Party)"/>
     </div>
 
@@ -119,7 +118,7 @@
 
     <div>
         <label>Content</label>
-        <EditContent @bind-Value="@CreateDialog.Content"/>
+        <EditContent AdditionalAttributes="@_req" @bind-Value="@CreateDialog.Content"/>
     </div>
 
     <fieldset>
@@ -192,12 +191,20 @@
 
 @code {
     V1ServiceOwnerDialogsCommandsCreate_Dialog CreateDialog { get; set; } = new();
+    private readonly Dictionary<string, object?> _req = new()
+    {
+        { "required", true }
+    };
+
     protected override void OnInitialized()
     {
         base.OnInitialized();
         CreateDialog.Attachments = [];
         CreateDialog.SearchTags = [];
         CreateDialog.Transmissions = [];
+        CreateDialog.GuiActions = [];
+        CreateDialog.ApiActions = [];
+        CreateDialog.Activities = [];
     }
     private void AddAttachment()
     {
@@ -213,4 +220,11 @@
     {
         CreateDialog.Attachments.Remove(attachment);
     }
+
+    private async Task Submit()
+    {
+        var response = await ServiceOwnerApi.V1ServiceOwnerDialogsCreateDialog(CreateDialog);
+        Console.WriteLine(response.StatusCode);
+    }
+
 }
