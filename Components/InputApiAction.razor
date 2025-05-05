@@ -3,12 +3,25 @@
 @using Altinn.ApiClients.Dialogporten.Features.V1
 @inherits InputBase<ICollection<V1ServiceOwnerDialogsCommandsCreate_ApiAction>>
 <fieldset>
+    @if (Value is null)
+    {
+        throw new UnreachableException("ApiAction is null, this should never happen");
+    }
     <table>
-        <tbody>
-        @if (Value is null)
+        <thead>
+        @if (Value.Any())
         {
-            throw new UnreachableException("ApiAction is null, this should never happen");
+            <tr>
+                <th>Id</th>
+                <th>Action</th>
+                <th>Authorization Attribute</th>
+                <th>Name</th>
+                <th>Endpoints</th>
+                <th>Action</th>
+            </tr>
         }
+        </thead>
+        <tbody>
         @foreach (var apiAction in Value)
         {
             <td>
@@ -28,7 +41,7 @@
             </td>
 
             <td>
-
+                <InputApiActionEndPoint @bind-Value="@apiAction.Endpoints"/>
             </td>
 
             <td>

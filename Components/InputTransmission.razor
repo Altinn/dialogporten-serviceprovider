@@ -46,33 +46,40 @@
                 </td>
 
                 <td>
-                    <fieldset>
-                        <label>Content Title</label>
-                        <InputCommonContentValue @bind-Value="@transmission.Content.Title"/>
-                        <ValidationMessage For="() => transmission.Content.Title"/>
-
-                        <label>Content Summary</label>
-                        <InputCommonContentValue @bind-Value="@transmission.Content.Summary"/>
-                        <ValidationMessage For="() => transmission.Content.Summary"/>
-
-                        <label>Content Reference</label>
-                        <InputCommonContentValue @bind-Value="@transmission.Content.ContentReference"/>
-                        <ValidationMessage For="() => transmission.Content.ContentReference"/>
-                    </fieldset>
-
+                    <label>Content Title</label>
+                    <InputCommonContentValue @bind-Value="@transmission.Content.Title"/>
+                    <ValidationMessage For="() => transmission.Content.Title"/>
                 </td>
+
+                <td>
+                    <label>Content Summary</label>
+                    <InputCommonContentValue @bind-Value="@transmission.Content.Summary"/>
+                    <ValidationMessage For="() => transmission.Content.Summary"/>
+                </td>
+               
+                <td>
+                    <label>Content Reference</label>
+                    <InputCommonContentValue @bind-Value="@transmission.Content.ContentReference"/>
+                    <ValidationMessage For="() => transmission.Content.ContentReference"/>
+                </td>
+
 
                 <td>
                     @foreach (var attachment in transmission.Attachments)
                     {
-                        // Amund: Labels eller Td
+                    <td>
                         <InputGuid @bind-Value="@attachment.Id"/>
+                    </td>
+                    <td>
                         <InputLocalization @bind-Value="@attachment.DisplayName"/>
+                    </td>
+                    <td>
                         <InputTransmissionAttachmentUrl @bind-Value="@attachment.Urls"/>
-                        <button type="button"
-                                @onclick="() => RemoveTransmissionAttachment(transmission, attachment)">Remove
-                        </button>
-                    }
+                    </td>
+                    <button type="button"
+                            @onclick="() => RemoveTransmissionAttachment(transmission, attachment)">Remove
+                    </button>
+                }
                 </td>
 
                 <td>
