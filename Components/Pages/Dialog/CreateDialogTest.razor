@@ -4,8 +4,7 @@
 @inject IServiceownerApi ServiceOwnerApi
 <h3>CreateDialogTest</h3>
 
-<EditForm Model="CreateDialog" OnValidSubmit="@(() => Submit())"
-          FormName="CreateDialogTest">
+<EditForm Model="CreateDialog" OnValidSubmit="@(() => Submit())" FormName="CreateDialogTest" @ref="_form">
     <DataAnnotationsValidator/>
     <ValidationSummary/>
 
@@ -74,6 +73,11 @@
         <label for="precedingProcess">Preceding Process</label>
         <InputText id="precedingProcess" @bind-Value="@CreateDialog.PrecedingProcess"></InputText>
         <ValidationMessage For="@(() => CreateDialog.PrecedingProcess)"/>
+    </div>
+
+    <div>
+        <label>Api Only</label>
+        <InputCheckbox @bind-Value="CreateDialog.IsApiOnly"/>
     </div>
 
     <div>
@@ -195,6 +199,62 @@
 }
 
 @code {
+    private EditForm _form = null!;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _messageStore = new ValidationMessageStore(_form.EditContext);
+            _form.EditContext.OnValidationRequested += ValidateForm;
+        }
+    }
+
+    private void ValidateForm(object sender, ValidationRequestedEventArgs e)
+    {
+        var context = (EditContext)sender;
+
+        _messageStore.Clear();
+
+        ValidateContentValue(CreateDialog.Content.Title, nameof(CreateDialog.Content.Title));
+        ValidateContentValue(CreateDialog.Content.NonSensitiveTitle, nameof(CreateDialog.Content.NonSensitiveTitle));
+
+        ValidateContentValue(CreateDialog.Content.Summary, nameof(CreateDialog.Content.Summary));
+        ValidateContentValue(CreateDialog.Content.NonSensitiveSummary, nameof(CreateDialog.Content.NonSensitiveSummary));
+
+        ValidateContentValue(CreateDialog.Content.SenderName, nameof(CreateDialog.Content.SenderName));
+
+        ValidateContentValue(CreateDialog.Content.AdditionalInfo, nameof(CreateDialog.Content.AdditionalInfo));
+
+        ValidateContentValue(CreateDialog.Content.ExtendedStatus, nameof(CreateDialog.Content.ExtendedStatus));
+
+        ValidateContentValue(CreateDialog.Content.MainContentReference, nameof(CreateDialog.Content.MainContentReference));
+
+        context.NotifyValidationStateChanged();
+
+    }
+
+    private void ValidateContentValue(V1CommonContent_ContentValue? content, string name)
+    {
+        if (content is null) return;
+
+        if ((content.Value == null || !content.Value.Any()) && !string.IsNullOrEmpty(content.MediaType))
+        {
+            var fieldId = new FieldIdentifier(CreateDialog, $"Content.{name}.Value");
+            _messageStore.Add(fieldId, $"{name} requires at least one localization");
+            Console.WriteLine($"Validation error added for {name}");
+            return;
+        }
+
+        if ( content.Value != null && content.Value.Any() && string.IsNullOrEmpty(content.MediaType))
+        {
+            var fieldId = new FieldIdentifier(CreateDialog, $"Content.{name}.Value");
+            _messageStore.Add(fieldId, $"{name} requires mediaType if you have any localization");
+            Console.WriteLine($"Validation error added for {name}");
+        }
+
+    }
+
     V1ServiceOwnerDialogsCommandsCreate_Dialog CreateDialog { get; set; } = new();
     private readonly Dictionary<string, object?> _req = new()
     {
@@ -204,6 +264,7 @@
     bool _showPopUp;
     private string? _header;
     private string? _message;
+    private ValidationMessageStore _messageStore;
 
     protected override void OnInitialized()
     {

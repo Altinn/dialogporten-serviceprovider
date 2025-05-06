@@ -49,14 +49,6 @@
     protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out ICollection<V1CommonLocalizations_Localization> result, [NotNullWhen(false)] out string? validationErrorMessage)
     {
         result = CurrentValue ?? new List<V1CommonLocalizations_Localization>();
-        if (AdditionalAttributes != null && AdditionalAttributes.TryGetValue("required", out var val))
-        {
-            if (!result.Any() && (bool)val)
-            {
-                validationErrorMessage = "At least one localization is required.";
-                return false;
-            }
-        }
         validationErrorMessage = "";
         return true;
     }
@@ -66,7 +58,6 @@
         if (Value is null) throw new UnreachableException("Localization is Null when removing, This should not be possible");
         Value.Add(new V1CommonLocalizations_Localization { LanguageCode = "", Value = "" });
         ValueChanged.InvokeAsync(Value);
-        StateHasChanged();
     }
 
     private void Remove(V1CommonLocalizations_Localization localization)
@@ -75,6 +66,5 @@
         Value.Remove(localization);
 
         ValueChanged.InvokeAsync(Value);
-        StateHasChanged();
     }
 }
