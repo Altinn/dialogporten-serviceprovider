@@ -188,6 +188,11 @@
     </fieldset>
     <button type="submit">Submit</button>
 </EditForm>
+@if (_showPopUp)
+{
+
+    <PopUpMessage Header="@_header" Message="@_message" OnClick="() => _showPopUp = false"></PopUpMessage>
+}
 
 @code {
     V1ServiceOwnerDialogsCommandsCreate_Dialog CreateDialog { get; set; } = new();
@@ -195,6 +200,10 @@
     {
         { "required", true }
     };
+
+    bool _showPopUp;
+    private string? _header;
+    private string? _message;
 
     protected override void OnInitialized()
     {
@@ -225,6 +234,9 @@
     {
         var response = await ServiceOwnerApi.V1ServiceOwnerDialogsCreateDialog(CreateDialog);
         Console.WriteLine(response.StatusCode);
+        _header = response.StatusCode.ToString();
+        _message = response.IsSuccessStatusCode ? response.Content : response.Error.Content;
+        _showPopUp = true;
     }
 
 }
