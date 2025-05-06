@@ -6,37 +6,39 @@
 
     <div>
         <label>Title:</label>
-        <InputCommonContentValue AdditionalAttributes="AdditionalAttributes" @bind-Value="@Value!.Title"/>
+        <InputCommonContentValue AdditionalAttributes="AdditionalAttributes" @bind-Value="@Value!.Title"
+                                 @bind-Value:after="NotifyValueChanged"/>
+        <ValidationMessage For="() => Value.Title"></ValidationMessage>
     </div>
 
     <div>
         <label>Non-Sensitive Title:</label>
-        <InputCommonContentValue @bind-Value="@Value.NonSensitiveTitle"/>
+        <InputCommonContentValue @bind-Value="@Value.NonSensitiveTitle" @bind-Value:after="NotifyValueChanged"/>
     </div>
 
     <div>
         <label>Summary:</label>
-        <InputCommonContentValue @bind-Value="@Value.Summary"/>
+        <InputCommonContentValue @bind-Value="@Value.Summary" @bind-Value:after="NotifyValueChanged"/>
     </div>
 
     <div>
         <label>Non-Sensitive Summary:</label>
-        <InputCommonContentValue @bind-Value="@Value.NonSensitiveSummary"/>
+        <InputCommonContentValue @bind-Value="@Value.NonSensitiveSummary" @bind-Value:after="NotifyValueChanged"/>
     </div>
 
     <div>
         <label>Sender Name:</label>
-        <InputCommonContentValue @bind-Value="@Value.SenderName"/>
+        <InputCommonContentValue @bind-Value="@Value.SenderName" @bind-Value:after="NotifyValueChanged"/>
     </div>
 
     <div>
         <label>Additional Info:</label>
-        <InputCommonContentValue @bind-Value="@Value.AdditionalInfo"/>
+        <InputCommonContentValue @bind-Value="@Value.AdditionalInfo" @bind-Value:after="NotifyValueChanged"/>
     </div>
 
     <div>
         <label>Main Content Reference:</label>
-        <InputCommonContentValue @bind-Value="@Value.MainContentReference"/>
+        <InputCommonContentValue @bind-Value="@Value.MainContentReference" @bind-Value:after="NotifyValueChanged"/>
     </div>
 </fieldset>
 
@@ -54,5 +56,11 @@
         validationErrorMessage = "";
         return true;
     }
-    
+
+    private void NotifyValueChanged()
+    {
+        ValueChanged.InvokeAsync(Value);
+    }
+
+
 }
