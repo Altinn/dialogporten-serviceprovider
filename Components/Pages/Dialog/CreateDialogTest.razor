@@ -210,9 +210,9 @@
         }
     }
 
-    private void ValidateForm(object sender, ValidationRequestedEventArgs e)
+    private void ValidateForm(object? sender, ValidationRequestedEventArgs e)
     {
-        var context = (EditContext)sender;
+        var context = (EditContext)sender!;
 
         _messageStore.Clear();
 
@@ -246,7 +246,7 @@
             return;
         }
 
-        if ( content.Value != null && content.Value.Any() && string.IsNullOrEmpty(content.MediaType))
+        if (content.Value != null && content.Value.Any() && string.IsNullOrEmpty(content.MediaType))
         {
             var fieldId = new FieldIdentifier(CreateDialog, $"Content.{name}.Value");
             _messageStore.Add(fieldId, $"{name} requires mediaType if you have any localization");
