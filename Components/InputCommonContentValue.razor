@@ -29,10 +29,14 @@
             AdditionalAttributes.TryGetValue("required", out var required);
             isRequired = required is true;
         }
-        Value ??= new V1CommonContent_ContentValue
+        if (Value == null)
         {
-            MediaType = isRequired ? "text/plain" : ""
-        };
+            Value = new V1CommonContent_ContentValue
+            {
+                MediaType = isRequired ? "text/plain" : ""
+            };
+            NotifyValueChanged();
+        }
     }
     protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out V1CommonContent_ContentValue result, [NotNullWhen(false)] out string? validationErrorMessage)
     {
