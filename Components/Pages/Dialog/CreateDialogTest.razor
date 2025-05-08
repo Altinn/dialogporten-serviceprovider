@@ -28,6 +28,17 @@
     </div>
 
     <div>
+        <label>Status</label>
+        <InputSelect @bind-Value="@temp">
+            @foreach (var status in RegClient.Resources)
+            {
+                <option value="@status.Identifier">@status.Identifier</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => CreateDialog.Status)"/>
+    </div>
+
+    <div>
         <label>Party</label>
         <InputText AdditionalAttributes="@_req" @bind-Value="@CreateDialog.Party"></InputText>
         <ValidationMessage For="@(() => CreateDialog.Party)"/>
@@ -200,6 +211,7 @@
 
 @code {
     private EditForm _form = null!;
+    private string temp = "";
 
     protected override void OnAfterRender(bool firstRender)
     {

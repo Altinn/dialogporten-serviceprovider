@@ -1,4 +1,5 @@
 using Altinn.ApiClients.Dialogporten;
+using Digdir.BDB.Dialogporten.ServiceProvider;
 using Digdir.BDB.Dialogporten.ServiceProvider.Auth;
 using Digdir.BDB.Dialogporten.ServiceProvider.Clients;
 using Digdir.BDB.Dialogporten.ServiceProvider.Components;
@@ -26,6 +27,7 @@ builder.Services
     .AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>()
     .AddHostedService<EdDsaSecurityKeysCacheService>()
     .AddHostedService<QueuedHostedService>()
+    .AddHostedService<RegClient>()
     .AddCors(options =>
     {
         options.AddPolicy("AllowedOriginsPolicy", builder =>
