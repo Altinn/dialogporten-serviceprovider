@@ -4,8 +4,8 @@
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inject ProtectedLocalStorage ProtectedLocalStore
-@rendermode InteractiveServer
 @inject IServiceownerApi ServiceOwnerApi
+@rendermode InteractiveServer
 <h3>CreateDialogTest</h3>
 
 <EditForm Model="CreateDialog" OnValidSubmit="@(() => Submit())" FormName="CreateDialogTest" @ref="_form">
