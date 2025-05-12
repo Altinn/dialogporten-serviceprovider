@@ -2,6 +2,8 @@
 @using Altinn.ApiClients.Dialogporten.Features.V1
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedLocalStorage ProtectedLocalStore
 @rendermode InteractiveServer
 @inject IServiceownerApi ServiceOwnerApi
 <h3>CreateDialogTest</h3>
@@ -59,13 +61,13 @@
 
     <div>
         <label for="visibleFrom">Visible From</label>
-        <InputDate id="visibleFrom" @bind-Value="@CreateDialog.VisibleFrom"></InputDate>
+        <DateInputWrapper id="visibleFrom" @bind-Value="@CreateDialog.VisibleFrom"/>
         <ValidationMessage For="@(() => CreateDialog.VisibleFrom)"/>
     </div>
 
     <div>
         <label for="dueAt">Due At</label>
-        <InputDate id="dueAt" @bind-Value="@CreateDialog.DueAt"></InputDate>
+        <DateInputWrapper id="dueAt" @bind-Value="@CreateDialog.DueAt"/>
         <ValidationMessage For="@(() => CreateDialog.DueAt)"/>
     </div>
 
@@ -88,19 +90,19 @@
 
     <div>
         <label for="expiresAt">Expires At</label>
-        <InputDate id="expiresAt" @bind-Value="@CreateDialog.ExpiresAt"></InputDate>
+        <DateInputWrapper id="expiresAt" @bind-Value="@CreateDialog.ExpiresAt"></DateInputWrapper>
         <ValidationMessage For="@(() => CreateDialog.ExpiresAt)"/>
     </div>
 
     <div>
         <label for="createdAt">Created At</label>
-        <InputDate id="createdAt" @bind-Value="@CreateDialog.CreatedAt"></InputDate>
+        <DateInputWrapper id="createdAt" @bind-Value="@CreateDialog.CreatedAt"></DateInputWrapper>
         <ValidationMessage For="@(() => CreateDialog.CreatedAt)"/>
     </div>
 
     <div>
         <label for="updatedAt">Updated At</label>
-        <InputDate id="updatedAt" @bind-Value="@CreateDialog.UpdatedAt"></InputDate>
+        <DateInputWrapper id="updatedAt" @bind-Value="@CreateDialog.UpdatedAt"></DateInputWrapper>
         <ValidationMessage For="@(() => CreateDialog.UpdatedAt)"/>
     </div>
 
@@ -304,6 +306,35 @@
         _header = response.StatusCode.ToString();
         _message = response.IsSuccessStatusCode ? response.Content : response.Error.Content;
         _showPopUp = true;
+        if (response.IsSuccessStatusCode)
+        {
+            var guid = response.Content!;
+            var dialogs = await ProtectedLocalStore.GetAsync<List<string>>("dialogs");
+            if (dialogs.Success)
+            {
+                if (dialogs.Value != null)
+                {
+
+                    dialogs.Value.Add(guid);
+                    ProtectedLocalStore.SetAsync("dialogs", dialogs);
+                }
+                else
+                {
+                    ProtectedLocalStore.SetAsync("dialogs", new List<string>()
+                    {
+                        guid
+                    });
+                }
+            }
+            else
+            {
+
+                ProtectedLocalStore.SetAsync("dialogs", new List<string>()
+                {
+                    guid
+                });
+            }
+        }
     }
 
 }

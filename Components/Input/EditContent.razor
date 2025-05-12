@@ -50,7 +50,6 @@
         Console.WriteLine(Value == null);
         if (Value == null)
         {
-            NotifyValueChanged();
             Value = new V1ServiceOwnerDialogsCommandsCreate_Content();
         }
     }
@@ -64,7 +63,7 @@
     private void NotifyValueChanged()
     {
         ValueChanged.InvokeAsync(Value);
-        Console.WriteLine($"Value changed: ${Value}");
+        Console.WriteLine($"Value changed: {Value}");
 
         if (EditContext != null)
         {

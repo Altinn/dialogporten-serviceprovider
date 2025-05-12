@@ -34,9 +34,9 @@
         {
             Value = new V1CommonContent_ContentValue
             {
-                MediaType = isRequired ? "text/plain" : ""
-            };
-            NotifyValueChanged();
+                MediaType = isRequired ? "text/plain" : "",
+                Value = []
+             };
         }
     }
     protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out V1CommonContent_ContentValue result, [NotNullWhen(false)] out string? validationErrorMessage)
