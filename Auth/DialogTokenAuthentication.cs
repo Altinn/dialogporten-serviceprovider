@@ -39,7 +39,7 @@ public class EdDsaSecurityKeysCacheService : IHostedService, IDisposable
     private readonly TimeSpan _refreshInterval = TimeSpan.FromHours(12);
 
 
-    // Amund: Er dette litt weird?
+    // Amund: Er dette litt weird? Burde ikke SDKen heller eksponere sin egen KeysCache da kan SDK brukere slippe å implemetere det selv om de trenger dem
 
     // In this service we allow keys for all non-production environments for
     // simplicity. Usually one would only allow a single environment (issuer) here,

@@ -52,17 +52,11 @@ public static class FieldParser
                     return new FieldRecord.ArrayRecord(propertyName, desc, itemFormat, isNullable);
                 }
             case FieldTypes.Object:
-                {
-                    return new FieldRecord.ObjectRecord(propertyName, ParseFields(jsonElement.GetProperty("properties")), isNullable);
-                }
-
+                return new FieldRecord.ObjectRecord(propertyName, ParseFields(jsonElement.GetProperty("properties")), isNullable);
             case FieldTypes.TextArea:
                 return new FieldRecord.TextAreaRecord(propertyName, desc, isNullable);
-                break;
             case FieldTypes.None:
                 break;
-            default:
-                throw new UnreachableException();
         }
         throw new UnreachableException();
     }

@@ -1,5 +1,7 @@
 @page "/dialog/create"
 @using Altinn.ApiClients.Dialogporten.Features.V1
+@using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input
+@using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
 @rendermode InteractiveServer
 @inject IServiceownerApi ServiceOwnerApi
 <h3>CreateDialogTest</h3>
@@ -22,20 +24,13 @@
 
     <div>
         <label>Service Resource</label>
-        <InputText AdditionalAttributes="@_req"
-                   @bind-Value="@CreateDialog.ServiceResource"></InputText>
-        <ValidationMessage For="@(() => CreateDialog.ServiceResource)"/>
-    </div>
-
-    <div>
-        <label>Status</label>
-        <InputSelect @bind-Value="@temp">
+        <InputSelect @bind-Value="@CreateDialog.ServiceResource">
             @foreach (var status in RegClient.Resources)
             {
-                <option value="@status.Identifier">@status.Identifier</option>
+                <option value=@("urn:altinn:resource:" + status.Identifier)>@status.Identifier</option>
             }
         </InputSelect>
-        <ValidationMessage For="@(() => CreateDialog.Status)"/>
+        <ValidationMessage For="@(() => CreateDialog.ServiceResource)"/>
     </div>
 
     <div>
@@ -211,13 +206,12 @@
 
 @code {
     private EditForm _form = null!;
-    private string temp = "";
 
     protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
         {
-            _messageStore = new ValidationMessageStore(_form.EditContext);
+            _messageStore = new ValidationMessageStore(_form.EditContext ?? throw new NullReferenceException());
             _form.EditContext.OnValidationRequested += ValidateForm;
         }
     }
@@ -276,7 +270,7 @@
     bool _showPopUp;
     private string? _header;
     private string? _message;
-    private ValidationMessageStore _messageStore;
+    private ValidationMessageStore _messageStore = null!;
 
     protected override void OnInitialized()
     {
