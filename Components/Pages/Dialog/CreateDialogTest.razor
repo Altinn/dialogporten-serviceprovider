@@ -310,6 +310,7 @@
         if (response.IsSuccessStatusCode)
         {
             var guid = response.Content!;
+            guid = guid.Trim('"');
             var dialogs = await ProtectedLocalStore.GetAsync<List<string>>("dialogs");
             if (dialogs.Success)
             {
