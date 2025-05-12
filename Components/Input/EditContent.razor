@@ -51,6 +51,7 @@
         if (Value == null)
         {
             Value = new V1ServiceOwnerDialogsCommandsCreate_Content();
+            NotifyValueChanged();
         }
     }
     protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out V1ServiceOwnerDialogsCommandsCreate_Content result, [NotNullWhen(false)] out string? validationErrorMessage)

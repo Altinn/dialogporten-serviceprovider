@@ -19,8 +19,8 @@
         await base.OnAfterRenderAsync(firstRender);
         if (firstRender)
         {
-            var temp = await ProtectedLocalStore.GetAsync<List<string>>("dialogs");
-            Console.WriteLine("hei");
+            var temp = await ProtectedLocalStore.GetAsync<List<string?>>("dialogs");
+            Console.WriteLine("Getting Dialogs from localstorage");
             if (temp.Success)
             {
                 Console.WriteLine(temp.Value!.Count());

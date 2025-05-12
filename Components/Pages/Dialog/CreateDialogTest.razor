@@ -244,6 +244,7 @@
 
     private void ValidateContentValue(V1CommonContent_ContentValue? content, string name)
     {
+        Console.WriteLine($"name: {name}");
         if (content is null) return;
 
         if ((content.Value == null || !content.Value.Any()) && !string.IsNullOrEmpty(content.MediaType))
@@ -316,11 +317,11 @@
                 {
 
                     dialogs.Value.Add(guid);
-                    ProtectedLocalStore.SetAsync("dialogs", dialogs);
+                    _ = ProtectedLocalStore.SetAsync("dialogs", dialogs.Value);
                 }
                 else
                 {
-                    ProtectedLocalStore.SetAsync("dialogs", new List<string>()
+                    _ = ProtectedLocalStore.SetAsync("dialogs", new List<string>()
                     {
                         guid
                     });
@@ -329,7 +330,7 @@
             else
             {
 
-                ProtectedLocalStore.SetAsync("dialogs", new List<string>()
+                _ = ProtectedLocalStore.SetAsync("dialogs", new List<string>()
                 {
                     guid
                 });

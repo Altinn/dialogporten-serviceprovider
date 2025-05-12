@@ -32,11 +32,15 @@
         }
         if (Value == null)
         {
-            Value = new V1CommonContent_ContentValue
+             Value = new V1CommonContent_ContentValue
             {
                 MediaType = isRequired ? "text/plain" : "",
                 Value = []
-             };
+            };
+            if (isRequired)
+            {
+                NotifyValueChanged();
+            }
         }
     }
     protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out V1CommonContent_ContentValue result, [NotNullWhen(false)] out string? validationErrorMessage)
