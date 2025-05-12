@@ -5,7 +5,7 @@
 @inject IServiceownerApi ServiceOwnerApi
 @rendermode InteractiveServer
 <h3>DeleteDialog</h3>
-<EditForm>
+<EditForm Model="DialogId" OnValidSubmit="Submit" FormName="Delete Dialog">
     <div>
         <InputSelect @bind-Value="@DialogId">
             @foreach (var status in _dialogs)
