@@ -1,26 +1,29 @@
-@inherits InputBase<V1CommonContent_ContentValue>
-@using System.Diagnostics
+@inherits InputBase<V1CommonContent_ContentValue?>
 @using System.Diagnostics.CodeAnalysis
 @using Altinn.ApiClients.Dialogporten.Features.V1
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
 <fieldset>
-    @if (Value is null) throw new UnreachableException();
     <div>
         <label>Media Type:</label>
         <InputText
             AdditionalAttributes="@AdditionalAttributes"
-            @bind-Value="Value.MediaType"
+            @bind-Value="_value.MediaType"
             @bind-Value:after="NotifyValueChanged"
         />
-        <InputLocalization @bind-Value="@Value.Value"
+        <InputLocalization @bind-Value="@_value.Value"
                            @bind-Value:after="NotifyValueChanged"
         />
-        <ValidationMessage For="@(() => Value.Value)"/>
+        <ValidationMessage For="@(() => _value.Value)"/>
     </div>
 
 </fieldset>
 
 @code {
+    private V1CommonContent_ContentValue _value = new()
+    {
+        Value = [],
+        MediaType = ""
+    };
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
@@ -30,17 +33,16 @@
             AdditionalAttributes.TryGetValue("required", out var required);
             isRequired = required is true;
         }
-        if (Value == null)
+
+        if (Value == null && isRequired)
         {
-             Value = new V1CommonContent_ContentValue
+            Value = new V1CommonContent_ContentValue
             {
                 MediaType = isRequired ? "text/plain" : "",
                 Value = []
             };
-            if (isRequired)
-            {
-                NotifyValueChanged();
-            }
+            _value = Value;
+            NotifyValueChanged();
         }
     }
     protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out V1CommonContent_ContentValue result, [NotNullWhen(false)] out string? validationErrorMessage)
@@ -53,6 +55,14 @@
 
     private void NotifyValueChanged()
     {
+        if (_value.MediaType == "" && !_value.Value.Any())
+        {
+            Value = null;
+        }
+        else
+        {
+            Value = _value;
+        }
         ValueChanged.InvokeAsync(Value);
     }
 }
