@@ -1,10 +1,27 @@
+@using System.Diagnostics
 @using System.Diagnostics.CodeAnalysis
 @using Altinn.ApiClients.Dialogporten.Features.V1
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
 @inherits InputBase<ICollection<V1ServiceOwnerDialogsCommandsCreate_Transmission>>
+@if (Value is null) throw new UnreachableException();
 <fieldset>
     <legend>Transmission</legend>
     <table>
+        <thead>
+        @if (Value.Any())
+        {
+            <th>Id</th>
+            <th>Created AT</th>
+            <th>AuthorizationAttribute</th>
+            <th>ExtendedType</th>
+            <th>RelatedTransmissionId</th>
+            <th>Type</th>
+            <th>Sender</th>
+            <th>Content</th>
+            <th>Actions</th>
+        }
+        </thead>
+        <tbody>
         @foreach (var transmission in Value!)
         {
             <tr>
@@ -47,21 +64,22 @@
                 </td>
 
                 <td>
-                    <label>Content Title</label>
-                    <InputCommonContentValue @bind-Value="@transmission.Content.Title"/>
-                    <ValidationMessage For="() => transmission.Content.Title"/>
-                </td>
+                    <div>
+                        <label>Content Title</label>
+                        <InputCommonContentValue @bind-Value="@transmission.Content.Title"/>
+                        <ValidationMessage For="() => transmission.Content.Title"/>
+                    </div>
+                    <div>
+                        <label>Content Summary</label>
+                        <InputCommonContentValue @bind-Value="@transmission.Content.Summary"/>
+                        <ValidationMessage For="() => transmission.Content.Summary"/>
+                    </div>
+                    <div>
+                        <label>Content Reference</label>
+                        <InputCommonContentValue @bind-Value="@transmission.Content.ContentReference"/>
+                        <ValidationMessage For="() => transmission.Content.ContentReference"/>
+                    </div>
 
-                <td>
-                    <label>Content Summary</label>
-                    <InputCommonContentValue @bind-Value="@transmission.Content.Summary"/>
-                    <ValidationMessage For="() => transmission.Content.Summary"/>
-                </td>
-               
-                <td>
-                    <label>Content Reference</label>
-                    <InputCommonContentValue @bind-Value="@transmission.Content.ContentReference"/>
-                    <ValidationMessage For="() => transmission.Content.ContentReference"/>
                 </td>
 
 
@@ -92,6 +110,8 @@
                 Attachment
             </button>
         }
+
+        </tbody>
     </table>
     <button type="button" @onclick="AddTransmission">Add Transmission</button>
 

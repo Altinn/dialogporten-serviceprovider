@@ -35,14 +35,17 @@
                 <div>
                     <!-- Path -->
                     <label>Path:</label>
-                    <InputText @bind-Value="@patchDocument.Path"/>
+                    <InputText AdditionalAttributes="_additionalProperties" @bind-Value="@patchDocument.Path"/>
                 </div>
 
-                <div>
-                    <!-- From -->
-                    <label>From:</label>
-                    <InputText @bind-Value="@patchDocument.From"/>
-                </div>
+                @if (patchDocument.OperationType is JsonPatchOperations_OperationType.Move or JsonPatchOperations_OperationType.Copy)
+                {
+                    <div>
+                        <!-- From -->
+                        <label>From:</label>
+                        <InputText @bind-Value="@patchDocument.From"/>
+                    </div>
+                }
 
                 <div>
                     <!-- Value -->
@@ -76,9 +79,16 @@
 
 
 @code {
+    private readonly Dictionary<string, object> _additionalProperties = new()
+    {
+        {
+            "required", true
+        }
+    };
+
     private ICollection<JsonPatchOperations_Operation>? PatchDocuments { get; set; }
-    private string DialogId { get; set; } = "";
-    private List<string> _dialogs = [];
+    private string? DialogId { get; set; } = "";
+    private List<string?> _dialogs = [];
     private string _header = "";
     private string? _message = "";
     private bool _showPopUp = false;
@@ -99,6 +109,7 @@
             {
                 Console.WriteLine(temp.Value!.Count());
                 _dialogs = temp.Value!;
+                DialogId = _dialogs.FirstOrDefault();
                 StateHasChanged();
             }
         }
@@ -106,12 +117,14 @@
 
     private void AddPatchDocument()
     {
+        if (PatchDocuments is null) throw new UnreachableException();
         PatchDocuments.Add(new JsonPatchOperations_Operation());
         StateHasChanged();
     }
 
     private void RemovePatchDocument(JsonPatchOperations_Operation patchDocument)
     {
+        if (PatchDocuments is null) throw new UnreachableException();
         PatchDocuments.Remove(patchDocument);
         StateHasChanged();
     }
