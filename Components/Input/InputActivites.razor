@@ -32,7 +32,7 @@
                 </td>
 
                 <td>
-                    <InputDate @bind-Value="@activity.CreatedAt"/>
+                    <DateInputWrapper @bind-Value="@activity.CreatedAt"/>
                     <ValidationMessage For="@(() => activity.CreatedAt)"/>
                 </td>
 

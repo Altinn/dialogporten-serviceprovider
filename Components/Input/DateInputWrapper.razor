@@ -1,30 +1,25 @@
 @inherits InputBase<DateTimeOffset?>
 @using System.Diagnostics.CodeAnalysis
 @using BlazorBootstrap
-<DateInput @bind-Value="ConvertedValue" TValue="DateTime?"/>
+<div>
+    <DateInput @bind-Value="_date" @bind-Value:after="UpdateDateTime"/>
+    <TimeInput @bind-Value="_time" @bind-Value:after="UpdateDateTime"/>
+</div>
 
 @code {
     // Amund: Tregner også tidspunkt ikke bare dato.
     private DateTime? ConvertedValue
+    { get; set; }
+    private void UpdateDateTime()
     {
-        get => Value?.DateTime;
-        set
-        {
-            if (value.HasValue)
-            {
-                var newValue = new DateTimeOffset(value.Value, Value?.Offset ?? TimeSpan.Zero);
-                if (Value != newValue)
-                {
-                    Value = newValue;
-                    ValueChanged.InvokeAsync(newValue);
-                }
-            }
-            else
-            {
-                Value = null;
-                ValueChanged.InvokeAsync(null);
-            }
-        }
+        if (_date is null) return;
+        if (_time is null) return;
+
+        ConvertedValue = new DateTime(_date.Value, _time.Value);
+        Value = ConvertedValue;
+        ValueChanged.InvokeAsync(ConvertedValue);
     }
+    private DateOnly? _date;
+    private TimeOnly? _time;
     protected override bool TryParseValueFromString(string? value, out DateTimeOffset? result, [NotNullWhen(false)] out string? validationErrorMessage) => throw new NotImplementedException();
 }

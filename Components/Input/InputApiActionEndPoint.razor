@@ -67,7 +67,7 @@
                 </td>
 
                 <td>
-                    <InputDate @bind-Value="@apiActionEndpoint.SunsetAt"/>
+                    <DateInputWrapper @bind-Value="@apiActionEndpoint.SunsetAt"/>
                     <ValidationMessage For="@(() => apiActionEndpoint.SunsetAt)"/>
                 </td>
 

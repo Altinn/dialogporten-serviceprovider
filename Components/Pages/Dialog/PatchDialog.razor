@@ -131,7 +131,7 @@
 
     private async Task Submit()
     {
-
+        if (PatchDocuments is null) throw new UnreachableException();
         if (Guid.TryParse(DialogId, out var guid))
         {
             var response = await ServiceOwnerApi.V1ServiceOwnerDialogsPatchDialog(guid, PatchDocuments, null);
