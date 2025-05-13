@@ -8,135 +8,135 @@
 @rendermode InteractiveServer
 <h3>CreateDialogTest</h3>
 
-<EditForm Model="CreateDialog" OnValidSubmit="@(() => Submit())" FormName="CreateDialogTest" @ref="_form">
+<EditForm Model="CreateDialogCommand" OnValidSubmit="@(() => Submit())" FormName="CreateDialogTest" @ref="_form">
     <DataAnnotationsValidator/>
     <ValidationSummary/>
 
     <div>
         <label>Id</label>
-        <InputGuid @bind-Value="@CreateDialog.Id"></InputGuid>
-        <ValidationMessage For="@(() => CreateDialog.Id)"/>
+        <InputGuid @bind-Value="@CreateDialogCommand.Id"></InputGuid>
+        <ValidationMessage For="@(() => CreateDialogCommand.Id)"/>
     </div>
 
     <div>
         <label>Idempotent Key</label>
-        <InputText @bind-Value="@CreateDialog.IdempotentKey"></InputText>
-        <ValidationMessage For="@(() => CreateDialog.IdempotentKey)"/>
+        <InputText @bind-Value="@CreateDialogCommand.IdempotentKey"></InputText>
+        <ValidationMessage For="@(() => CreateDialogCommand.IdempotentKey)"/>
     </div>
 
     <div>
         <label>Service Resource</label>
-        <InputSelect @bind-Value="@CreateDialog.ServiceResource">
+        <InputSelect @bind-Value="@CreateDialogCommand.ServiceResource">
             @foreach (var status in RegClient.Resources)
             {
                 <option value=@("urn:altinn:resource:" + status.Identifier)>@status.Identifier</option>
             }
         </InputSelect>
-        <ValidationMessage For="@(() => CreateDialog.ServiceResource)"/>
+        <ValidationMessage For="@(() => CreateDialogCommand.ServiceResource)"/>
     </div>
 
     <div>
         <label>Party</label>
-        <InputText AdditionalAttributes="@_req" @bind-Value="@CreateDialog.Party"></InputText>
-        <ValidationMessage For="@(() => CreateDialog.Party)"/>
+        <InputText AdditionalAttributes="@_req" @bind-Value="@CreateDialogCommand.Party"></InputText>
+        <ValidationMessage For="@(() => CreateDialogCommand.Party)"/>
     </div>
 
     <div>
         <label>Progress</label>
-        <InputNumber @bind-Value="@CreateDialog.Progress"></InputNumber>
-        <ValidationMessage For="@(() => CreateDialog.Progress)"/>
+        <InputNumber @bind-Value="@CreateDialogCommand.Progress"></InputNumber>
+        <ValidationMessage For="@(() => CreateDialogCommand.Progress)"/>
     </div>
 
     <div>
         <label for="extendedStatus">Extended Status</label>
-        <InputText id="extendedStatus" @bind-Value="@CreateDialog.ExtendedStatus"></InputText>
-        <ValidationMessage For="@(() => CreateDialog.ExtendedStatus)"/>
+        <InputText id="extendedStatus" @bind-Value="@CreateDialogCommand.ExtendedStatus"></InputText>
+        <ValidationMessage For="@(() => CreateDialogCommand.ExtendedStatus)"/>
     </div>
 
     <div>
         <label for="externalReference">External Reference</label>
-        <InputText id="externalReference" @bind-Value="@CreateDialog.ExternalReference"></InputText>
-        <ValidationMessage For="@(() => CreateDialog.ExternalReference)"/>
+        <InputText id="externalReference" @bind-Value="@CreateDialogCommand.ExternalReference"></InputText>
+        <ValidationMessage For="@(() => CreateDialogCommand.ExternalReference)"/>
     </div>
 
     <div>
         <label for="visibleFrom">Visible From</label>
-        <DateInputWrapper id="visibleFrom" @bind-Value="@CreateDialog.VisibleFrom"/>
-        <ValidationMessage For="@(() => CreateDialog.VisibleFrom)"/>
+        <DateInputWrapper id="visibleFrom" @bind-Value="@CreateDialogCommand.VisibleFrom"/>
+        <ValidationMessage For="@(() => CreateDialogCommand.VisibleFrom)"/>
     </div>
 
     <div>
         <label for="dueAt">Due At</label>
-        <DateInputWrapper id="dueAt" @bind-Value="@CreateDialog.DueAt"/>
-        <ValidationMessage For="@(() => CreateDialog.DueAt)"/>
+        <DateInputWrapper id="dueAt" @bind-Value="@CreateDialogCommand.DueAt"/>
+        <ValidationMessage For="@(() => CreateDialogCommand.DueAt)"/>
     </div>
 
     <div>
         <label for="process">Process</label>
-        <InputText id="process" @bind-Value="@CreateDialog.Process"></InputText>
-        <ValidationMessage For="@(() => CreateDialog.Process)"/>
+        <InputText id="process" @bind-Value="@CreateDialogCommand.Process"></InputText>
+        <ValidationMessage For="@(() => CreateDialogCommand.Process)"/>
     </div>
 
     <div>
         <label for="precedingProcess">Preceding Process</label>
-        <InputText id="precedingProcess" @bind-Value="@CreateDialog.PrecedingProcess"></InputText>
-        <ValidationMessage For="@(() => CreateDialog.PrecedingProcess)"/>
+        <InputText id="precedingProcess" @bind-Value="@CreateDialogCommand.PrecedingProcess"></InputText>
+        <ValidationMessage For="@(() => CreateDialogCommand.PrecedingProcess)"/>
     </div>
 
     <div>
         <label>Api Only</label>
-        <InputCheckbox @bind-Value="CreateDialog.IsApiOnly"/>
+        <InputCheckbox @bind-Value="CreateDialogCommand.IsApiOnly"/>
     </div>
 
     <div>
         <label for="expiresAt">Expires At</label>
-        <DateInputWrapper id="expiresAt" @bind-Value="@CreateDialog.ExpiresAt"></DateInputWrapper>
-        <ValidationMessage For="@(() => CreateDialog.ExpiresAt)"/>
+        <DateInputWrapper id="expiresAt" @bind-Value="@CreateDialogCommand.ExpiresAt"></DateInputWrapper>
+        <ValidationMessage For="@(() => CreateDialogCommand.ExpiresAt)"/>
     </div>
 
     <div>
         <label for="createdAt">Created At</label>
-        <DateInputWrapper id="createdAt" @bind-Value="@CreateDialog.CreatedAt"></DateInputWrapper>
-        <ValidationMessage For="@(() => CreateDialog.CreatedAt)"/>
+        <DateInputWrapper id="createdAt" @bind-Value="@CreateDialogCommand.CreatedAt"></DateInputWrapper>
+        <ValidationMessage For="@(() => CreateDialogCommand.CreatedAt)"/>
     </div>
 
     <div>
         <label for="updatedAt">Updated At</label>
-        <DateInputWrapper id="updatedAt" @bind-Value="@CreateDialog.UpdatedAt"></DateInputWrapper>
-        <ValidationMessage For="@(() => CreateDialog.UpdatedAt)"/>
+        <DateInputWrapper id="updatedAt" @bind-Value="@CreateDialogCommand.UpdatedAt"></DateInputWrapper>
+        <ValidationMessage For="@(() => CreateDialogCommand.UpdatedAt)"/>
     </div>
 
     <div>
         <label for="status">Status</label>
-        <InputSelect id="status" @bind-Value="@CreateDialog.Status">
+        <InputSelect id="status" @bind-Value="@CreateDialogCommand.Status">
             @foreach (var status in Enum.GetValues<DialogsEntities_DialogStatus>())
             {
                 <option value="@status">@status</option>
             }
         </InputSelect>
-        <ValidationMessage For="@(() => CreateDialog.Status)"/>
+        <ValidationMessage For="@(() => CreateDialogCommand.Status)"/>
     </div>
 
     <div>
         <label for="systemLabel">System Label:</label>
-        <InputSelect id="systemLabel" @bind-Value="@CreateDialog.SystemLabel">
+        <InputSelect id="systemLabel" @bind-Value="@CreateDialogCommand.SystemLabel">
             @foreach (var label in Enum.GetValues<DialogEndUserContextsEntities_SystemLabel>())
             {
                 <option value="@label">@label</option>
             }
         </InputSelect>
-        <ValidationMessage For="@(() => CreateDialog.SystemLabel)"/>
+        <ValidationMessage For="@(() => CreateDialogCommand.SystemLabel)"/>
     </div>
 
     <div>
         <label>Content</label>
-        <EditContent AdditionalAttributes="@_req" @bind-Value="@CreateDialog.Content"/>
+        <EditContent AdditionalAttributes="@_req" @bind-Value="@CreateDialogCommand.Content"/>
     </div>
 
     <fieldset>
         <legend>Search Tags</legend>
         <table>
-            @foreach (var tag in CreateDialog.SearchTags)
+            @foreach (var tag in CreateDialogCommand.SearchTags)
             {
                 <tr>
                     <td>
@@ -144,13 +144,13 @@
                         <ValidationMessage For="@(() => tag.Value)"></ValidationMessage>
                     </td>
                     <td>
-                        <button type="button" @onclick="() => CreateDialog.SearchTags.Remove(tag)">Remove</button>
+                        <button type="button" @onclick="() => CreateDialogCommand.SearchTags.Remove(tag)">Remove</button>
                     </td>
                 </tr>
             }
         </table>
         <button type="button"
-                @onclick="() => CreateDialog.SearchTags.Add(new V1ServiceOwnerDialogsCommandsCreate_Tag())">
+                @onclick="() => CreateDialogCommand.SearchTags.Add(new V1ServiceOwnerDialogsCommandsCreate_Tag())">
             Add SearchTag
         </button>
     </fieldset>
@@ -158,7 +158,7 @@
     <fieldset>
         <legend>Attachment</legend>
         <table>
-            @foreach (var attachment in CreateDialog.Attachments)
+            @foreach (var attachment in CreateDialogCommand.Attachments)
             {
                 <tr>
                     <td>
@@ -181,22 +181,22 @@
     </fieldset>
 
     <div>
-        <InputTransmission @bind-Value="@CreateDialog.Transmissions"/>
+        <InputTransmission @bind-Value="@CreateDialogCommand.Transmissions"/>
     </div>
 
     <fieldset>
         <!-- Gui actions -->
-        <InputGuiActions @bind-Value="CreateDialog.GuiActions"/>
+        <InputGuiActions @bind-Value="CreateDialogCommand.GuiActions"/>
     </fieldset>
 
     <fieldset>
         <!-- Api actions -->
-        <InputApiAction @bind-Value="CreateDialog.ApiActions"/>
+        <InputApiAction @bind-Value="CreateDialogCommand.ApiActions"/>
     </fieldset>
 
     <fieldset>
         <!-- Activities -->
-        <InputActivites @bind-Value="CreateDialog.Activities"/>
+        <InputActivites @bind-Value="CreateDialogCommand.Activities"/>
     </fieldset>
     <button type="submit">Submit</button>
 </EditForm>
@@ -224,19 +224,19 @@
 
         _messageStore.Clear();
 
-        ValidateContentValue(CreateDialog.Content.Title, nameof(CreateDialog.Content.Title));
-        ValidateContentValue(CreateDialog.Content.NonSensitiveTitle, nameof(CreateDialog.Content.NonSensitiveTitle));
+        ValidateContentValue(CreateDialogCommand.Content.Title, nameof(CreateDialogCommand.Content.Title));
+        ValidateContentValue(CreateDialogCommand.Content.NonSensitiveTitle, nameof(CreateDialogCommand.Content.NonSensitiveTitle));
 
-        ValidateContentValue(CreateDialog.Content.Summary, nameof(CreateDialog.Content.Summary));
-        ValidateContentValue(CreateDialog.Content.NonSensitiveSummary, nameof(CreateDialog.Content.NonSensitiveSummary));
+        ValidateContentValue(CreateDialogCommand.Content.Summary, nameof(CreateDialogCommand.Content.Summary));
+        ValidateContentValue(CreateDialogCommand.Content.NonSensitiveSummary, nameof(CreateDialogCommand.Content.NonSensitiveSummary));
 
-        ValidateContentValue(CreateDialog.Content.SenderName, nameof(CreateDialog.Content.SenderName));
+        ValidateContentValue(CreateDialogCommand.Content.SenderName, nameof(CreateDialogCommand.Content.SenderName));
 
-        ValidateContentValue(CreateDialog.Content.AdditionalInfo, nameof(CreateDialog.Content.AdditionalInfo));
+        ValidateContentValue(CreateDialogCommand.Content.AdditionalInfo, nameof(CreateDialogCommand.Content.AdditionalInfo));
 
-        ValidateContentValue(CreateDialog.Content.ExtendedStatus, nameof(CreateDialog.Content.ExtendedStatus));
+        ValidateContentValue(CreateDialogCommand.Content.ExtendedStatus, nameof(CreateDialogCommand.Content.ExtendedStatus));
 
-        ValidateContentValue(CreateDialog.Content.MainContentReference, nameof(CreateDialog.Content.MainContentReference));
+        ValidateContentValue(CreateDialogCommand.Content.MainContentReference, nameof(CreateDialogCommand.Content.MainContentReference));
 
         context.NotifyValidationStateChanged();
 
@@ -249,7 +249,7 @@
 
         if ((content.Value == null || !content.Value.Any()) && !string.IsNullOrEmpty(content.MediaType))
         {
-            var fieldId = new FieldIdentifier(CreateDialog, $"Content.{name}.Value");
+            var fieldId = new FieldIdentifier(CreateDialogCommand, $"Content.{name}.Value");
             _messageStore.Add(fieldId, $"{name} requires at least one localization");
             Console.WriteLine($"Validation error added for {name}");
             return;
@@ -257,14 +257,14 @@
 
         if (content.Value != null && content.Value.Any() && string.IsNullOrEmpty(content.MediaType))
         {
-            var fieldId = new FieldIdentifier(CreateDialog, $"Content.{name}.Value");
+            var fieldId = new FieldIdentifier(CreateDialogCommand, $"Content.{name}.Value");
             _messageStore.Add(fieldId, $"{name} requires mediaType if you have any localization");
             Console.WriteLine($"Validation error added for {name}");
         }
 
     }
 
-    V1ServiceOwnerDialogsCommandsCreate_Dialog CreateDialog { get; set; } = new();
+    V1ServiceOwnerDialogsCommandsCreate_Dialog CreateDialogCommand { get; set; } = new();
     private readonly Dictionary<string, object?> _req = new()
     {
         { "required", true }
@@ -278,16 +278,16 @@
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        CreateDialog.Attachments = [];
-        CreateDialog.SearchTags = [];
-        CreateDialog.Transmissions = [];
-        CreateDialog.GuiActions = [];
-        CreateDialog.ApiActions = [];
-        CreateDialog.Activities = [];
+        CreateDialogCommand.Attachments = [];
+        CreateDialogCommand.SearchTags = [];
+        CreateDialogCommand.Transmissions = [];
+        CreateDialogCommand.GuiActions = [];
+        CreateDialogCommand.ApiActions = [];
+        CreateDialogCommand.Activities = [];
     }
     private void AddAttachment()
     {
-        CreateDialog.Attachments.Add(new V1ServiceOwnerDialogsCommandsCreate_Attachment
+        CreateDialogCommand.Attachments.Add(new V1ServiceOwnerDialogsCommandsCreate_Attachment
         {
             Id = null,
             DisplayName = [],
@@ -297,12 +297,12 @@
 
     private void RemoveAttachment(V1ServiceOwnerDialogsCommandsCreate_Attachment attachment)
     {
-        CreateDialog.Attachments.Remove(attachment);
+        CreateDialogCommand.Attachments.Remove(attachment);
     }
 
     private async Task Submit()
     {
-        var response = await ServiceOwnerApi.V1ServiceOwnerDialogsCreateDialog(CreateDialog);
+        var response = await ServiceOwnerApi.V1ServiceOwnerDialogsCreateDialog(CreateDialogCommand);
         Console.WriteLine(response.StatusCode);
         _header = response.StatusCode.ToString();
         _message = response.IsSuccessStatusCode ? response.Content : response.Error.Content;
