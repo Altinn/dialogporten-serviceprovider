@@ -4,6 +4,67 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider;
 
 public static class PrefillExtensions
 {
+    public static void Prefill(this V1ServiceOwnerDialogsCommandsCreate_Dialog dialog, DialogPrefill prefillType)
+    {
+        switch (prefillType)
+        {
+            case DialogPrefill.Empty:
+                break;
+            case DialogPrefill.Skattemeldig:
+                dialog.ServiceResource = "urn:altinn:resource:ske-innrapportering-boligselskap";
+                dialog.Party = "urn:altinn:person:identifier-no:20815497741";
+                dialog.Content.Title.MediaType = "text/plain";
+                dialog.Content.Title.Value =
+                [
+                    new V1CommonLocalizations_Localization
+                    {
+                        Value = "Skattemeldingen for 2024",
+                        LanguageCode = "nb"
+                    }
+                ];
+                dialog.Content.Summary.MediaType = "text/plain";
+                dialog.Content.Summary.Value =
+                [
+                    new V1CommonLocalizations_Localization
+                    {
+                        Value = "Dette er skattemeldingen din for 2024. Informasjonen er delt med deg 2025-5-16 10:22",
+                        LanguageCode = "nb"
+                    }
+                ];
+
+                dialog.SearchTags =
+                [
+                    new V1ServiceOwnerDialogsCommandsCreate_Tag
+                    {
+                        Value = "SBv2.9"
+                    },
+                    new V1ServiceOwnerDialogsCommandsCreate_Tag
+                    {
+                        Value = "trollsikringstjenesten"
+                    },
+                    new V1ServiceOwnerDialogsCommandsCreate_Tag
+                    {
+                        Value = "trolljeger"
+                    }
+                ];
+
+                dialog.GuiActions = [new V1ServiceOwnerDialogsCommandsCreate_GuiAction(), new V1ServiceOwnerDialogsCommandsCreate_GuiAction()];
+
+                // Amund: Føles feil ut på et fundamentalt nivå
+                var enumerator = dialog.GuiActions.GetEnumerator();
+                enumerator.MoveNext();
+                enumerator.Current.Prefill(GuiActionPrefill.ReadConfirmation);
+                enumerator.MoveNext();
+                enumerator.Current.Prefill(GuiActionPrefill.DeleteButton);
+                enumerator.Current.Priority = DialogsEntitiesActions_DialogGuiActionPriority.Secondary;
+                enumerator.Dispose();
+
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(prefillType), prefillType, null);
+        }
+
+    }
     public static void Prefill(this V1ServiceOwnerDialogsCommandsCreate_GuiAction guiAction, GuiActionPrefill prefillType)
     {
         switch (prefillType)
@@ -123,4 +184,10 @@ public enum GuiActionPrefill
     ReadConfirmation,
     DeleteButton,
     Information
+}
+
+public enum DialogPrefill
+{
+    Empty,
+    Skattemeldig
 }

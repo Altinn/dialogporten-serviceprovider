@@ -12,6 +12,7 @@
     <DataAnnotationsValidator/>
     <ValidationSummary/>
 
+    <button type="button" onclick="@Prefill">prefill</button>
     <div>
         <label>Id</label>
         <InputGuid @bind-Value="@CreateDialogCommand.Id"></InputGuid>
@@ -27,6 +28,7 @@
     <div>
         <label>Service Resource</label>
         <InputSelect @bind-Value="@CreateDialogCommand.ServiceResource">
+            <option value="" disabled selected>Select your option</option>
             @foreach (var status in RegClient.Resources)
             {
                 <option value=@("urn:altinn:resource:" + status.Identifier)>@status.Identifier</option>
@@ -37,7 +39,8 @@
 
     <div>
         <label>Party</label>
-        <InputText AdditionalAttributes="@_req" @bind-Value="@CreateDialogCommand.Party"></InputText>
+        @* <InputText AdditionalAttributes="@_req" @bind-Value="@CreateDialogCommand.Party"></InputText> *@
+        <InputParty @bind-Value="CreateDialogCommand.Party"></InputParty>
         <ValidationMessage For="@(() => CreateDialogCommand.Party)"/>
     </div>
 
@@ -337,6 +340,11 @@
                 });
             }
         }
+    }
+    private void Prefill()
+    {
+        CreateDialogCommand.Prefill(DialogPrefill.Skattemeldig);
+        StateHasChanged();
     }
 
 }
