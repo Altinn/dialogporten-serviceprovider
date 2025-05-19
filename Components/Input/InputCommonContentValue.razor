@@ -44,6 +44,10 @@
             _value = Value;
             NotifyValueChanged();
         }
+        else if (Value != null)
+        {
+            _value = Value;
+        }
     }
     protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out V1CommonContent_ContentValue result, [NotNullWhen(false)] out string? validationErrorMessage)
     {
