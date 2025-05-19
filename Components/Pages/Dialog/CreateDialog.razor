@@ -312,22 +312,36 @@
         _showPopUp = true;
         if (response.IsSuccessStatusCode)
         {
-            var guid = response.Content!;
-            guid = guid.Trim('"');
+
+            var guidString = response.Content!;
+            guidString = guidString.Trim('"');
+
+            if (CreateDialogCommand.Transmissions.Any())
+            {
+                // Get all transmission Id
+                Guid.TryParse(guidString, out var guid);
+                var getDialog = await ServiceOwnerApi.V1ServiceOwnerDialogsGetDialog(guid, CreateDialogCommand.Party);
+                if (getDialog.IsSuccessStatusCode)
+                {
+                    var temp = getDialog.Content;
+                    // temp.Transmissions.First().Id;
+                }
+
+            }
             var dialogs = await ProtectedLocalStore.GetAsync<List<string>>("dialogs");
             if (dialogs.Success)
             {
                 if (dialogs.Value != null)
                 {
 
-                    dialogs.Value.Add(guid);
+                    dialogs.Value.Add(guidString);
                     _ = ProtectedLocalStore.SetAsync("dialogs", dialogs.Value);
                 }
                 else
                 {
                     _ = ProtectedLocalStore.SetAsync("dialogs", new List<string>()
                     {
-                        guid
+                        guidString
                     });
                 }
             }
@@ -336,7 +350,7 @@
 
                 _ = ProtectedLocalStore.SetAsync("dialogs", new List<string>()
                 {
-                    guid
+                    guidString
                 });
             }
         }
