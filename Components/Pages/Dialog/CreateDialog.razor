@@ -204,6 +204,9 @@
     </fieldset>
     <button type="submit">Submit</button>
 </EditForm>
+<label For="dialog-seed">Seed:</label>
+<InputTextArea id="dialog-seed" @bind-Value="Seed"/>
+<button type="button" @onclick="ParseSeed">Import</button>
 @if (_showPopUp)
 {
 
@@ -212,6 +215,7 @@
 
 @code {
     private EditForm _form = null!;
+    private string Seed { get; set; } = "";
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -360,5 +364,55 @@
         CreateDialogCommand.Prefill(DialogPrefill.Skattemeldig);
         StateHasChanged();
     }
+
+    private void ParseSeed()
+    {
+        // Amund: Cleaning av CreateDialogCommand
+        var parts = Seed.Split(";");
+
+        foreach (var part in parts)
+        {
+            var seedData = part.Split("=", 2);
+            var fieldData = seedData.First().Split(":");
+            // Amund: Extra value, (title:en => en) to create different lang of titles
+            string? firstVal = null;
+            if (fieldData.Length >= 2)
+            {
+                firstVal = fieldData[1];
+            }
+            switch (fieldData.First().ToLowerInvariant())
+            {
+                case "title":
+                    CreateDialogCommand.Content.Title.Add(seedData[1], firstVal);
+                    break;
+                case "summary":
+                    CreateDialogCommand.Content.Summary.Add(seedData[1], firstVal);
+                    break;
+                case "non-sensitive-title":
+                    CreateDialogCommand.Content.NonSensitiveTitle.Add(seedData[1], firstVal);
+                    break;
+                case "non-sensitive-summary":
+                    CreateDialogCommand.Content.NonSensitiveSummary.Add(seedData[1], firstVal);
+                    break;
+                case "sender":
+                case "sendername":
+                    CreateDialogCommand.Content.SenderName.Add(seedData[1], firstVal);
+                    break;
+                case "additional-info":
+                    CreateDialogCommand.Content.AdditionalInfo.Add(seedData[1], firstVal);
+                    break;
+                case "main-content-reference":
+                    CreateDialogCommand.Content.MainContentReference.Add(seedData[1], firstVal);
+                    break;
+                case "resource":
+                    CreateDialogCommand.ServiceResource = "urn:altinn:resource:" + seedData[1];
+                    break;
+                default:
+                    Console.WriteLine($"Field: {seedData.First()}, is not supported (yet)");
+                    break;
+            }
+        }
+    }
+
 
 }
