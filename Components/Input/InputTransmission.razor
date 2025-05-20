@@ -103,6 +103,7 @@
 
                 <td>
                     <button type="button" @onclick="() => RemoveTransmission(transmission)">Remove</button>
+                    <button type="button" @onclick="() => AddSubTransmission(transmission)">Add Sub</button>
                 </td>
             </tr>
 
@@ -129,6 +130,30 @@
             AuthorizationAttribute = null!,
             ExtendedType = null!,
             RelatedTransmissionId = null,
+            Type = DialogsEntitiesTransmissions_DialogTransmissionType.Information,
+            Sender = new V1ServiceOwnerCommonActors_Actor(),
+            Content = new V1ServiceOwnerDialogsCommandsCreate_TransmissionContent
+            {
+                Title = new V1CommonContent_ContentValue(),
+                Summary = new V1CommonContent_ContentValue(),
+                ContentReference = new V1CommonContent_ContentValue()
+            },
+            Attachments = []
+        });
+        ValueChanged.InvokeAsync(Value);
+
+    }
+
+    private void AddSubTransmission(V1ServiceOwnerDialogsCommandsCreate_Transmission parent)
+    {
+        parent.Id ??= Guid.CreateVersion7();
+        Value!.Add(new V1ServiceOwnerDialogsCommandsCreate_Transmission
+        {
+            Id = null,
+            CreatedAt = default,
+            AuthorizationAttribute = null!,
+            ExtendedType = null!,
+            RelatedTransmissionId = parent.Id,
             Type = DialogsEntitiesTransmissions_DialogTransmissionType.Information,
             Sender = new V1ServiceOwnerCommonActors_Actor(),
             Content = new V1ServiceOwnerDialogsCommandsCreate_TransmissionContent

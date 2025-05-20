@@ -5,7 +5,7 @@
 
     <div>
         <label>Actor Type</label>
-        <InputSelect @bind-Value="@Value!.ActorType">
+        <InputSelect @bind-Value="@_value.ActorType" @bind-Value:after="NotifyValueChanged">
             @foreach (var type in Enum.GetValues<Actors_ActorType>())
             {
                 <option value="@type">@type</option>
@@ -14,30 +14,59 @@
         <ValidationMessage For="@(() => Value.ActorType)"/>
 
         <label>Actor Name</label>
-        <InputText @bind-Value="@Value.ActorName"></InputText>
+        <InputText @bind-Value="@_value.ActorName" @bind-Value:after="NotifyValueChanged"></InputText>
         <ValidationMessage For="@(() => Value.ActorName)"></ValidationMessage>
 
         <label>Actor Id</label>
-        <InputText @bind-Value="@Value.ActorId"></InputText>
+        <InputText @bind-Value="@_value.ActorId" @bind-Value:after="NotifyValueChanged"></InputText>
         <ValidationMessage For="@(() => Value.ActorId)"></ValidationMessage>
     </div>
 </fieldset>
 
 @code {
 
-
+    private V1ServiceOwnerCommonActors_Actor _value = new();
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
-        Value ??= new V1ServiceOwnerCommonActors_Actor();
-        Value.ActorType = default;
-        Value.ActorId = "";
-        Value.ActorName = "";
+        if (Value == null)
+        {
+            Value = new V1ServiceOwnerCommonActors_Actor
+            {
+                ActorType = default,
+                ActorId = "",
+                ActorName = ""
+            };
+        }
+        else
+        {
+            _value = Value;
+        }
     }
     protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out V1ServiceOwnerCommonActors_Actor result, [NotNullWhen(false)] out string? validationErrorMessage)
     {
         result = CurrentValue ?? new V1ServiceOwnerCommonActors_Actor();
         validationErrorMessage = "";
         return true;
+    }
+
+    private void NotifyValueChanged()
+    {
+        Value = _value;
+
+        if (string.IsNullOrWhiteSpace(_value.ActorId))
+        {
+            Value.ActorId = null!;
+        }
+
+        if (string.IsNullOrWhiteSpace(_value.ActorName))
+        {
+            Value.ActorName = null!;
+        }
+        ValueChanged.InvokeAsync(Value);
+        Console.WriteLine($"Value changed: {Value}");
+
+        EditContext.NotifyFieldChanged(FieldIdentifier);
+
     }
 }
