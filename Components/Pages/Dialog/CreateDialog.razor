@@ -286,10 +286,19 @@
     protected override void OnInitialized()
     {
         base.OnInitialized();
+        var deleteButton = new V1ServiceOwnerDialogsCommandsCreate_GuiAction();
+        deleteButton.Prefill(GuiActionPrefill.DeleteButton);
+
         CreateDialogCommand.Attachments = [];
-        CreateDialogCommand.SearchTags = [];
+        CreateDialogCommand.SearchTags =
+        [
+            new V1ServiceOwnerDialogsCommandsCreate_Tag
+            {
+                Value = "SOv0.1"
+            }
+        ];
         CreateDialogCommand.Transmissions = [];
-        CreateDialogCommand.GuiActions = [];
+        CreateDialogCommand.GuiActions = [deleteButton];
         CreateDialogCommand.ApiActions = [];
         CreateDialogCommand.Activities = [];
     }
@@ -375,37 +384,39 @@
             var seedData = part.Split("=", 2);
             var fieldData = seedData.First().Split(":");
             // Amund: Extra value, (title:en => en) to create different lang of titles
-            string? firstVal = null;
+            string? param1 = null;
             if (fieldData.Length >= 2)
             {
-                firstVal = fieldData[1];
+                param1 = fieldData[1];
             }
+
+            var value = seedData[1];
             switch (fieldData.First().ToLowerInvariant())
             {
                 case "title":
-                    CreateDialogCommand.Content.Title.Add(seedData[1], firstVal);
+                    CreateDialogCommand.Content.Title.Add(value, param1);
                     break;
                 case "summary":
-                    CreateDialogCommand.Content.Summary.Add(seedData[1], firstVal);
+                    CreateDialogCommand.Content.Summary.Add(value, param1);
                     break;
                 case "non-sensitive-title":
-                    CreateDialogCommand.Content.NonSensitiveTitle.Add(seedData[1], firstVal);
+                    CreateDialogCommand.Content.NonSensitiveTitle.Add(value, param1);
                     break;
                 case "non-sensitive-summary":
-                    CreateDialogCommand.Content.NonSensitiveSummary.Add(seedData[1], firstVal);
+                    CreateDialogCommand.Content.NonSensitiveSummary.Add(value, param1);
                     break;
                 case "sender":
                 case "sendername":
-                    CreateDialogCommand.Content.SenderName.Add(seedData[1], firstVal);
+                    CreateDialogCommand.Content.SenderName.Add(value, param1);
                     break;
                 case "additional-info":
-                    CreateDialogCommand.Content.AdditionalInfo.Add(seedData[1], firstVal);
+                    CreateDialogCommand.Content.AdditionalInfo.Add(value, param1);
                     break;
                 case "main-content-reference":
-                    CreateDialogCommand.Content.MainContentReference.Add(seedData[1], firstVal);
+                    CreateDialogCommand.Content.MainContentReference.Add(value, param1);
                     break;
                 case "resource":
-                    CreateDialogCommand.ServiceResource = "urn:altinn:resource:" + seedData[1];
+                    CreateDialogCommand.ServiceResource = "urn:altinn:resource:" + value;
                     break;
                 default:
                     Console.WriteLine($"Field: {seedData.First()}, is not supported (yet)");
