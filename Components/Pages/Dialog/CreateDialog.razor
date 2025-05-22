@@ -336,38 +336,41 @@
                 var getDialog = await ServiceOwnerApi.V1ServiceOwnerDialogsGetDialog(guid, CreateDialogCommand.Party);
                 if (getDialog.IsSuccessStatusCode)
                 {
-                    var temp = getDialog.Content;
-                    // temp.Transmissions.First().Id;
-                }
+                    var transmissionIds = getDialog.Content!.Transmissions.Select(x => x.Id).ToList();
+                    var transmissionsStorageResult = await ProtectedLocalStore.GetAsync<List<Dictionary<string, List<Guid>>>>("transmissions");
 
-            }
-            var dialogs = await ProtectedLocalStore.GetAsync<List<string>>("dialogs");
-            if (dialogs.Success)
-            {
-                if (dialogs.Value != null)
-                {
+                    var transmissions = new List<Dictionary<string, List<Guid>>>();
 
-                    dialogs.Value.Add(guidString);
-                    _ = ProtectedLocalStore.SetAsync("dialogs", dialogs.Value);
-                }
-                else
-                {
-                    _ = ProtectedLocalStore.SetAsync("dialogs", new List<string>()
+                    if (transmissionsStorageResult is { Success: true, Value: not null })
                     {
-                        guidString
-                    });
-                }
-            }
-            else
-            {
+                        transmissions = transmissionsStorageResult.Value;
+                    }
 
-                _ = ProtectedLocalStore.SetAsync("dialogs", new List<string>()
-                {
-                    guidString
-                });
+                    transmissions.Add(new Dictionary<string, List<Guid>>()
+                    {
+                        {
+                            guidString, transmissionIds
+                        }
+                    });
+                    _ = ProtectedLocalStore.SetAsync("transmissions", transmissions);
+                }
+
             }
+
+            var dialogStorageResult = await ProtectedLocalStore.GetAsync<List<string>>("dialogs");
+            List<string> dialogs = [];
+
+            if (dialogStorageResult is { Success: true, Value: not null })
+            {
+                dialogs = dialogStorageResult.Value;
+            }
+
+            dialogs.Add(guidString);
+
+            _ = ProtectedLocalStore.SetAsync("dialogs", dialogs);
         }
     }
+
     private void Prefill()
     {
         CreateDialogCommand.Prefill(DialogPrefill.Skattemeldig);
