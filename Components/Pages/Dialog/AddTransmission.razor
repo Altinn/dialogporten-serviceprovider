@@ -1,0 +1,67 @@
+@page "/dialog/transmission/add"
+@inject ProtectedLocalStorage ProtectedLocalStore
+@inject IServiceownerApi ServiceOwnerApi
+@rendermode InteractiveServer
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+<h3>AddTransmission</h3>
+
+<EditForm Model="CreateTransmissionCommand" OnValidSubmit="Submit">
+
+    <InputSelect @bind-Value="@SelectedDialog">
+        <option value="@Guid.Empty" disabled selected>Select your option</option>
+        @foreach (var dialogId in _dialogs.Keys)
+        {
+            <option value=@(dialogId)>@dialogId</option>
+        }
+    </InputSelect>
+
+    <InputSelect @bind-Value="@SelectedTransmission">
+
+        <option value="@Guid.Empty" disabled selected>Select your option</option>
+        @if (SelectedDialog != Guid.Empty)
+        {
+            @foreach (var transmissionId in Transmissions)
+            {
+                <option value=@(transmissionId)>@transmissionId</option>
+            }
+        }
+    </InputSelect>
+
+    <button type="submit">Submit</button>
+</EditForm>
+
+@code {
+    private Dictionary<Guid, List<Guid>> _dialogs = null!;
+    private Guid SelectedDialog { get; set; } = Guid.Empty;
+    private Guid SelectedTransmission { get; set; } = Guid.Empty;
+    private List<Guid> Transmissions => _dialogs[SelectedDialog];
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        _dialogs = [];
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender)
+        {
+            var temp = await ProtectedLocalStore.GetAsync<Dictionary<Guid, List<Guid>>>("transmissions");
+            Console.WriteLine("Getting Dialogs with transmissions from localstorage");
+            if (temp.Success)
+            {
+                Console.WriteLine(temp.Value!.Count());
+                _dialogs = temp.Value!;
+                StateHasChanged();
+            }
+        }
+    }
+    public V1ServiceOwnerDialogsCommandsCreate_Transmission CreateTransmissionCommand { get; } = new();
+    private async Task Submit()
+    {
+        Console.WriteLine(CreateTransmissionCommand);
+        var transmissionsStorageResult = await ProtectedLocalStore.GetAsync<Dictionary<Guid, List<Guid>>>("transmissions");
+    }
+
+}
