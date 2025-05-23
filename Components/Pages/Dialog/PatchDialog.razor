@@ -87,8 +87,8 @@
     };
 
     private ICollection<JsonPatchOperations_Operation>? PatchDocuments { get; set; }
-    private string? DialogId { get; set; } = "";
-    private List<string?> _dialogs = [];
+    private Guid DialogId { get; set; } = Guid.Empty;
+    private List<Guid> _dialogs = [];
     private string _header = "";
     private string? _message = "";
     private bool _showPopUp = false;
@@ -103,7 +103,7 @@
         await base.OnAfterRenderAsync(firstRender);
         if (firstRender)
         {
-            var temp = await ProtectedLocalStore.GetAsync<List<string?>>("dialogs");
+            var temp = await ProtectedLocalStore.GetAsync<List<Guid>>("dialogs");
             Console.WriteLine("Getting Dialogs from localstorage");
             if (temp.Success)
             {
@@ -132,9 +132,8 @@
     private async Task Submit()
     {
         if (PatchDocuments is null) throw new UnreachableException();
-        if (Guid.TryParse(DialogId, out var guid))
         {
-            var response = await ServiceOwnerApi.V1ServiceOwnerDialogsPatchDialog(guid, PatchDocuments, null);
+            var response = await ServiceOwnerApi.V1ServiceOwnerDialogsPatchDialog(DialogId, PatchDocuments, null);
 
             _header = response.StatusCode.ToString();
             _message = response.IsSuccessStatusCode ? "No Content" : response.Error.Content;
