@@ -114,6 +114,66 @@ public static class PrefillExtensions
                 enumerator.Current.Priority = DialogsEntitiesActions_DialogGuiActionPriority.Secondary;
                 enumerator.Dispose();
 
+                // Amund: temp
+                dialog.Transmissions =
+                [
+                    new V1ServiceOwnerDialogsCommandsCreate_Transmission
+                    {
+                        Id = null,
+                        CreatedAt = default,
+                        AuthorizationAttribute = null!,
+                        ExtendedType = null!,
+                        RelatedTransmissionId = null,
+                        Type = DialogsEntitiesTransmissions_DialogTransmissionType.Information,
+                        Sender = new V1ServiceOwnerCommonActors_Actor
+                        {
+                            ActorType = Actors_ActorType.ServiceOwner,
+                            ActorName = null!,
+                            ActorId = null!
+                        },
+                        Content = new V1ServiceOwnerDialogsCommandsCreate_TransmissionContent
+                        {
+                            Title = new V1CommonContent_ContentValue
+                            {
+                                Value =
+                                [
+                                    new V1CommonLocalizations_Localization
+                                    {
+                                        Value = "no",
+                                        LanguageCode = "nb"
+                                    }
+                                ],
+                                MediaType = "text/plain",
+                            },
+                            Summary = new V1CommonContent_ContentValue
+                            {
+                                Value =
+                                [
+                                    new V1CommonLocalizations_Localization
+                                    {
+                                        Value = "no",
+                                        LanguageCode = "nb"
+                                    }
+                                ],
+                                MediaType = "text/plain",
+                            },
+                            ContentReference = new V1CommonContent_ContentValue
+                            {
+                                Value =
+                                [
+                                    new V1CommonLocalizations_Localization
+                                    {
+                                        Value = "http://nrk.no",
+                                        LanguageCode = "nb"
+                                    }
+                                ],
+                                MediaType = "application/vnd.dialogporten.frontchannelembed+json;type=markdown"
+                            }
+                        },
+                        Attachments = []
+                    }
+                ];
+
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(prefillType), prefillType, null);
