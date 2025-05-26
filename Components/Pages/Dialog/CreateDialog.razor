@@ -3,6 +3,7 @@
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Org.BouncyCastle.Security
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inject IServiceownerApi ServiceOwnerApi
 @rendermode InteractiveServer
@@ -425,12 +426,39 @@
                 case "attachment":
                     ParseAttachment(fieldData, value);
                     break;
+                case "guiaction":
+                    ParseGuiAction(fieldData, value);
+                    break;
                 default:
                     Console.WriteLine($"Field: {seedData.First()}, is not supported (yet)");
                     break;
             }
         }
         StateHasChanged();
+    }
+    private void ParseGuiAction(string[] data, string value)
+    {
+        // Amund: 
+        // hvor mange trenges det egt? skal det bare hardkodes inn et bestemt antall?
+        // 3? eller trengs det noen gang flere?
+        // seperat liste med actions, som index henter ifra,
+        // om indexen blir brukt så blir også actoin fra den idexen lagt inn i actions?
+        // Da er det ikke viktig hvilken rekkefølge ting har,
+        // om da det blir brukt action:200 så må da listen bli 200 lang sett en max på typ 5?
+        // Dette begynner å bli komplekst. Skal dette dras ut i egen fil?
+        if (!int.TryParse(data[1], out var index))
+        {
+            // Amund: WOO husk WOO
+            throw new InvalidParameterException();
+        }
+        var field = data[2];
+        switch (field)
+        {
+            case "id":
+
+                break;
+
+        }
     }
     private void ParseAttachment(string[] data, string value)
     {
