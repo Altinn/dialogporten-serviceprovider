@@ -422,10 +422,63 @@
                 case "resource":
                     CreateDialogCommand.ServiceResource = "urn:altinn:resource:" + value;
                     break;
+                case "attachment":
+                    ParseAttachment(fieldData, value);
+                    break;
                 default:
                     Console.WriteLine($"Field: {seedData.First()}, is not supported (yet)");
                     break;
             }
         }
+        StateHasChanged();
+    }
+    private void ParseAttachment(string[] data, string value)
+    {
+
+        // Amund: Might add way to support multiple
+
+        // if (data.Length < 2)
+        // {
+        //     return;
+        // }
+        // if (!int.TryParse(data.First(), out var attachmentIndex))
+        // {
+        //     return;
+        // }
+        var field = data[1];
+
+        var attachment = CreateDialogCommand.Attachments.FirstOrDefault() ?? new V1ServiceOwnerDialogsCommandsCreate_Attachment();
+        var attachmentUrl = attachment.Urls?.FirstOrDefault() ?? new V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl();
+        switch (field)
+        {
+            case "id":
+                Guid.TryParse(value, out var guid);
+                attachment.Id = guid;
+                break;
+            case "url":
+                if (Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var uri))
+                {
+                    attachmentUrl.Url = uri;
+                }
+                break;
+            case "mediatype":
+                attachmentUrl.MediaType = value;
+                break;
+            case "type":
+                attachmentUrl.ConsumerType = Enum.Parse<Attachments_AttachmentUrlConsumerType>(value);
+                break;
+            case "name":
+                var local = attachment.DisplayName?.FirstOrDefault() ?? new V1CommonLocalizations_Localization();
+                local.Value = value;
+                local.LanguageCode = "nb";
+                attachment.DisplayName = [local];
+                break;
+            default:
+                break;
+        }
+
+        attachment.Urls = [attachmentUrl];
+        CreateDialogCommand.Attachments = [attachment];
+
     }
 }
