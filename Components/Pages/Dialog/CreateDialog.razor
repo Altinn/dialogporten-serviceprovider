@@ -1,4 +1,5 @@
 @page "/dialog/create"
+@using System.Security.Policy
 @using Altinn.ApiClients.Dialogporten.Features.V1
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
@@ -453,20 +454,82 @@
             // Amund: WOO husk WOO
             throw new InvalidParameterException();
         }
+
+        var guiActions = CreateDialogCommand.GuiActions.ToList();
+        while (guiActions.Count < index)
+        {
+            guiActions.Add(new V1ServiceOwnerDialogsCommandsCreate_GuiAction
+            {
+                Title = [],
+                Prompt = []
+            });
+        }
+        var guiAction = guiActions[index - 1];
         var field = data[2];
         switch (field)
         {
             case "id":
+                Guid.TryParse(value, out var guid);
+                guiAction.Id = guid;
+                break;
+            case "action":
+                guiAction.Action = value;
+                break;
+            case "authorizationattribute":
+                guiAction.AuthorizationAttribute = value;
+                break;
+            case "url":
+                if (Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var uri))
+                {
+                    guiAction.Url = uri;
+                }
+                break;
+            case "isdeletedialogaction":
+                if (bool.TryParse(value, out var result))
+                {
+                    guiAction.IsDeleteDialogAction = result;
+                }
+                break;
 
+            case "httpmethod":
+                if (Enum.TryParse<Http_HttpVerb>(value, out var httpMethod))
+                {
+                    guiAction.HttpMethod = httpMethod;
+                }
+                break;
+            case "priority":
+                if (Enum.TryParse<DialogsEntitiesActions_DialogGuiActionPriority>(value, out var priority))
+                {
+                    guiAction.Priority = priority;
+                }
+                break;
+            case "title":
+                var titleLang = data.Length > 3 ? data[3] : "nb";
+                var title = new V1CommonLocalizations_Localization
+                {
+                    Value = value,
+                    LanguageCode = titleLang
+                };
+                guiAction.Title = guiAction.Title.Append(title).ToList();
+                break;
+            case "prompt":
+                var promptLang = data.Length > 3 ? data[3] : "nb";
+                var prompt = new V1CommonLocalizations_Localization
+                {
+                    Value = value,
+                    LanguageCode = promptLang
+                };
+                guiAction.Prompt = guiAction.Prompt.Append(prompt).ToList();
                 break;
 
         }
+        CreateDialogCommand.GuiActions = guiActions;
     }
     private void ParseAttachment(string[] data, string value)
     {
-
         if (!int.TryParse(data[1], out var attachmentIndex))
         {
+            Console.WriteLine($"data[1]: {data[1]} could not be parsed to int");
             return;
         }
 
@@ -475,7 +538,8 @@
         {
             attachments.Add(new V1ServiceOwnerDialogsCommandsCreate_Attachment
             {
-                Urls = new List<V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl>()
+                Urls = [],
+                DisplayName = []
             });
         }
         var attachment = attachments[attachmentIndex - 1];
@@ -500,11 +564,15 @@
             case "type":
                 attachmentUrl.ConsumerType = Enum.Parse<Attachments_AttachmentUrlConsumerType>(value);
                 break;
+            case "displayname":
             case "name":
-                var local = attachment.DisplayName?.FirstOrDefault() ?? new V1CommonLocalizations_Localization();
-                local.Value = value;
-                local.LanguageCode = "nb";
-                attachment.DisplayName = [local];
+                var nameLang = data.Length > 3 ? data[3] : "nb";
+                var name = new V1CommonLocalizations_Localization
+                {
+                    Value = value,
+                    LanguageCode = nameLang
+                };
+                attachment.DisplayName = attachment.DisplayName.Append(name).ToList();
                 break;
             default:
                 break;
