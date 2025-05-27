@@ -388,7 +388,6 @@
         {
             var seedData = part.Split("=", 2);
             var fieldData = seedData.First().Split(":");
-            // Amund: Extra value, (title:en => en) to create different lang of titles
             string? param1 = null;
             if (fieldData.Length >= 2)
             {
@@ -441,6 +440,9 @@
                     break;
                 case "apiaction":
                     ParseApiAction(fieldData, value);
+                    break;
+                case "activity":
+                    ParseActivity(fieldData, value);
                     break;
                 default:
                     Console.WriteLine($"Field: {seedData.First()}, is not supported (yet)");
@@ -512,7 +514,7 @@
                     Value = value,
                     LanguageCode = titleLang
                 };
-                guiAction.Title = guiAction.Title.Append(title).ToList();
+                guiAction.Title.Add(title);
                 break;
             case "prompt":
                 var promptLang = data.Length > 3 ? data[3] : "nb";
@@ -521,7 +523,7 @@
                     Value = value,
                     LanguageCode = promptLang
                 };
-                guiAction.Prompt = guiAction.Prompt.Append(prompt).ToList();
+                guiAction.Prompt.Add(prompt);
                 break;
 
         }
@@ -574,7 +576,7 @@
                     Value = value,
                     LanguageCode = nameLang
                 };
-                attachment.DisplayName = attachment.DisplayName.Append(name).ToList();
+                attachment.DisplayName.Add(name);
                 break;
             default:
                 break;
@@ -839,6 +841,106 @@
         }
 
         apiAction.Endpoints = endpoints;
+    }
+
+    private void ParseActivity(string[] data, string value)
+    {
+        if (!int.TryParse(data[1], out var activityIndex))
+        {
+            Console.WriteLine($"data[1]: {data[1]} could not be parsed to int");
+            return;
+        }
+
+        var activities = CreateDialogCommand.Activities.ToList();
+        while (activities.Count < activityIndex)
+        {
+            activities.Add(new V1ServiceOwnerDialogsCommandsCreate_Activity
+            {
+                PerformedBy = new V1ServiceOwnerCommonActors_Actor(),
+                Description = []
+            });
+        }
+        var activity = activities[activityIndex - 1];
+        var field = data[2];
+
+        switch (field)
+        {
+            case "id":
+                Guid.TryParse(value, out var guid);
+                activity.Id = guid;
+                break;
+            case "createdat":
+                if (DateTimeOffset.TryParse(value, out var createdAt))
+                {
+                    activity.CreatedAt = createdAt;
+                }
+                break;
+            case "extendedtype":
+                if (Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var extendedType))
+                {
+                    activity.ExtendedType = extendedType;
+                }
+                break;
+            case "type":
+                if (Enum.TryParse<DialogsEntitiesActivities_DialogActivityType>(value, out var type))
+                {
+                    activity.Type = type;
+                }
+                break;
+            case "transmissionid":
+                if (Guid.TryParse(value, out var transmissionId))
+                {
+                    activity.TransmissionId = transmissionId;
+                }
+                break;
+            case "performedby":
+                ParseActivityPerformedBy(data, value, activity);
+                break;
+            case "description":
+                var descriptionLang = data.Length > 3 ? data[3] : "nb";
+                var description = new V1CommonLocalizations_Localization
+                {
+                    Value = value,
+                    LanguageCode = descriptionLang
+                };
+                activity.Description = activity.Description.Append(description).ToList();
+                break;
+            default:
+                Console.WriteLine($"Field: {field} is not supported for Activity (yet)");
+                break;
+        }
+
+        CreateDialogCommand.Activities = activities;
+    }
+
+    private void ParseActivityPerformedBy(string[] data, string value, V1ServiceOwnerDialogsCommandsCreate_Activity activity)
+    {
+        if (data.Length < 4)
+        {
+            Console.WriteLine("Not enough parameters for Activity PerformedBy");
+            return;
+        }
+
+        var performedByField = data[3];
+
+        switch (performedByField)
+        {
+            case "actortype":
+                if (Enum.TryParse<Actors_ActorType>(value, out var actorType))
+                {
+                    activity.PerformedBy.ActorType = actorType;
+                }
+                break;
+            case "actorid":
+                activity.PerformedBy.ActorId = value;
+                break;
+            case "actorname":
+                activity.PerformedBy.ActorName = value;
+                break;
+            default:
+                Console.WriteLine($"PerformedBy field: {performedByField} is not supported (yet)");
+                break;
+        }
     }
 }
         
