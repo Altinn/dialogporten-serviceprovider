@@ -445,299 +445,65 @@
         if (CreateDialogCommand.Content.Title?.Value != null)
         {
             seedParts.Add($"title:mediatype={CreateDialogCommand.Content.Title.MediaType}");
-            foreach (var localization in CreateDialogCommand.Content.Title.Value)
-            {
-                seedParts.Add($"title:{localization.LanguageCode}={localization.Value}");
-            }
+            seedParts
+                .AddRange(CreateDialogCommand.Content.Title.Value
+                                             .Select(localization =>
+                                                 $"title:{localization.LanguageCode}={localization.Value}"));
         }
 
         if (CreateDialogCommand.Content.Summary?.Value != null)
         {
-            foreach (var localization in CreateDialogCommand.Content.Summary.Value)
-            {
-                seedParts.Add($"summary:{localization.LanguageCode}={localization.Value}");
-            }
+            seedParts.AddRange(CreateDialogCommand.Content.Summary.Value
+                                                  .Select(localization =>
+                                                      $"summary:{localization.LanguageCode}={localization.Value}"));
         }
 
         if (CreateDialogCommand.Content.NonSensitiveTitle?.Value != null)
         {
-            foreach (var localization in CreateDialogCommand.Content.NonSensitiveTitle.Value)
-            {
-                seedParts.Add($"non-sensitive-title:{localization.LanguageCode}={localization.Value}");
-            }
+            seedParts
+                .AddRange(CreateDialogCommand.Content.NonSensitiveTitle.Value
+                                             .Select(localization =>
+                                                 $"non-sensitive-title:{localization.LanguageCode}={localization.Value}"));
         }
 
         if (CreateDialogCommand.Content.NonSensitiveSummary?.Value != null)
         {
-            foreach (var localization in CreateDialogCommand.Content.NonSensitiveSummary.Value)
-            {
-                seedParts.Add($"non-sensitive-summary:{localization.LanguageCode}={localization.Value}");
-            }
+            seedParts.AddRange(CreateDialogCommand.Content.NonSensitiveSummary.Value
+                                                  .Select(localization =>
+                                                      $"non-sensitive-summary:{localization.LanguageCode}={localization.Value}"));
         }
 
         if (CreateDialogCommand.Content.SenderName?.Value != null)
         {
-            foreach (var localization in CreateDialogCommand.Content.SenderName.Value)
-            {
-                seedParts.Add($"sendername:{localization.LanguageCode}={localization.Value}");
-            }
+            seedParts.AddRange(CreateDialogCommand.Content.SenderName.Value
+                                                  .Select(localization =>
+                                                      $"sendername:{localization.LanguageCode}={localization.Value}"));
         }
 
         if (CreateDialogCommand.Content.AdditionalInfo?.Value != null)
         {
-            foreach (var localization in CreateDialogCommand.Content.AdditionalInfo.Value)
-            {
-                seedParts.Add($"additional-info:{localization.LanguageCode}={localization.Value}");
-            }
+            seedParts.AddRange(CreateDialogCommand.Content.AdditionalInfo.Value
+                                                  .Select(localization =>
+                                                      $"additional-info:{localization.LanguageCode}={localization.Value}"));
         }
 
         if (CreateDialogCommand.Content.ExtendedStatus?.Value != null)
         {
-            foreach (var localization in CreateDialogCommand.Content.ExtendedStatus.Value)
-            {
-                seedParts.Add($"extended-status:{localization.LanguageCode}={localization.Value}");
-            }
+            seedParts.AddRange(CreateDialogCommand.Content.ExtendedStatus.Value
+                                                  .Select(localization =>
+                                                      $"extended-status:{localization.LanguageCode}={localization.Value}"));
         }
 
         if (CreateDialogCommand.Content.MainContentReference?.Value != null)
         {
-            foreach (var localization in CreateDialogCommand.Content.MainContentReference.Value)
-            {
-                seedParts.Add($"main-content-reference:{localization.LanguageCode}={localization.Value}");
-            }
+            seedParts.AddRange(CreateDialogCommand.Content.MainContentReference.Value
+                                                  .Select(localization =>
+                                                      $"main-content-reference:{localization.LanguageCode}={localization.Value}"));
         }
 
         // Collections
         // Search Tags
-        foreach (var tag in CreateDialogCommand.SearchTags)
-        {
-            seedParts.Add($"searchtag={tag.Value}");
-        }
-
-        // Attachments
-        // int attachmentIndex = 1;
-        // foreach (var attachment in CreateDialogCommand.Attachments)
-        // {
-        //     if (attachment.Title?.Value != null)
-        //     {
-        //         foreach (var localization in attachment.Title.Value)
-        //         {
-        //             seedParts.Add($"attachment:{attachmentIndex}:title:{localization.LanguageCode}={localization.Value}");
-        //         }
-        //     }
-        //
-        //     if (!string.IsNullOrEmpty(attachment.FileName))
-        //         seedParts.Add($"attachment:{attachmentIndex}:filename={attachment.FileName}");
-        //
-        //     if (attachment.Url != null)
-        //         seedParts.Add($"attachment:{attachmentIndex}:url={attachment.Url}");
-        //
-        //     attachmentIndex++;
-        // }
-        //
-        // // GuiActions
-        // int guiActionIndex = 1;
-        // foreach (var guiAction in CreateDialogCommand.GuiActions)
-        // {
-        //     if (!string.IsNullOrEmpty(guiAction.Name))
-        //         seedParts.Add($"guiaction:{guiActionIndex}:name={guiAction.Name}");
-        //
-        //     if (guiAction.Title != null)
-        //     {
-        //         foreach (var localization in guiAction.Title)
-        //         {
-        //             seedParts.Add($"guiaction:{guiActionIndex}:title:{localization.LanguageCode}={localization.Value}");
-        //         }
-        //     }
-        //
-        //     if (guiAction.Prompt != null)
-        //     {
-        //         foreach (var localization in guiAction.Prompt)
-        //         {
-        //             seedParts.Add($"guiaction:{guiActionIndex}:prompt:{localization.LanguageCode}={localization.Value}");
-        //         }
-        //     }
-        //
-        //     if (guiAction.Url != null)
-        //         seedParts.Add($"guiaction:{guiActionIndex}:url={guiAction.Url}");
-        //
-        //     if (!string.IsNullOrEmpty(guiAction.Action))
-        //         seedParts.Add($"guiaction:{guiActionIndex}:action={guiAction.Action}");
-        //
-        //     seedParts.Add($"guiaction:{guiActionIndex}:httpmethod={guiAction.HttpMethod}");
-        //
-        //     if (guiAction.IsDeleteDialogAction)
-        //         seedParts.Add($"guiaction:{guiActionIndex}:isdeleteaction=true");
-        //
-        //     guiActionIndex++;
-        // }
-        //
-        // // ApiActions
-        // int apiActionIndex = 1;
-        // foreach (var apiAction in CreateDialogCommand.ApiActions)
-        // {
-        //     if (!string.IsNullOrEmpty(apiAction.Name))
-        //         seedParts.Add($"apiaction:{apiActionIndex}:name={apiAction.Name}");
-        //
-        //     if (!string.IsNullOrEmpty(apiAction.Action))
-        //         seedParts.Add($"apiaction:{apiActionIndex}:action={apiAction.Action}");
-        //
-        //     if (!string.IsNullOrEmpty(apiAction.AuthorizationAttribute))
-        //         seedParts.Add($"apiaction:{apiActionIndex}:authorizationattribute={apiAction.AuthorizationAttribute}");
-        //
-        //     int endpointIndex = 1;
-        //     foreach (var endpoint in apiAction.Endpoints)
-        //     {
-        //         if (endpoint.Url != null)
-        //             seedParts.Add($"apiaction:{apiActionIndex}:endpoint:{endpointIndex}:url={endpoint.Url}");
-        //
-        //         seedParts.Add($"apiaction:{apiActionIndex}:endpoint:{endpointIndex}:httpmethod={endpoint.HttpMethod}");
-        //
-        //         if (!string.IsNullOrEmpty(endpoint.Version))
-        //             seedParts.Add($"apiaction:{apiActionIndex}:endpoint:{endpointIndex}:version={endpoint.Version}");
-        //
-        //         if (endpoint.DocumentationUrl != null)
-        //             seedParts.Add($"apiaction:{apiActionIndex}:endpoint:{endpointIndex}:documentationurl={endpoint.DocumentationUrl}");
-        //
-        //         if (endpoint.RequestSchema != null)
-        //             seedParts.Add($"apiaction:{apiActionIndex}:endpoint:{endpointIndex}:requestschema={endpoint.RequestSchema}");
-        //
-        //         if (endpoint.ResponseSchema != null)
-        //             seedParts.Add($"apiaction:{apiActionIndex}:endpoint:{endpointIndex}:responseschema={endpoint.ResponseSchema}");
-        //
-        //         if (endpoint.Deprecated)
-        //             seedParts.Add($"apiaction:{apiActionIndex}:endpoint:{endpointIndex}:deprecated=true");
-        //
-        //         if (endpoint.SunsetAt.HasValue)
-        //             seedParts.Add($"apiaction:{apiActionIndex}:endpoint:{endpointIndex}:sunsetat={endpoint.SunsetAt.Value:o}");
-        //
-        //         endpointIndex++;
-        //     }
-        //
-        //     apiActionIndex++;
-        // }
-        //
-        // // Activities
-        // int activityIndex = 1;
-        // foreach (var activity in CreateDialogCommand.Activities)
-        // {
-        //     if (activity.Id.HasValue)
-        //         seedParts.Add($"activity:{activityIndex}:id={activity.Id}");
-        //
-        //     if (activity.CreatedAt.HasValue)
-        //         seedParts.Add($"activity:{activityIndex}:createdat={activity.CreatedAt.Value:o}");
-        //
-        //     if (activity.ExtendedType != null)
-        //         seedParts.Add($"activity:{activityIndex}:extendedtype={activity.ExtendedType}");
-        //
-        //     seedParts.Add($"activity:{activityIndex}:type={activity.Type}");
-        //
-        //     if (activity.TransmissionId.HasValue)
-        //         seedParts.Add($"activity:{activityIndex}:transmissionid={activity.TransmissionId}");
-        //
-        //     if (activity.PerformedBy != null)
-        //     {
-        //         seedParts.Add($"activity:{activityIndex}:performedby:actortype={activity.PerformedBy.ActorType}");
-        //
-        //         if (!string.IsNullOrEmpty(activity.PerformedBy.ActorId))
-        //             seedParts.Add($"activity:{activityIndex}:performedby:actorid={activity.PerformedBy.ActorId}");
-        //
-        //         if (!string.IsNullOrEmpty(activity.PerformedBy.ActorName))
-        //             seedParts.Add($"activity:{activityIndex}:performedby:actorname={activity.PerformedBy.ActorName}");
-        //     }
-        //
-        //     if (activity.Description != null)
-        //     {
-        //         foreach (var description in activity.Description)
-        //         {
-        //             seedParts.Add($"activity:{activityIndex}:description:{description.LanguageCode}={description.Value}");
-        //         }
-        //     }
-        //
-        //     activityIndex++;
-        // }
-        //
-        // // Transmissions
-        // int transmissionIndex = 1;
-        // foreach (var transmission in CreateDialogCommand.Transmissions)
-        // {
-        //     if (transmission.Id.HasValue)
-        //         seedParts.Add($"transmission:{transmissionIndex}:id={transmission.Id}");
-        //
-        //     if (transmission.CreatedAt.HasValue)
-        //         seedParts.Add($"transmission:{transmissionIndex}:createdat={transmission.CreatedAt.Value:o}");
-        //
-        //     if (!string.IsNullOrEmpty(transmission.AuthorizationAttribute))
-        //         seedParts.Add($"transmission:{transmissionIndex}:authorizationattribute={transmission.AuthorizationAttribute}");
-        //
-        //     if (transmission.ExtendedType != null)
-        //         seedParts.Add($"transmission:{transmissionIndex}:extendedtype={transmission.ExtendedType}");
-        //
-        //     if (transmission.RelatedTransmissionId.HasValue)
-        //         seedParts.Add($"transmission:{transmissionIndex}:relatedtransmissionid={transmission.RelatedTransmissionId}");
-        //
-        //     seedParts.Add($"transmission:{transmissionIndex}:type={transmission.Type}");
-        //
-        //     if (transmission.Sender != null)
-        //     {
-        //         seedParts.Add($"transmission:{transmissionIndex}:sender:actortype={transmission.Sender.ActorType}");
-        //
-        //         if (!string.IsNullOrEmpty(transmission.Sender.ActorId))
-        //             seedParts.Add($"transmission:{transmissionIndex}:sender:actorid={transmission.Sender.ActorId}");
-        //
-        //         if (!string.IsNullOrEmpty(transmission.Sender.ActorName))
-        //             seedParts.Add($"transmission:{transmissionIndex}:sender:actorname={transmission.Sender.ActorName}");
-        //     }
-        //
-        //     if (transmission.Content != null)
-        //     {
-        //         if (transmission.Content.Title?.Value != null)
-        //         {
-        //             foreach (var localization in transmission.Content.Title.Value)
-        //             {
-        //                 seedParts.Add($"transmission:{transmissionIndex}:content:title:{localization.LanguageCode}={localization.Value}");
-        //             }
-        //         }
-        //
-        //         if (transmission.Content.Summary?.Value != null)
-        //         {
-        //             foreach (var localization in transmission.Content.Summary.Value)
-        //             {
-        //                 seedParts.Add($"transmission:{transmissionIndex}:content:summary:{localization.LanguageCode}={localization.Value}");
-        //             }
-        //         }
-        //
-        //         if (transmission.Content.ContentReference?.Value != null)
-        //         {
-        //             foreach (var localization in transmission.Content.ContentReference.Value)
-        //             {
-        //                 seedParts.Add($"transmission:{transmissionIndex}:content:contentreference:{localization.LanguageCode}={localization.Value}");
-        //             }
-        //         }
-        //     }
-        //
-        //     int attachmentIdx = 1;
-        //     foreach (var attachment in transmission.Attachments)
-        //     {
-        //         if (attachment.Id.HasValue)
-        //             seedParts.Add($"transmission:{transmissionIndex}:attachment:{attachmentIdx}:id={attachment.Id}");
-        //
-        //         if (attachment.DisplayName != null)
-        //             seedParts.Add($"transmission:{transmissionIndex}:attachment:{attachmentIdx}:displayname={attachment.DisplayName.Value}");
-        //
-        //         // For attachment URLs, we'd need to iterate through each URL if it's a collection
-        //         if (attachment.Urls != null)
-        //         {
-        //             foreach (var url in attachment.Urls)
-        //             {
-        //                 seedParts.Add($"transmission:{transmissionIndex}:attachment:{attachmentIdx}:url={url}");
-        //             }
-        //         }
-        //
-        //         attachmentIdx++;
-        //     }
-        //
-        //     transmissionIndex++;
+        seedParts.AddRange(CreateDialogCommand.SearchTags.Select(tag => $"searchtag={tag.Value}"));
 
         return string.Join(";", seedParts);
     }
@@ -1251,7 +1017,7 @@
     }
 
 
-    private void ParseApiActionEndpoint(IEnumerator<string> data,
+    private static void ParseApiActionEndpoint(IEnumerator<string> data,
         string value,
         V1ServiceOwnerDialogsCommandsCreate_ApiAction apiAction)
     {
