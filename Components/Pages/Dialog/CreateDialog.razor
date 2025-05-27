@@ -424,6 +424,13 @@
                 case "resource":
                     CreateDialogCommand.ServiceResource = "urn:altinn:resource:" + value;
                     break;
+                case "searchtag":
+                    CreateDialogCommand.SearchTags.Add(
+                        new V1ServiceOwnerDialogsCommandsCreate_Tag
+                        {
+                            Value = value
+                        });
+                    break;
                 case "attachment":
                     ParseAttachment(fieldData, value);
                     break;
