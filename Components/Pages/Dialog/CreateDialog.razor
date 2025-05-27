@@ -444,6 +444,8 @@
         // seperat liste med actions, som index henter ifra,
         // om indexen blir brukt så blir også actoin fra den idexen lagt inn i actions?
         // Da er det ikke viktig hvilken rekkefølge ting har,
+        // men hvordan vet man om det er ny eller oppdatering? kanskje best å enforce rekkefølge? vartfall 1 før 2.
+        // Vartfall om 2 er brukt så blir det 2 stk
         // om da det blir brukt action:200 så må da listen bli 200 lang sett en max på typ 5?
         // Dette begynner å bli komplekst. Skal dette dras ut i egen fil?
         if (!int.TryParse(data[1], out var index))
@@ -463,20 +465,23 @@
     private void ParseAttachment(string[] data, string value)
     {
 
-        // Amund: Might add way to support multiple
+        if (!int.TryParse(data[1], out var attachmentIndex))
+        {
+            return;
+        }
 
-        // if (data.Length < 2)
-        // {
-        //     return;
-        // }
-        // if (!int.TryParse(data.First(), out var attachmentIndex))
-        // {
-        //     return;
-        // }
-        var field = data[1];
-
-        var attachment = CreateDialogCommand.Attachments.FirstOrDefault() ?? new V1ServiceOwnerDialogsCommandsCreate_Attachment();
+        var attachments = CreateDialogCommand.Attachments.ToList();
+        while (attachments.Count < attachmentIndex)
+        {
+            attachments.Add(new V1ServiceOwnerDialogsCommandsCreate_Attachment
+            {
+                Urls = new List<V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl>()
+            });
+        }
+        var attachment = attachments[attachmentIndex - 1];
         var attachmentUrl = attachment.Urls?.FirstOrDefault() ?? new V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl();
+
+        var field = data[2];
         switch (field)
         {
             case "id":
@@ -506,7 +511,7 @@
         }
 
         attachment.Urls = [attachmentUrl];
-        CreateDialogCommand.Attachments = [attachment];
+        CreateDialogCommand.Attachments = attachments;
 
     }
 }
