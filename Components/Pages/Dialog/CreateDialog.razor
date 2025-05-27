@@ -6,7 +6,7 @@
 @using Org.BouncyCastle.Security
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inject IServiceownerApi ServiceOwnerApi
-@inject IJSRuntime JS
+@inject IJSRuntime Js
 @rendermode InteractiveServer
 <h3>CreateDialogTest</h3>
 
@@ -232,7 +232,7 @@
     private async Task ExportSeedToClipboard()
     {
         var seed = ExportSeed();
-        await JS.InvokeVoidAsync("navigator.clipboard.writeText", seed);
+        await Js.InvokeVoidAsync("navigator.clipboard.writeText", seed);
         // You could also show a notification that the seed was copied
     }
     private void ValidateForm(object? sender, ValidationRequestedEventArgs e)
@@ -750,15 +750,11 @@
         foreach (var part in parts)
         {
             var seedData = part.Split("=", 2);
-            var fieldData = seedData.First().Split(":");
-            string? param1 = null;
-            if (fieldData.Length >= 2)
-            {
-                param1 = fieldData[1];
-            }
-
+            var fieldData = seedData.First().Split(":").AsEnumerable().GetEnumerator();
+            fieldData.MoveNext();
+            var field = fieldData.Current;
             var value = seedData[1];
-            switch (fieldData.First().ToLowerInvariant())
+            switch (field!.ToLowerInvariant())
             {
                 // Dialog fields
                 case "id":
@@ -849,36 +845,36 @@
                 // Content fields
                 case "title":
                     CreateDialogCommand.Content.Title ??= new V1CommonContent_ContentValue { Value = [] };
-                    AddLocalization(CreateDialogCommand.Content.Title, fieldData, value);
+                    AddContentValue(CreateDialogCommand.Content.Title, fieldData, value);
                     break;
                 case "summary":
                     CreateDialogCommand.Content.Summary ??= new V1CommonContent_ContentValue { Value = [] };
-                    AddLocalization(CreateDialogCommand.Content.Summary, fieldData, value);
+                    AddContentValue(CreateDialogCommand.Content.Summary, fieldData, value);
                     break;
                 case "non-sensitive-title":
                     CreateDialogCommand.Content.NonSensitiveTitle ??= new V1CommonContent_ContentValue { Value = [] };
-                    AddLocalization(CreateDialogCommand.Content.NonSensitiveTitle, fieldData, value);
+                    AddContentValue(CreateDialogCommand.Content.NonSensitiveTitle, fieldData, value);
                     break;
                 case "non-sensitive-summary":
                     CreateDialogCommand.Content.NonSensitiveSummary ??= new V1CommonContent_ContentValue { Value = [] };
-                    AddLocalization(CreateDialogCommand.Content.NonSensitiveSummary, fieldData, value);
+                    AddContentValue(CreateDialogCommand.Content.NonSensitiveSummary, fieldData, value);
                     break;
                 case "sender":
                 case "sendername":
                     CreateDialogCommand.Content.SenderName ??= new V1CommonContent_ContentValue { Value = [] };
-                    AddLocalization(CreateDialogCommand.Content.SenderName, fieldData, value);
+                    AddContentValue(CreateDialogCommand.Content.SenderName, fieldData, value);
                     break;
                 case "additional-info":
                     CreateDialogCommand.Content.AdditionalInfo ??= new V1CommonContent_ContentValue { Value = [] };
-                    AddLocalization(CreateDialogCommand.Content.AdditionalInfo, fieldData, value);
+                    AddContentValue(CreateDialogCommand.Content.AdditionalInfo, fieldData, value);
                     break;
                 case "extended-status":
                     CreateDialogCommand.Content.ExtendedStatus ??= new V1CommonContent_ContentValue { Value = [] };
-                    AddLocalization(CreateDialogCommand.Content.ExtendedStatus, fieldData, value);
+                    AddContentValue(CreateDialogCommand.Content.ExtendedStatus, fieldData, value);
                     break;
                 case "main-content-reference":
                     CreateDialogCommand.Content.MainContentReference ??= new V1CommonContent_ContentValue { Value = [] };
-                    AddLocalization(CreateDialogCommand.Content.MainContentReference, fieldData, value);
+                    AddContentValue(CreateDialogCommand.Content.MainContentReference, fieldData, value);
                     break;
 
                 // Collections
@@ -911,10 +907,13 @@
         }
         StateHasChanged();
     }
-    private static void AddLocalization(V1CommonContent_ContentValue contentValue, string[] fieldData, string value)
+    private static void AddContentValue(V1CommonContent_ContentValue contentValue, IEnumerator<string> fieldData, string value)
     {
-
-        var lang = fieldData.Length >= 2 ? fieldData[1] : "nb";
+        var lang = "nb";
+        if (fieldData.MoveNext())
+        {
+            lang = fieldData.Current;
+        }
         if (lang == "mediatype")
         {
             contentValue.MediaType = lang;
@@ -927,9 +926,14 @@
         });
     }
 
-    private void ParseGuiAction(string[] data, string value)
+    private void ParseGuiAction(IEnumerator<string> data, string value)
     {
-        if (!int.TryParse(data[1], out var index))
+        if (!data.MoveNext())
+        {
+            Console.WriteLine("wthh");
+            return;
+        }
+        if (!int.TryParse(data.Current, out var index))
         {
             // Amund: WOO husk WOO
             throw new InvalidParameterException();
@@ -945,7 +949,13 @@
             });
         }
         var guiAction = guiActions[index - 1];
-        var field = data[2];
+
+        if (!data.MoveNext())
+        {
+            Console.WriteLine("wthh2");
+            return;
+        }
+        var field = data.Current;
         switch (field)
         {
             case "id":
@@ -972,21 +982,19 @@
                 break;
 
             case "httpmethod":
-                if (Enum.TryParse
-                    <Http_HttpVerb>(value, out var httpMethod))
+                if (Enum.TryParse<Http_HttpVerb>(value, out var httpMethod))
                 {
                     guiAction.HttpMethod = httpMethod;
                 }
                 break;
             case "priority":
-                if (Enum.TryParse
-                    <DialogsEntitiesActions_DialogGuiActionPriority>(value, out var priority))
+                if (Enum.TryParse<DialogsEntitiesActions_DialogGuiActionPriority>(value, out var priority))
                 {
                     guiAction.Priority = priority;
                 }
                 break;
             case "title":
-                var titleLang = data.Length > 3 ? data[3] : "nb";
+                var titleLang = data.MoveNext() ? data.Current : "nb";
                 var title = new V1CommonLocalizations_Localization
                 {
                     Value = value,
@@ -995,7 +1003,7 @@
                 guiAction.Title.Add(title);
                 break;
             case "prompt":
-                var promptLang = data.Length > 3 ? data[3] : "nb";
+                var promptLang = data.MoveNext() ? data.Current : "nb";
                 var prompt = new V1CommonLocalizations_Localization
                 {
                     Value = value,
@@ -1008,11 +1016,16 @@
         CreateDialogCommand.GuiActions = guiActions;
     }
 
-    private void ParseAttachment(string[] data, string value)
+    private void ParseAttachment(IEnumerator<string> data, string value)
     {
-        if (!int.TryParse(data[1], out var attachmentIndex))
+        if (!data.MoveNext())
         {
-            Console.WriteLine($"data[1]: {data[1]} could not be parsed to int");
+            Console.WriteLine("wth!");
+            return;
+        }
+        if (!int.TryParse(data.Current, out var attachmentIndex))
+        {
+            Console.WriteLine($"data.Current: {data.Current} could not be parsed to int");
             return;
         }
 
@@ -1029,7 +1042,12 @@
         var attachmentUrl = attachment.Urls?.FirstOrDefault() ?? new
             V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl();
 
-        var field = data[2];
+        if (!data.MoveNext())
+        {
+            Console.WriteLine("wth2!");
+            return;
+        }
+        var field = data.Current;
         switch (field)
         {
             case "id":
@@ -1051,7 +1069,7 @@
                 break;
             case "displayname":
             case "name":
-                var nameLang = data.Length > 3 ? data[3] : "nb";
+                var nameLang = data.MoveNext() ? data.Current : "nb";
                 var name = new V1CommonLocalizations_Localization
                 {
                     Value = value,
@@ -1068,11 +1086,16 @@
 
     }
 
-    private void ParseTransmission(string[] data, string value)
+    private void ParseTransmission(IEnumerator<string> data, string value)
     {
-        if (!int.TryParse(data[1], out var transmissionIndex))
+        if (!data.MoveNext())
         {
-            Console.WriteLine($"data[1]: {data[1]} could not be parsed to int");
+            Console.WriteLine("wthhhh");
+            return;
+        }
+        if (!int.TryParse(data.Current, out var transmissionIndex))
+        {
+            Console.WriteLine($"data[1]: {data.Current} could not be parsed to int");
             return;
         }
 
@@ -1096,7 +1119,12 @@
             });
         }
         var transmission = transmissions[transmissionIndex - 1];
-        var field = data[2];
+        if (!data.MoveNext())
+        {
+            Console.WriteLine("wthhhh2");
+            return;
+        }
+        var field = data.Current;
 
         switch (field)
         {
@@ -1126,8 +1154,7 @@
                 }
                 break;
             case "type":
-                if (Enum.TryParse
-                    <DialogsEntitiesTransmissions_DialogTransmissionType>(value, out var type))
+                if (Enum.TryParse<DialogsEntitiesTransmissions_DialogTransmissionType>(value, out var type))
                 {
                     transmission.Type = type;
                 }
@@ -1146,46 +1173,16 @@
                 transmission.Sender.ActorName = value;
                 break;
             case "title":
-                var titleLang = data.Length > 3 ? data[3] : "nb";
-
-                if (titleLang == "mediatype")
-                {
-                    transmission.Content.Title.MediaType = value;
-                    break;
-                }
-                transmission.Content.Title.Value.Add(new V1CommonLocalizations_Localization
-                {
-                    Value = value,
-                    LanguageCode = titleLang
-                });
+                transmission.Content.Title ??= new V1CommonContent_ContentValue { Value = [] };
+                AddContentValue(transmission.Content.Title, data, value);
                 break;
             case "summary":
-                var summaryLang = data.Length > 3 ? data[3] : "nb";
-
-                if (summaryLang == "mediatype")
-                {
-                    transmission.Content.Summary.MediaType = value;
-                    break;
-                }
-                transmission.Content.Summary.Value.Add(new V1CommonLocalizations_Localization
-                {
-                    Value = value,
-                    LanguageCode = summaryLang
-                });
+                transmission.Content.Summary ??= new V1CommonContent_ContentValue { Value = [] };
+                AddContentValue(transmission.Content.Summary, data, value);
                 break;
             case "contentreference":
-                var contentLang = data.Length > 3 ? data[3] : "nb";
-                if (contentLang == "mediatype")
-                {
-                    transmission.Content.ContentReference.MediaType = value;
-                    break;
-                }
-
-                transmission.Content.ContentReference.Value.Add(new V1CommonLocalizations_Localization
-                {
-                    Value = value,
-                    LanguageCode = contentLang
-                });
+                transmission.Content.ContentReference ??= new V1CommonContent_ContentValue { Value = [] };
+                AddContentValue(transmission.Content.ContentReference, data, value);
                 break;
             default:
                 Console.WriteLine($"Field: {field}");
@@ -1194,11 +1191,16 @@
         CreateDialogCommand.Transmissions = transmissions;
     }
 
-    private void ParseApiAction(string[] data, string value)
+    private void ParseApiAction(IEnumerator<string> data, string value)
     {
-        if (!int.TryParse(data[1], out var apiActionIndex))
+        if (!data.MoveNext())
         {
-            Console.WriteLine($"data[1]: {data[1]} could not be parsed to int");
+            Console.WriteLine("waaa");
+            return;
+        }
+        if (!int.TryParse(data.Current, out var apiActionIndex))
+        {
+            Console.WriteLine($"data[1]: {data.Current} could not be parsed to int");
             return;
         }
 
@@ -1214,7 +1216,13 @@
             });
         }
         var apiAction = apiActions[apiActionIndex - 1];
-        var field = data[2];
+
+        if (!data.MoveNext())
+        {
+            Console.WriteLine("waaa");
+            return;
+        }
+        var field = data.Current;
 
         switch (field)
         {
@@ -1243,19 +1251,19 @@
     }
 
 
-    private void ParseApiActionEndpoint(string[] data,
+    private void ParseApiActionEndpoint(IEnumerator<string> data,
         string value,
         V1ServiceOwnerDialogsCommandsCreate_ApiAction apiAction)
     {
-        if (data.Length < 4)
+        if (!data.MoveNext())
         {
             Console.WriteLine("Not enough parameters for API action endpoint");
             return;
         }
 
-        if (!int.TryParse(data[3], out var endpointIndex))
+        if (!int.TryParse(data.Current, out var endpointIndex))
         {
-            Console.WriteLine($"data[3]: {data[3]} could not be parsed to int");
+            Console.WriteLine($"data[3]: {data.Current} could not be parsed to int");
             return;
         }
 
@@ -1266,13 +1274,13 @@
         }
         var endpoint = endpoints[endpointIndex - 1];
 
-        if (data.Length < 5)
+        if (!data.MoveNext())
         {
             Console.WriteLine("Missing endpoint field parameter");
             return;
         }
 
-        var endpointField = data[4];
+        var endpointField = data.Current;
 
         switch (endpointField)
         {
@@ -1329,11 +1337,16 @@
         apiAction.Endpoints = endpoints;
     }
 
-    private void ParseActivity(string[] data, string value)
+    private void ParseActivity(IEnumerator<string> data, string value)
     {
-        if (!int.TryParse(data[1], out var activityIndex))
+        if (!data.MoveNext())
         {
-            Console.WriteLine($"data[1]: {data[1]} could not be parsed to int");
+            Console.WriteLine("wateru");
+            return;
+        }
+        if (!int.TryParse(data.Current, out var activityIndex))
+        {
+            Console.WriteLine($"data[1]: {data.Current} could not be parsed to int");
             return;
         }
 
@@ -1347,7 +1360,12 @@
             });
         }
         var activity = activities[activityIndex - 1];
-        var field = data[2];
+        if (!data.MoveNext())
+        {
+            Console.WriteLine("wateru2");
+            return;
+        }
+        var field = data.Current;
 
         switch (field)
         {
@@ -1383,7 +1401,7 @@
                 ParseActivityPerformedBy(data, value, activity);
                 break;
             case "description":
-                var descriptionLang = data.Length > 3 ? data[3] : "nb";
+                var descriptionLang = data.MoveNext() ? data.Current : "nb";
                 var description = new V1CommonLocalizations_Localization
                 {
                     Value = value,
@@ -1399,17 +1417,17 @@
         CreateDialogCommand.Activities = activities;
     }
 
-    private void ParseActivityPerformedBy(string[] data,
+    private static void ParseActivityPerformedBy(IEnumerator<string> data,
         string value,
         V1ServiceOwnerDialogsCommandsCreate_Activity activity)
     {
-        if (data.Length < 4)
+        if (!data.MoveNext())
         {
             Console.WriteLine("Not enough parameters for Activity PerformedBy");
             return;
         }
 
-        var performedByField = data[3];
+        var performedByField = data.Current;
 
         switch (performedByField)
         {
