@@ -430,6 +430,9 @@
                 case "guiaction":
                     ParseGuiAction(fieldData, value);
                     break;
+                case "transmission":
+                    ParseTransmission(fieldData, value);
+                    break;
                 default:
                     Console.WriteLine($"Field: {seedData.First()}, is not supported (yet)");
                     break;
@@ -582,4 +585,128 @@
         CreateDialogCommand.Attachments = attachments;
 
     }
+    private void ParseTransmission(string[] data, string value)
+    {
+        if (!int.TryParse(data[1], out var transmissionIndex))
+        {
+            Console.WriteLine($"data[1]: {data[1]} could not be parsed to int");
+            return;
+        }
+
+        var transmissions = CreateDialogCommand.Transmissions.ToList();
+        while (transmissions.Count < transmissionIndex)
+        {
+            transmissions.Add(new V1ServiceOwnerDialogsCommandsCreate_Transmission
+            {
+                Type = DialogsEntitiesTransmissions_DialogTransmissionType.Information,
+                Sender = new V1ServiceOwnerCommonActors_Actor
+                {
+                    ActorType = Actors_ActorType.ServiceOwner
+                },
+                Content = new V1ServiceOwnerDialogsCommandsCreate_TransmissionContent
+                {
+                    Title = new V1CommonContent_ContentValue { Value = [] },
+                    Summary = new V1CommonContent_ContentValue { Value = [] },
+                    ContentReference = new V1CommonContent_ContentValue { Value = [] }
+                },
+                Attachments = []
+            });
+        }
+        var transmission = transmissions[transmissionIndex - 1];
+        var field = data[2];
+
+        switch (field)
+        {
+            case "id":
+                Guid.TryParse(value, out var guid);
+                transmission.Id = guid;
+                break;
+            case "createdat":
+                if (DateTime.TryParse(value, out var dateTime))
+                {
+                    transmission.CreatedAt = dateTime;
+                }
+                break;
+            case "authorizationattribute":
+                transmission.AuthorizationAttribute = value;
+                break;
+            case "extendedtype":
+                if (Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var uri))
+                {
+                    transmission.ExtendedType = uri;
+                }
+                break;
+            case "relatedtransmissionid":
+                if (Guid.TryParse(value, out var relatedId))
+                {
+                    transmission.RelatedTransmissionId = relatedId;
+                }
+                break;
+            case "type":
+                if (Enum.TryParse<DialogsEntitiesTransmissions_DialogTransmissionType>(value, out var type))
+                {
+                    transmission.Type = type;
+                }
+                break;
+            case "sendertype":
+                if (Enum.TryParse<Actors_ActorType>(value, out var actorType))
+                {
+                    transmission.Sender.ActorType = actorType;
+                }
+                break;
+            case "senderid":
+                transmission.Sender.ActorId = value;
+                break;
+            case "sendername":
+                transmission.Sender.ActorName = value;
+                break;
+            case "title":
+                var titleLang = data.Length > 3 ? data[3] : "nb";
+
+                if (titleLang == "mediatype")
+                {
+                    transmission.Content.Title.MediaType = value;
+                    break;
+                }
+                transmission.Content.Title.Value.Add(new V1CommonLocalizations_Localization
+                {
+                    Value = value,
+                    LanguageCode = titleLang
+                });
+                break;
+            case "summary":
+                var summaryLang = data.Length > 3 ? data[3] : "nb";
+
+                if (summaryLang == "mediatype")
+                {
+                    transmission.Content.Summary.MediaType = value;
+                    break;
+                }
+                transmission.Content.Summary.Value.Add(new V1CommonLocalizations_Localization
+                {
+                    Value = value,
+                    LanguageCode = summaryLang
+                });
+                break;
+            case "contentreference":
+                var contentLang = data.Length > 3 ? data[3] : "nb";
+                if (contentLang == "mediatype")
+                {
+                    transmission.Content.ContentReference.MediaType = value;
+                    break;
+                }
+
+                transmission.Content.ContentReference.Value.Add(new V1CommonLocalizations_Localization
+                {
+                    Value = value,
+                    LanguageCode = contentLang
+                });
+                break;
+            default:
+                Console.WriteLine($"Field: {field}");
+                break;
+        }
+        CreateDialogCommand.Transmissions = transmissions;
+    }
 }
+        
