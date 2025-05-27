@@ -1,5 +1,4 @@
 @page "/dialog/create"
-@using System.Security.Policy
 @using Altinn.ApiClients.Dialogporten.Features.V1
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
@@ -440,6 +439,9 @@
                 case "transmission":
                     ParseTransmission(fieldData, value);
                     break;
+                case "apiaction":
+                    ParseApiAction(fieldData, value);
+                    break;
                 default:
                     Console.WriteLine($"Field: {seedData.First()}, is not supported (yet)");
                     break;
@@ -704,6 +706,139 @@
                 break;
         }
         CreateDialogCommand.Transmissions = transmissions;
+    }
+
+    private void ParseApiAction(string[] data, string value)
+    {
+        if (!int.TryParse(data[1], out var apiActionIndex))
+        {
+            Console.WriteLine($"data[1]: {data[1]} could not be parsed to int");
+            return;
+        }
+
+        var apiActions = CreateDialogCommand.ApiActions.ToList();
+        while (apiActions.Count < apiActionIndex)
+        {
+            apiActions.Add(new V1ServiceOwnerDialogsCommandsCreate_ApiAction
+            {
+                Action = string.Empty,
+                AuthorizationAttribute = string.Empty,
+                Name = string.Empty,
+                Endpoints = []
+            });
+        }
+        var apiAction = apiActions[apiActionIndex - 1];
+        var field = data[2];
+
+        switch (field)
+        {
+            case "id":
+                Guid.TryParse(value, out var guid);
+                apiAction.Id = guid;
+                break;
+            case "action":
+                apiAction.Action = value;
+                break;
+            case "authorizationattribute":
+                apiAction.AuthorizationAttribute = value;
+                break;
+            case "name":
+                apiAction.Name = value;
+                break;
+            case "endpoint":
+                ParseApiActionEndpoint(data, value, apiAction);
+                break;
+            default:
+                Console.WriteLine($"Field: {field} is not supported for API action (yet)");
+                break;
+        }
+
+        CreateDialogCommand.ApiActions = apiActions;
+    }
+
+
+    private void ParseApiActionEndpoint(string[] data, string value, V1ServiceOwnerDialogsCommandsCreate_ApiAction apiAction)
+    {
+        if (data.Length < 4)
+        {
+            Console.WriteLine("Not enough parameters for API action endpoint");
+            return;
+        }
+
+        if (!int.TryParse(data[3], out var endpointIndex))
+        {
+            Console.WriteLine($"data[3]: {data[3]} could not be parsed to int");
+            return;
+        }
+
+        var endpoints = apiAction.Endpoints.ToList();
+        while (endpoints.Count < endpointIndex)
+        {
+            endpoints.Add(new V1ServiceOwnerDialogsCommandsCreate_ApiActionEndpoint());
+        }
+        var endpoint = endpoints[endpointIndex - 1];
+
+        if (data.Length < 5)
+        {
+            Console.WriteLine("Missing endpoint field parameter");
+            return;
+        }
+
+        var endpointField = data[4];
+
+        switch (endpointField)
+        {
+            case "url":
+                if (Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var uri))
+                {
+                    endpoint.Url = uri;
+                }
+                break;
+            case "httpmethod":
+                if (Enum.TryParse<Http_HttpVerb>(value, out var httpMethod))
+                {
+                    endpoint.HttpMethod = httpMethod;
+                }
+                break;
+            case "version":
+                endpoint.Version = value;
+                break;
+            case "documentationurl":
+                if (Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var docUri))
+                {
+                    endpoint.DocumentationUrl = docUri;
+                }
+                break;
+            case "requestschema":
+                if (Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var reqUri))
+                {
+                    endpoint.RequestSchema = reqUri;
+                }
+                break;
+            case "responseschema":
+                if (Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var respUri))
+                {
+                    endpoint.ResponseSchema = respUri;
+                }
+                break;
+            case "deprecated":
+                if (bool.TryParse(value, out var deprecated))
+                {
+                    endpoint.Deprecated = deprecated;
+                }
+                break;
+            case "sunsetat":
+                if (DateTimeOffset.TryParse(value, out var sunsetAt))
+                {
+                    endpoint.SunsetAt = sunsetAt;
+                }
+                break;
+            default:
+                Console.WriteLine($"Endpoint field: {endpointField} is not supported (yet)");
+                break;
+        }
+
+        apiAction.Endpoints = endpoints;
     }
 }
         
