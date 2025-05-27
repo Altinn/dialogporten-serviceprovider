@@ -449,16 +449,6 @@
     }
     private void ParseGuiAction(string[] data, string value)
     {
-        // Amund: 
-        // hvor mange trenges det egt? skal det bare hardkodes inn et bestemt antall?
-        // 3? eller trengs det noen gang flere?
-        // seperat liste med actions, som index henter ifra,
-        // om indexen blir brukt så blir også actoin fra den idexen lagt inn i actions?
-        // Da er det ikke viktig hvilken rekkefølge ting har,
-        // men hvordan vet man om det er ny eller oppdatering? kanskje best å enforce rekkefølge? vartfall 1 før 2.
-        // Vartfall om 2 er brukt så blir det 2 stk
-        // om da det blir brukt action:200 så må da listen bli 200 lang sett en max på typ 5?
-        // Dette begynner å bli komplekst. Skal dette dras ut i egen fil?
         if (!int.TryParse(data[1], out var index))
         {
             // Amund: WOO husk WOO
