@@ -291,42 +291,6 @@ public static class PrefillExtensions
 
         }
     }
-    public static void Prefill(this V1CommonContent_ContentValue contentValue, string mediaType = "text/plain")
-    {
-        contentValue.MediaType = mediaType;
-        contentValue.Value = [];
-    }
-
-    public static void Add(this V1CommonContent_ContentValue contentValue, string value, string? lang = "nb")
-    {
-        lang ??= "nb";
-        contentValue.Value.Add(CreateLocal(value, lang));
-
-    }
-
-    // Amund: weird plassering?
-    private static V1CommonLocalizations_Localization CreateLocal(string value, string lang)
-    {
-        return new V1CommonLocalizations_Localization
-        {
-            Value = value,
-            LanguageCode = lang
-        };
-    }
-
-    private static V1CommonContent_ContentValue CreateContentValue(string value, string? lang = "nb", string type = "text/plain")
-    {
-        if (lang is null)
-        {
-            lang = "nb";
-        }
-        return new V1CommonContent_ContentValue
-        {
-            Value = [CreateLocal(value, lang)],
-            MediaType = type
-        };
-
-    }
 }
 
 public enum GuiActionPrefill
