@@ -230,7 +230,7 @@
 
     private async Task ExportSeedToClipboard()
     {
-        var seed = ExportSeed();
+        var seed = SeedExporter.ExportSeed(CreateDialogCommand);
         await Js.InvokeVoidAsync("navigator.clipboard.writeText", seed);
         // You could also show a notification that the seed was copied
     }
@@ -386,126 +386,6 @@
         StateHasChanged();
     }
 
-    private string ExportSeed()
-    {
-        var seedParts = new List<string>();
-
-        // Basic Dialog Information
-        if (CreateDialogCommand.Id.HasValue)
-            seedParts.Add($"id={CreateDialogCommand.Id}");
-
-        if (!string.IsNullOrEmpty(CreateDialogCommand.IdempotentKey))
-            seedParts.Add($"idempotentkey={CreateDialogCommand.IdempotentKey}");
-
-        if (!string.IsNullOrEmpty(CreateDialogCommand.ServiceResource))
-            seedParts.Add($"serviceresource={CreateDialogCommand.ServiceResource}");
-
-        if (!string.IsNullOrEmpty(CreateDialogCommand.Party))
-            seedParts.Add($"party={CreateDialogCommand.Party}");
-
-        if (CreateDialogCommand.Progress.HasValue)
-            seedParts.Add($"progress={CreateDialogCommand.Progress}");
-
-        if (!string.IsNullOrEmpty(CreateDialogCommand.ExtendedStatus))
-            seedParts.Add($"extendedstatus={CreateDialogCommand.ExtendedStatus}");
-
-        if (!string.IsNullOrEmpty(CreateDialogCommand.ExternalReference))
-            seedParts.Add($"externalreference={CreateDialogCommand.ExternalReference}");
-
-        if (CreateDialogCommand.VisibleFrom.HasValue)
-            seedParts.Add($"visiblefrom={CreateDialogCommand.VisibleFrom.Value:o}");
-
-        if (CreateDialogCommand.DueAt.HasValue)
-            seedParts.Add($"dueat={CreateDialogCommand.DueAt.Value:o}");
-
-        if (!string.IsNullOrEmpty(CreateDialogCommand.Process))
-            seedParts.Add($"process={CreateDialogCommand.Process}");
-
-        if (!string.IsNullOrEmpty(CreateDialogCommand.PrecedingProcess))
-            seedParts.Add($"precedingprocess={CreateDialogCommand.PrecedingProcess}");
-
-        if (CreateDialogCommand.ExpiresAt.HasValue)
-            seedParts.Add($"expiresat={CreateDialogCommand.ExpiresAt.Value:o}");
-
-        seedParts.Add($"isapionly={CreateDialogCommand.IsApiOnly.ToString().ToLower()}");
-
-        if (CreateDialogCommand.CreatedAt.HasValue)
-            seedParts.Add($"createdat={CreateDialogCommand.CreatedAt.Value:o}");
-
-        if (CreateDialogCommand.UpdatedAt.HasValue)
-            seedParts.Add($"updatedat={CreateDialogCommand.UpdatedAt.Value:o}");
-
-        seedParts.Add($"status={CreateDialogCommand.Status}");
-
-        if (CreateDialogCommand.SystemLabel.HasValue)
-            seedParts.Add($"systemlabel={CreateDialogCommand.SystemLabel}");
-
-        // Content fields
-        if (CreateDialogCommand.Content.Title?.Value != null)
-        {
-            seedParts.Add($"title:mediatype={CreateDialogCommand.Content.Title.MediaType}");
-            seedParts
-                .AddRange(CreateDialogCommand.Content.Title.Value
-                                             .Select(localization =>
-                                                 $"title:{localization.LanguageCode}={localization.Value}"));
-        }
-
-        if (CreateDialogCommand.Content.Summary?.Value != null)
-        {
-            seedParts.AddRange(CreateDialogCommand.Content.Summary.Value
-                                                  .Select(localization =>
-                                                      $"summary:{localization.LanguageCode}={localization.Value}"));
-        }
-
-        if (CreateDialogCommand.Content.NonSensitiveTitle?.Value != null)
-        {
-            seedParts
-                .AddRange(CreateDialogCommand.Content.NonSensitiveTitle.Value
-                                             .Select(localization =>
-                                                 $"non-sensitive-title:{localization.LanguageCode}={localization.Value}"));
-        }
-
-        if (CreateDialogCommand.Content.NonSensitiveSummary?.Value != null)
-        {
-            seedParts.AddRange(CreateDialogCommand.Content.NonSensitiveSummary.Value
-                                                  .Select(localization =>
-                                                      $"non-sensitive-summary:{localization.LanguageCode}={localization.Value}"));
-        }
-
-        if (CreateDialogCommand.Content.SenderName?.Value != null)
-        {
-            seedParts.AddRange(CreateDialogCommand.Content.SenderName.Value
-                                                  .Select(localization =>
-                                                      $"sendername:{localization.LanguageCode}={localization.Value}"));
-        }
-
-        if (CreateDialogCommand.Content.AdditionalInfo?.Value != null)
-        {
-            seedParts.AddRange(CreateDialogCommand.Content.AdditionalInfo.Value
-                                                  .Select(localization =>
-                                                      $"additional-info:{localization.LanguageCode}={localization.Value}"));
-        }
-
-        if (CreateDialogCommand.Content.ExtendedStatus?.Value != null)
-        {
-            seedParts.AddRange(CreateDialogCommand.Content.ExtendedStatus.Value
-                                                  .Select(localization =>
-                                                      $"extended-status:{localization.LanguageCode}={localization.Value}"));
-        }
-
-        if (CreateDialogCommand.Content.MainContentReference?.Value != null)
-        {
-            seedParts.AddRange(CreateDialogCommand.Content.MainContentReference.Value
-                                                  .Select(localization =>
-                                                      $"main-content-reference:{localization.LanguageCode}={localization.Value}"));
-        }
-
-        // Collections
-        // Search Tags
-        seedParts.AddRange(CreateDialogCommand.SearchTags.Select(tag => $"searchtag={tag.Value}"));
-
-        return string.Join(";", seedParts);
-    }
     private void Import()
     {
         SeedParser.ParseSeed(CreateDialogCommand, Seed);
