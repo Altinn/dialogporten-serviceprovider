@@ -313,8 +313,10 @@ public static class SeedParser
         switch (field)
         {
             case "id":
-                Guid.TryParse(value, out var guid);
-                attachment.Id = guid;
+                if (Guid.TryParse(value, out var guid))
+                {
+                    attachment.Id = guid;
+                }
                 break;
             case "url":
                 if (Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var uri))
@@ -343,7 +345,14 @@ public static class SeedParser
                 break;
         }
 
-        attachment.Urls = [attachmentUrl];
+        if (attachment.Urls is null)
+        {
+            attachment.Urls = [attachmentUrl];
+        }
+        else
+        {
+            attachment.Urls.Add(attachmentUrl);
+        }
         createDialogCommand.Attachments = attachments;
 
     }
