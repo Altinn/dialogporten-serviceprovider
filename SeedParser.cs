@@ -108,40 +108,9 @@ public static class SeedParser
                     break;
 
                 // Content fields
-                case "title":
-                    createDialogCommand.Content.Title ??= new V1CommonContent_ContentValue { Value = [] };
-                    AddContentValue(createDialogCommand.Content.Title, fieldData, value);
+                case "content":
+                    ParseContent(createDialogCommand, fieldData, value);
                     break;
-                case "summary":
-                    createDialogCommand.Content.Summary ??= new V1CommonContent_ContentValue { Value = [] };
-                    AddContentValue(createDialogCommand.Content.Summary, fieldData, value);
-                    break;
-                case "non-sensitive-title":
-                    createDialogCommand.Content.NonSensitiveTitle ??= new V1CommonContent_ContentValue { Value = [] };
-                    AddContentValue(createDialogCommand.Content.NonSensitiveTitle, fieldData, value);
-                    break;
-                case "non-sensitive-summary":
-                    createDialogCommand.Content.NonSensitiveSummary ??= new V1CommonContent_ContentValue { Value = [] };
-                    AddContentValue(createDialogCommand.Content.NonSensitiveSummary, fieldData, value);
-                    break;
-                case "sender":
-                case "sendername":
-                    createDialogCommand.Content.SenderName ??= new V1CommonContent_ContentValue { Value = [] };
-                    AddContentValue(createDialogCommand.Content.SenderName, fieldData, value);
-                    break;
-                case "additional-info":
-                    createDialogCommand.Content.AdditionalInfo ??= new V1CommonContent_ContentValue { Value = [] };
-                    AddContentValue(createDialogCommand.Content.AdditionalInfo, fieldData, value);
-                    break;
-                case "extended-status":
-                    createDialogCommand.Content.ExtendedStatus ??= new V1CommonContent_ContentValue { Value = [] };
-                    AddContentValue(createDialogCommand.Content.ExtendedStatus, fieldData, value);
-                    break;
-                case "main-content-reference":
-                    createDialogCommand.Content.MainContentReference ??= new V1CommonContent_ContentValue { Value = [] };
-                    AddContentValue(createDialogCommand.Content.MainContentReference, fieldData, value);
-                    break;
-
                 // Collections
                 case "searchtag":
                     createDialogCommand.SearchTags.Add(
@@ -166,42 +135,67 @@ public static class SeedParser
                     ParseActivity(createDialogCommand, fieldData, value);
                     break;
                 default:
-                    Console.WriteLine($"Field: {seedData.First()}, is not supported (yet)");
-                    break;
+                    throw new InvalidParameterException($"Field: {seedData.First()}, is not supported");
             }
         }
     }
-    private static void AddContentValue(V1CommonContent_ContentValue contentValue, IEnumerator<string> fieldData, string value)
+
+    private static void ParseContent(V1ServiceOwnerDialogsCommandsCreate_Dialog createDialogCommand, IEnumerator<string> data, string value)
     {
-        var lang = "nb";
-        if (fieldData.MoveNext())
+        if (!data.MoveNext())
         {
-            lang = fieldData.Current;
+            throw new InvalidParameterException($"Not enough parameters for Dialog.Content, value:{value}");
         }
-        if (lang == "mediatype")
+        var field = data.Current;
+        switch (field)
         {
-            contentValue.MediaType = lang;
-            return;
+            case "title":
+                createDialogCommand.Content.Title ??= new V1CommonContent_ContentValue { Value = [] };
+                AddContentValue(createDialogCommand.Content.Title, data, value);
+                break;
+            case "summary":
+                createDialogCommand.Content.Summary ??= new V1CommonContent_ContentValue { Value = [] };
+                AddContentValue(createDialogCommand.Content.Summary, data, value);
+                break;
+            case "non-sensitive-title":
+                createDialogCommand.Content.NonSensitiveTitle ??= new V1CommonContent_ContentValue { Value = [] };
+                AddContentValue(createDialogCommand.Content.NonSensitiveTitle, data, value);
+                break;
+            case "non-sensitive-summary":
+                createDialogCommand.Content.NonSensitiveSummary ??= new V1CommonContent_ContentValue { Value = [] };
+                AddContentValue(createDialogCommand.Content.NonSensitiveSummary, data, value);
+                break;
+            case "sender":
+            case "sendername":
+                createDialogCommand.Content.SenderName ??= new V1CommonContent_ContentValue { Value = [] };
+                AddContentValue(createDialogCommand.Content.SenderName, data, value);
+                break;
+            case "additional-info":
+                createDialogCommand.Content.AdditionalInfo ??= new V1CommonContent_ContentValue { Value = [] };
+                AddContentValue(createDialogCommand.Content.AdditionalInfo, data, value);
+                break;
+            case "extended-status":
+                createDialogCommand.Content.ExtendedStatus ??= new V1CommonContent_ContentValue { Value = [] };
+                AddContentValue(createDialogCommand.Content.ExtendedStatus, data, value);
+                break;
+            case "main-content-reference":
+                createDialogCommand.Content.MainContentReference ??= new V1CommonContent_ContentValue { Value = [] };
+                AddContentValue(createDialogCommand.Content.MainContentReference, data, value);
+                break;
+            default:
+                throw new InvalidParameterException($"Content Field: {field}, is not supported");
         }
-        contentValue.Value.Add(new V1CommonLocalizations_Localization
-        {
-            Value = value,
-            LanguageCode = lang
-        });
     }
     private static void ParseGuiAction(V1ServiceOwnerDialogsCommandsCreate_Dialog createDialogCommand, IEnumerator<string> data, string value)
     {
         if (!data.MoveNext())
         {
-            Console.WriteLine("wthh");
-            return;
+            throw new InvalidParameterException($"Not enough parameters for Dialog.GuiAction, value:{value}");
         }
         if (!int.TryParse(data.Current, out var index))
         {
-            // Amund: WOO husk WOO
-            throw new InvalidParameterException();
+            throw new InvalidParameterException($"Can't {data.Current} to an Int");
         }
-
         var guiActions = createDialogCommand.GuiActions.ToList();
         while (guiActions.Count < index)
         {
@@ -215,8 +209,7 @@ public static class SeedParser
 
         if (!data.MoveNext())
         {
-            Console.WriteLine("wthh2");
-            return;
+            throw new InvalidParameterException($"Not enough parameters for Dialog.GuiAction, value:{value}");
         }
         var field = data.Current;
         switch (field)
@@ -282,13 +275,11 @@ public static class SeedParser
     {
         if (!data.MoveNext())
         {
-            Console.WriteLine("wth!");
-            return;
+            throw new InvalidParameterException($"Not enough parameters for Dialog.Attachment, value:{value}");
         }
         if (!int.TryParse(data.Current, out var attachmentIndex))
         {
-            Console.WriteLine($"data.Current: {data.Current} could not be parsed to int");
-            return;
+            throw new InvalidParameterException($"Can't {data.Current} to an Int");
         }
 
         var attachments = createDialogCommand.Attachments.ToList();
@@ -306,8 +297,7 @@ public static class SeedParser
 
         if (!data.MoveNext())
         {
-            Console.WriteLine("wth2!");
-            return;
+            throw new InvalidParameterException($"Not enough parameters for Dialog.Attachment, value:{value}");
         }
         var field = data.Current;
         switch (field)
@@ -360,13 +350,11 @@ public static class SeedParser
     {
         if (!data.MoveNext())
         {
-            Console.WriteLine("wthhhh");
-            return;
+            throw new InvalidParameterException($"Not enough parameters for Dialog.Transmission, value:{value}");
         }
         if (!int.TryParse(data.Current, out var transmissionIndex))
         {
-            Console.WriteLine($"data[1]: {data.Current} could not be parsed to int");
-            return;
+            throw new InvalidParameterException($"Can't {data.Current} to an Int");
         }
 
         var transmissions = createDialogCommand.Transmissions.ToList();
@@ -391,16 +379,17 @@ public static class SeedParser
         var transmission = transmissions[transmissionIndex - 1];
         if (!data.MoveNext())
         {
-            Console.WriteLine("wthhhh2");
-            return;
+            throw new InvalidParameterException($"Not enough parameters for Dialog.Transmission, value:{value}");
         }
         var field = data.Current;
 
         switch (field)
         {
             case "id":
-                Guid.TryParse(value, out var guid);
-                transmission.Id = guid;
+                if (Guid.TryParse(value, out var guid))
+                {
+                    transmission.Id = guid;
+                }
                 break;
             case "createdat":
                 if (DateTime.TryParse(value, out var dateTime))
@@ -430,8 +419,7 @@ public static class SeedParser
                 }
                 break;
             case "sendertype":
-                if (Enum.TryParse
-                    <Actors_ActorType>(value, out var actorType))
+                if (Enum.TryParse<Actors_ActorType>(value, out var actorType))
                 {
                     transmission.Sender.ActorType = actorType;
                 }
@@ -455,8 +443,7 @@ public static class SeedParser
                 AddContentValue(transmission.Content.ContentReference, data, value);
                 break;
             default:
-                Console.WriteLine($"Field: {field}");
-                break;
+                throw new InvalidParameterException($"Transmission Field: {data.Current}, is not supported");
         }
         createDialogCommand.Transmissions = transmissions;
     }
@@ -464,13 +451,11 @@ public static class SeedParser
     {
         if (!data.MoveNext())
         {
-            Console.WriteLine("waaa");
-            return;
+            throw new InvalidParameterException($"Not enough parameters for Dialog.ApiAction, value:{value}");
         }
         if (!int.TryParse(data.Current, out var apiActionIndex))
         {
-            Console.WriteLine($"data[1]: {data.Current} could not be parsed to int");
-            return;
+            throw new InvalidParameterException($"Can't {data.Current} to an Int");
         }
 
         var apiActions = createDialogCommand.ApiActions.ToList();
@@ -488,16 +473,17 @@ public static class SeedParser
 
         if (!data.MoveNext())
         {
-            Console.WriteLine("waaa");
-            return;
+            throw new InvalidParameterException($"Not enough parameters for Dialog.ApiAction, value:{value}");
         }
         var field = data.Current;
 
         switch (field)
         {
             case "id":
-                Guid.TryParse(value, out var guid);
-                apiAction.Id = guid;
+                if (Guid.TryParse(value, out var guid))
+                {
+                    apiAction.Id = guid;
+                }
                 break;
             case "action":
                 apiAction.Action = value;
@@ -512,8 +498,7 @@ public static class SeedParser
                 ParseApiActionEndpoint(data, value, apiAction);
                 break;
             default:
-                Console.WriteLine($"Field: {field} is not supported for API action (yet)");
-                break;
+                throw new InvalidParameterException($"ApiAction Field: {field}, is not supported");
         }
 
         createDialogCommand.ApiActions = apiActions;
@@ -524,14 +509,12 @@ public static class SeedParser
     {
         if (!data.MoveNext())
         {
-            Console.WriteLine("Not enough parameters for API action endpoint");
-            return;
+            throw new InvalidParameterException($"Not enough parameters for Dialog.ApiAction.Endpoint, value:{value}");
         }
 
         if (!int.TryParse(data.Current, out var endpointIndex))
         {
-            Console.WriteLine($"data[3]: {data.Current} could not be parsed to int");
-            return;
+            throw new InvalidParameterException($"Can't {data.Current} to an Int");
         }
 
         var endpoints = apiAction.Endpoints.ToList();
@@ -543,13 +526,12 @@ public static class SeedParser
 
         if (!data.MoveNext())
         {
-            Console.WriteLine("Missing endpoint field parameter");
-            return;
+            throw new InvalidParameterException($"Not enough parameters for Dialog.ApiAction.Endpoint, value:{value}");
         }
 
-        var endpointField = data.Current;
+        var field = data.Current;
 
-        switch (endpointField)
+        switch (field)
         {
             case "url":
                 if (Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var uri))
@@ -597,8 +579,7 @@ public static class SeedParser
                 }
                 break;
             default:
-                Console.WriteLine($"Endpoint field: {endpointField} is not supported (yet)");
-                break;
+                throw new InvalidParameterException($"ApiActinEndpoint Field: {field}, is not supported");
         }
 
         apiAction.Endpoints = endpoints;
@@ -607,13 +588,11 @@ public static class SeedParser
     {
         if (!data.MoveNext())
         {
-            Console.WriteLine("wateru");
-            return;
+            throw new InvalidParameterException($"Not enough parameters for Dialog.ApiAction.Activity, value:{value}");
         }
         if (!int.TryParse(data.Current, out var activityIndex))
         {
-            Console.WriteLine($"data[1]: {data.Current} could not be parsed to int");
-            return;
+            throw new InvalidParameterException($"Can't {data.Current} to an Int");
         }
 
         var activities = createDialogCommand.Activities.ToList();
@@ -628,8 +607,7 @@ public static class SeedParser
         var activity = activities[activityIndex - 1];
         if (!data.MoveNext())
         {
-            Console.WriteLine("wateru2");
-            return;
+            throw new InvalidParameterException($"Not enough parameters for Dialog.ApiAction.Activity, value:{value}");
         }
         var field = data.Current;
 
@@ -678,8 +656,7 @@ public static class SeedParser
                 activity.Description = activity.Description.Append(description).ToList();
                 break;
             default:
-                Console.WriteLine($"Field: {field} is not supported for Activity (yet)");
-                break;
+                throw new InvalidParameterException($"Activity Field: {field}, is not supported");
         }
 
         createDialogCommand.Activities = activities;
@@ -690,17 +667,15 @@ public static class SeedParser
     {
         if (!data.MoveNext())
         {
-            Console.WriteLine("Not enough parameters for Activity PerformedBy");
-            return;
+            throw new InvalidParameterException($"Not enough parameters for Dialog.ApiAction.Activity.PerformedBy, value:{value}");
         }
 
-        var performedByField = data.Current;
+        var field = data.Current;
 
-        switch (performedByField)
+        switch (field)
         {
             case "actortype":
-                if (Enum.TryParse
-                    <Actors_ActorType>(value, out var actorType))
+                if (Enum.TryParse<Actors_ActorType>(value, out var actorType))
                 {
                     activity.PerformedBy.ActorType = actorType;
                 }
@@ -712,8 +687,25 @@ public static class SeedParser
                 activity.PerformedBy.ActorName = value;
                 break;
             default:
-                Console.WriteLine($"PerformedBy field: {performedByField} is not supported(yet)");
-                break;
+                throw new InvalidParameterException($"Performedby Field: {field}, is not supported");
         }
+    }
+    private static void AddContentValue(V1CommonContent_ContentValue contentValue, IEnumerator<string> fieldData, string value)
+    {
+        var lang = "nb";
+        if (fieldData.MoveNext())
+        {
+            lang = fieldData.Current;
+        }
+        if (lang == "mediatype")
+        {
+            contentValue.MediaType = lang;
+            return;
+        }
+        contentValue.Value.Add(new V1CommonLocalizations_Localization
+        {
+            Value = value,
+            LanguageCode = lang
+        });
     }
 }
