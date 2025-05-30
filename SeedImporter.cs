@@ -3,7 +3,7 @@ using Org.BouncyCastle.Security;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider;
 
-public static class SeedParser
+public static class SeedImporter
 {
     public static void ParseSeed(V1ServiceOwnerDialogsCommandsCreate_Dialog createDialogCommand, string seed)
     {
@@ -291,8 +291,7 @@ public static class SeedParser
             });
         }
         var attachment = attachments[attachmentIndex - 1];
-        var attachmentUrl = attachment.Urls?.FirstOrDefault() ?? new
-            V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl();
+        attachment.Urls ??= [];
 
         if (!data.MoveNext())
         {
@@ -308,17 +307,7 @@ public static class SeedParser
                 }
                 break;
             case "url":
-                if (Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var uri))
-                {
-                    attachmentUrl.Url = uri;
-                }
-                break;
-            case "mediatype":
-                attachmentUrl.MediaType = value;
-                break;
-            case "type":
-                attachmentUrl.ConsumerType = Enum.Parse
-                    <Attachments_AttachmentUrlConsumerType>(value);
+                ParseAttachmentUrl(attachment, data, value);
                 break;
             case "displayname":
             case "name":
@@ -334,16 +323,52 @@ public static class SeedParser
                 break;
         }
 
-        if (attachment.Urls is null)
-        {
-            attachment.Urls = [attachmentUrl];
-        }
-        else
-        {
-            attachment.Urls.Add(attachmentUrl);
-        }
         createDialogCommand.Attachments = attachments;
 
+    }
+    private static void ParseAttachmentUrl(V1ServiceOwnerDialogsCommandsCreate_Attachment attachmentUrl, IEnumerator<string> data, string value)
+    {
+        if (!data.MoveNext())
+        {
+            throw new InvalidParameterException($"Not enough parameters for Dialog.AttachmentUrl, value:{value}");
+        }
+
+        if (!int.TryParse(data.Current, out var urlIndex))
+        {
+            throw new InvalidParameterException($"Can't {data.Current} to an Int");
+        }
+
+        if (!data.MoveNext())
+        {
+            throw new InvalidParameterException($"Not enough parameters for Dialog.AttachmentUrl, value:{value}");
+        }
+
+        var attachmentUrls = attachmentUrl.Urls.ToList();
+        while (attachmentUrls.Count < urlIndex)
+        {
+            attachmentUrls.Add(new V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl());
+        }
+
+        var url = attachmentUrls[urlIndex - 1];
+
+        var field = data.Current;
+        switch (field)
+        {
+            case "url":
+                if (Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var uri))
+                {
+                    url.Url = uri;
+                }
+                break;
+            case "mediatype":
+                url.MediaType = value;
+                break;
+            case "type":
+                url.ConsumerType = Enum.Parse<Attachments_AttachmentUrlConsumerType>(value);
+                break;
+
+        }
+        attachmentUrl.Urls = attachmentUrls;
     }
     private static void ParseTransmission(V1ServiceOwnerDialogsCommandsCreate_Dialog createDialogCommand, IEnumerator<string> data, string value)
     {
