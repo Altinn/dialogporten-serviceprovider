@@ -59,69 +59,61 @@ public static class SeedExporter
             seedParts.Add($"systemlabel={createDialogCommand.SystemLabel}");
 
         // Content fields
-        if (createDialogCommand.Content.Title?.Value != null)
-        {
-            seedParts.Add($"title:mediatype={createDialogCommand.Content.Title.MediaType}");
-            seedParts
-                .AddRange(createDialogCommand.Content.Title.Value
-                                             .Select(localization =>
-                                                 $"title:{localization.LanguageCode}={localization.Value}"));
-        }
-
-        if (createDialogCommand.Content.Summary?.Value != null)
-        {
-            seedParts.AddRange(createDialogCommand.Content.Summary.Value
-                                                  .Select(localization =>
-                                                      $"summary:{localization.LanguageCode}={localization.Value}"));
-        }
-
-        if (createDialogCommand.Content.NonSensitiveTitle?.Value != null)
-        {
-            seedParts
-                .AddRange(createDialogCommand.Content.NonSensitiveTitle.Value
-                                             .Select(localization =>
-                                                 $"non-sensitive-title:{localization.LanguageCode}={localization.Value}"));
-        }
-
-        if (createDialogCommand.Content.NonSensitiveSummary?.Value != null)
-        {
-            seedParts.AddRange(createDialogCommand.Content.NonSensitiveSummary.Value
-                                                  .Select(localization =>
-                                                      $"non-sensitive-summary:{localization.LanguageCode}={localization.Value}"));
-        }
-
-        if (createDialogCommand.Content.SenderName?.Value != null)
-        {
-            seedParts.AddRange(createDialogCommand.Content.SenderName.Value
-                                                  .Select(localization =>
-                                                      $"sendername:{localization.LanguageCode}={localization.Value}"));
-        }
-
-        if (createDialogCommand.Content.AdditionalInfo?.Value != null)
-        {
-            seedParts.AddRange(createDialogCommand.Content.AdditionalInfo.Value
-                                                  .Select(localization =>
-                                                      $"additional-info:{localization.LanguageCode}={localization.Value}"));
-        }
-
-        if (createDialogCommand.Content.ExtendedStatus?.Value != null)
-        {
-            seedParts.AddRange(createDialogCommand.Content.ExtendedStatus.Value
-                                                  .Select(localization =>
-                                                      $"extended-status:{localization.LanguageCode}={localization.Value}"));
-        }
-
-        if (createDialogCommand.Content.MainContentReference?.Value != null)
-        {
-            seedParts.AddRange(createDialogCommand.Content.MainContentReference.Value
-                                                  .Select(localization =>
-                                                      $"main-content-reference:{localization.LanguageCode}={localization.Value}"));
-        }
+        seedParts.AddRange(ExportContent(createDialogCommand.Content));
 
         // Collections
         // Search Tags
         seedParts.AddRange(createDialogCommand.SearchTags.Select(tag => $"searchtag={tag.Value}"));
 
+        seedParts.AddRange(ExportAttachments(createDialogCommand.Attachments));
+
         return string.Join(";", seedParts);
+    }
+    // Amund: Escape ; in values URL enconding?
+    private static List<string> ExportContent(V1ServiceOwnerDialogsCommandsCreate_Content content)
+    {
+        var parts = new List<string>();
+        foreach (var propertyInfo in content.GetType().GetProperties())
+        {
+            var value = propertyInfo.GetValue(content);
+
+            if (value == null || value.GetType() != typeof(V1CommonContent_ContentValue))
+                continue;
+
+            var contentValue = value as V1CommonContent_ContentValue;
+            var field = $"content:{propertyInfo.Name.ToLowerInvariant()}";
+            parts.Add($"{field}:mediatype={Uri.EscapeDataString(contentValue!.MediaType)}");
+            parts.AddRange(contentValue.Value.Select(localization => $"{field}:{localization.LanguageCode}={localization.Value}"));
+        }
+
+        return parts;
+    }
+
+    private static List<string> ExportAttachments(ICollection<V1ServiceOwnerDialogsCommandsCreate_Attachment> attachments)
+    {
+        var parts = new List<string>();
+        var attachmentIndex = 1;
+        foreach (var attachment in attachments)
+        {
+            var field = $"attachment:{attachmentIndex++}";
+            if (attachment.Id.HasValue)
+            {
+                parts.Add($"{field}:id={attachment.Id}");
+            }
+            if (attachment.DisplayName.Count != 0)
+            {
+                parts.AddRange(attachment.DisplayName.Select(localization => $"{field}:displayname:{localization.LanguageCode}={localization.Value}"));
+            }
+
+            var index = 1;
+            foreach (var url in attachment.Urls)
+            {
+                parts.Add($"{field}:url:{index}:url={url.Url}");
+                parts.Add($"{field}:url:{index}:mediatype={url.MediaType}");
+                parts.Add($"{field}:url:{index}:consumertype={url.ConsumerType}");
+                index++;
+            }
+        }
+        return parts;
     }
 }

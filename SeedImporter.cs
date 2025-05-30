@@ -363,6 +363,7 @@ public static class SeedImporter
             case "mediatype":
                 url.MediaType = value;
                 break;
+            case "consumertype":
             case "type":
                 url.ConsumerType = Enum.Parse<Attachments_AttachmentUrlConsumerType>(value);
                 break;
