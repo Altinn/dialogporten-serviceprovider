@@ -28,7 +28,7 @@ public class InputUri : InputBase<Uri?>
             validationErrorMessage = ValidationMessage;
             return false;
         }
-
+        // Amund: Fix werid URI update adding /
         if (Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out result))
         {
             validationErrorMessage = null;

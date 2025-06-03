@@ -99,7 +99,7 @@
     private void Add()
     {
         if (Value is null) throw new UnreachableException();
-        Value.Add(new());
+        Value.Add(new V1ServiceOwnerDialogsCommandsCreate_ApiActionEndpoint());
         ValueChanged.InvokeAsync(Value);
     }
 

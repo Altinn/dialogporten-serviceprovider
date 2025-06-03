@@ -169,15 +169,15 @@ public static class SeedImporter
                 createDialogCommand.Content.SenderName ??= new V1CommonContent_ContentValue { Value = [] };
                 AddContentValue(createDialogCommand.Content.SenderName, data, value);
                 break;
-            case "additional-info":
+            case "additionalinfo":
                 createDialogCommand.Content.AdditionalInfo ??= new V1CommonContent_ContentValue { Value = [] };
                 AddContentValue(createDialogCommand.Content.AdditionalInfo, data, value);
                 break;
-            case "extended-status":
+            case "extendedstatus":
                 createDialogCommand.Content.ExtendedStatus ??= new V1CommonContent_ContentValue { Value = [] };
                 AddContentValue(createDialogCommand.Content.ExtendedStatus, data, value);
                 break;
-            case "main-content-reference":
+            case "maincontentreference":
                 createDialogCommand.Content.MainContentReference ??= new V1CommonContent_ContentValue { Value = [] };
                 AddContentValue(createDialogCommand.Content.MainContentReference, data, value);
                 break;
@@ -443,17 +443,28 @@ public static class SeedImporter
                     transmission.Type = type;
                 }
                 break;
-            case "sendertype":
-                if (Enum.TryParse<Actors_ActorType>(value, out var actorType))
+            case "sender":
+
+                if (!data.MoveNext())
                 {
-                    transmission.Sender.ActorType = actorType;
+                    throw new InvalidParameterException($"Not enough parameters for Dialog.Transmission, value:{value}");
                 }
-                break;
-            case "senderid":
-                transmission.Sender.ActorId = value;
-                break;
-            case "sendername":
-                transmission.Sender.ActorName = value;
+                var senderField = data.Current;
+                switch (senderField)
+                {
+                    case "type":
+                        if (Enum.TryParse<Actors_ActorType>(value, out var actorType))
+                        {
+                            transmission.Sender.ActorType = actorType;
+                        }
+                        break;
+                    case "id":
+                        transmission.Sender.ActorId = value;
+                        break;
+                    case "name":
+                        transmission.Sender.ActorName = value;
+                        break;
+                }
                 break;
             case "title":
                 transmission.Content.Title ??= new V1CommonContent_ContentValue { Value = [] };
