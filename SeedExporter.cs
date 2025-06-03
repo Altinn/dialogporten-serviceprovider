@@ -72,7 +72,158 @@ public static class SeedExporter
         // Transmissions
         ExportTransmissions(seedParts, createDialogCommand.Transmissions);
 
+        // Gui Actions
+        ExportGuiActions(seedParts, createDialogCommand.GuiActions);
+
+        // Api Actions
+        ExportApiActions(seedParts, createDialogCommand.ApiActions);
+
+        // Activities
+        ExportActivities(seedParts, createDialogCommand.Activities);
+
         return string.Join(";", seedParts);
+    }
+    private static void ExportActivities(List<string> seedParts, ICollection<V1ServiceOwnerDialogsCommandsCreate_Activity> activities)
+    {
+        var activityIndex = 1;
+        foreach (var activity in activities)
+        {
+            var field = $"activity:{activityIndex++}";
+
+            if (activity.Id.HasValue)
+            {
+                seedParts.Add($"{field}:id={activity.Id}");
+            }
+
+            if (activity.CreatedAt.HasValue)
+            {
+                seedParts.Add($"{field}:createdat={activity.CreatedAt.Value:o}");
+            }
+
+            seedParts.Add($"{field}:type={activity.Type}");
+
+            if (activity.ExtendedType is not null)
+            {
+                seedParts.Add($"{field}:extendedtype={activity.ExtendedType}");
+            }
+            if (activity.TransmissionId.HasValue)
+            {
+                seedParts.Add($"{field}:id={activity.TransmissionId.Value}");
+            }
+
+            if (activity.PerformedBy != null)
+            {
+                ExportCommonActor(seedParts, activity.PerformedBy, $"{field}:performedby");
+            }
+
+            seedParts.AddRange(activity.Description.Select(localization => $"{field}:description:{localization.LanguageCode}={localization.Value}"));
+
+        }
+    }
+    private static void ExportApiActions(List<string> seedParts, ICollection<V1ServiceOwnerDialogsCommandsCreate_ApiAction> apiActions)
+    {
+        var apiActionIndex = 1;
+        foreach (var apiAction in apiActions)
+        {
+            var field = $"apiaction:{apiActionIndex++}";
+
+            if (apiAction.Id.HasValue)
+            {
+                seedParts.Add($"{field}:id={apiAction.Id}");
+            }
+
+            if (!string.IsNullOrEmpty(apiAction.Action))
+            {
+                seedParts.Add($"{field}:action={apiAction.Action}");
+            }
+
+            if (!string.IsNullOrEmpty(apiAction.AuthorizationAttribute))
+            {
+                seedParts.Add($"{field}:authorizationattribute={apiAction.AuthorizationAttribute}");
+            }
+
+            if (!string.IsNullOrEmpty(apiAction.Name))
+            {
+                seedParts.Add($"{field}:name={apiAction.Name}");
+            }
+
+            // API Action Endpoints
+            var endpointIndex = 1;
+            foreach (var endpoint in apiAction.Endpoints)
+            {
+                var endpointField = $"{field}:endpoint:{endpointIndex++}";
+
+                if (!string.IsNullOrEmpty(endpoint.Version))
+                {
+                    seedParts.Add($"{endpointField}:version={endpoint.Version}");
+                }
+
+                seedParts.Add($"{endpointField}:url={endpoint.Url}");
+
+                seedParts.Add($"{endpointField}:httpmethod={endpoint.HttpMethod}");
+
+                if (endpoint.DocumentationUrl != null)
+                {
+                    seedParts.Add($"{endpointField}:documentationurl={endpoint.DocumentationUrl}");
+                }
+
+                if (endpoint.RequestSchema != null)
+                {
+                    seedParts.Add($"{endpointField}:requestschema={endpoint.RequestSchema}");
+                }
+
+                if (endpoint.ResponseSchema != null)
+                {
+                    seedParts.Add($"{endpointField}:responseschema={endpoint.ResponseSchema}");
+                }
+
+                seedParts.Add($"{endpointField}:deprecated={endpoint.Deprecated.ToString().ToLower()}");
+
+                if (endpoint.SunsetAt.HasValue)
+                {
+                    seedParts.Add($"{endpointField}:sunsetat={endpoint.SunsetAt.Value:o}");
+                }
+            }
+        }
+    }
+    private static void ExportGuiActions(List<string> seedParts, ICollection<V1ServiceOwnerDialogsCommandsCreate_GuiAction> guiActions)
+    {
+        var guiActionIndex = 1;
+        foreach (var guiAction in guiActions)
+        {
+            var field = $"guiaction:{guiActionIndex++}";
+
+            if (guiAction.Id.HasValue)
+            {
+                seedParts.Add($"{field}:id={guiAction.Id}");
+            }
+
+            if (!string.IsNullOrEmpty(guiAction.Action))
+            {
+                seedParts.Add($"{field}:action={guiAction.Action}");
+            }
+
+            if (guiAction.HttpMethod.HasValue)
+            {
+                seedParts.Add($"{field}:httpmethod={guiAction.HttpMethod}");
+            }
+
+            seedParts.Add($"{field}:priority={guiAction.Priority}");
+
+            seedParts.Add($"{field}:isdeletedialogaction={guiAction.IsDeleteDialogAction.ToString().ToLower()}");
+
+            // Title localizations
+            if (guiAction.Title.Count != 0)
+            {
+                seedParts.AddRange(guiAction.Title.Select(localization => $"{field}:title:{localization.LanguageCode}={localization.Value}"));
+            }
+
+            // Prompt localizations
+            if (guiAction.Prompt.Count != 0)
+            {
+                seedParts.AddRange(guiAction.Prompt.Select(localization => $"{field}:prompt:{localization.LanguageCode}={localization.Value}"));
+            }
+        }
     }
     private static void ExportTransmissions(List<string> parts, ICollection<V1ServiceOwnerDialogsCommandsCreate_Transmission> transmissions)
     {
