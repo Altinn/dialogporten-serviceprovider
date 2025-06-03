@@ -59,39 +59,91 @@ public static class SeedExporter
             seedParts.Add($"systemlabel={createDialogCommand.SystemLabel}");
 
         // Content fields
-        seedParts.AddRange(ExportContent(createDialogCommand.Content));
+        ExportContent(seedParts, createDialogCommand.Content);
 
         // Collections
+
         // Search Tags
         seedParts.AddRange(createDialogCommand.SearchTags.Select(tag => $"searchtag={tag.Value}"));
 
-        seedParts.AddRange(ExportAttachments(createDialogCommand.Attachments));
+        // Attachments
+        ExportAttachments(seedParts, createDialogCommand.Attachments);
+
+        // Transmissions
+        ExportTransmissions(seedParts, createDialogCommand.Transmissions);
 
         return string.Join(";", seedParts);
     }
-    // Amund: Escape ; in values URL enconding?
-    private static List<string> ExportContent(V1ServiceOwnerDialogsCommandsCreate_Content content)
+    private static void ExportTransmissions(List<string> parts, ICollection<V1ServiceOwnerDialogsCommandsCreate_Transmission> transmissions)
     {
-        var parts = new List<string>();
-        foreach (var propertyInfo in content.GetType().GetProperties())
+        var transmissionIndex = 1;
+        foreach (var transmission in transmissions)
         {
-            var value = propertyInfo.GetValue(content);
+            var field = $"transmission:{transmissionIndex++}";
+            if (transmission.Id.HasValue)
+            {
+                parts.Add($"{field}:id={transmission.Id.Value}");
+            }
 
-            if (value == null || value.GetType() != typeof(V1CommonContent_ContentValue))
-                continue;
+            if (transmission.CreatedAt != default)
+            {
+                parts.Add($"{field}:createdat={transmission.CreatedAt:o}");
+            }
 
-            var contentValue = value as V1CommonContent_ContentValue;
-            var field = $"content:{propertyInfo.Name.ToLowerInvariant()}";
-            parts.Add($"{field}:mediatype={Uri.EscapeDataString(contentValue!.MediaType)}");
-            parts.AddRange(contentValue.Value.Select(localization => $"{field}:{localization.LanguageCode}={localization.Value}"));
+            if (!string.IsNullOrWhiteSpace(transmission.AuthorizationAttribute))
+            {
+                parts.Add($"{field}:authorizationattribute={transmission.AuthorizationAttribute}");
+            }
+
+            if (transmission.RelatedTransmissionId.HasValue)
+            {
+                parts.Add($"{field}:relatedtransmissionid={transmission.RelatedTransmissionId.Value}");
+            }
+
+            ExportCommonActor(parts, transmission.Sender, $"{field}:sender");
+
+            // Content
+            ExportCommentContentValue(parts, $"{field}:title", transmission.Content.Title);
+            ExportCommentContentValue(parts, $"{field}:summary", transmission.Content.Summary);
+            ExportCommentContentValue(parts, $"{field}:contentreference", transmission.Content.ContentReference);
+
+            // attachment
+            ExportTransmissionAttachments(parts, transmission.Attachments, field);
         }
-
-        return parts;
     }
 
-    private static List<string> ExportAttachments(ICollection<V1ServiceOwnerDialogsCommandsCreate_Attachment> attachments)
+    private static void ExportTransmissionAttachments(List<string> parts, ICollection<V1ServiceOwnerDialogsCommandsCreate_TransmissionAttachment> attachments, string field)
     {
-        var parts = new List<string>();
+        var attachmentIndex = 1;
+        foreach (var attachment in attachments)
+        {
+            var myField = $"{field}:attachment:{attachmentIndex++}";
+            if (attachment.Id.HasValue)
+            {
+                parts.Add($"{myField}:id={attachment.Id.Value}");
+            }
+            if (attachment.DisplayName.Count != 0)
+            {
+                parts.AddRange(attachment.DisplayName.Select(localization => $"{myField}:displayname:{localization.LanguageCode}={localization.Value}"));
+            }
+
+            var index = 1;
+            foreach (var url in attachment.Urls)
+            {
+                parts.Add($"{myField}:url:{index}:url={url.Url}");
+                parts.Add($"{myField}:url:{index}:mediatype={url.MediaType}");
+                parts.Add($"{myField}:url:{index}:consumertype={url.ConsumerType}");
+                index++;
+            }
+
+            attachmentIndex++;
+
+
+        }
+    }
+
+    private static void ExportAttachments(List<string> parts, ICollection<V1ServiceOwnerDialogsCommandsCreate_Attachment> attachments)
+    {
         var attachmentIndex = 1;
         foreach (var attachment in attachments)
         {
@@ -114,6 +166,46 @@ public static class SeedExporter
                 index++;
             }
         }
-        return parts;
+    }
+
+    private static void ExportCommonActor(List<string> parts, V1ServiceOwnerCommonActors_Actor actor, string field)
+    {
+
+        parts.Add($"{field}:actortype={actor.ActorType}");
+        if (!string.IsNullOrWhiteSpace(actor.ActorName))
+        {
+            parts.Add($"{field}:actorname={actor.ActorName}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(actor.ActorId))
+        {
+            parts.Add($"{field}:actorid={actor.ActorId}");
+        }
+    }
+
+    // Amund: Escape ; in values URL enconding?
+    private static void ExportContent(List<string> parts, V1ServiceOwnerDialogsCommandsCreate_Content content)
+    {
+        foreach (var propertyInfo in content.GetType().GetProperties())
+        {
+            var value = propertyInfo.GetValue(content);
+
+            if (value == null || value.GetType() != typeof(V1CommonContent_ContentValue))
+                continue;
+
+            var contentValue = value as V1CommonContent_ContentValue;
+            var field = $"content:{propertyInfo.Name.ToLowerInvariant()}";
+            ExportCommentContentValue(parts, field, contentValue);
+        }
+    }
+
+    private static void ExportCommentContentValue(List<string> parts, string field, V1CommonContent_ContentValue? contentValue)
+    {
+        if (contentValue == null)
+        {
+            return;
+        }
+        parts.Add($"{field}:mediatype={Uri.EscapeDataString(contentValue.MediaType)}");
+        parts.AddRange(contentValue.Value.Select(localization => $"{field}:{localization.LanguageCode}={localization.Value}"));
     }
 }
