@@ -11,21 +11,30 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Altinn.ApiClients.Dialogporten" Version="1.64.2-rc" />
-        <PackageReference Include="Blazor.Bootstrap" Version="3.3.1" />
+        <PackageReference Include="Altinn.ApiClients.Dialogporten" Version="1.64.2-rc"/>
+        <PackageReference Include="Blazor.Bootstrap" Version="3.3.1"/>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.2.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8"/>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.8"/>
         <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.5"/>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.8"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.5"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.0.2"/>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
         <PackageReference Include="Refit.HttpClientFactory" Version="8.0.0"/>
         <PackageReference Include="ScottBrady.IdentityModel" Version="4.0.0"/>
         <PackageReference Include="ScottBrady.IdentityModel.AspNetCore" Version="2.1.0"/>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <None Update="Data\myApp.db" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true"/>
+    </ItemGroup>
     <ItemGroup>
         <None Update="Attachments\sample.docx">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -39,16 +48,16 @@
     </ItemGroup>
 
     <ItemGroup>
-      <_ContentIncludedByDefault Remove="tools\out\V1EndUserDialogSystemLabelsSet_SetDialogSystemLabel.json" />
-      <_ContentIncludedByDefault Remove="tools\out\V1ServiceOwnerDialogActivitiesCreate_DialogActivity.json" />
-      <_ContentIncludedByDefault Remove="tools\out\V1ServiceOwnerDialogsCreate_Dialog.json" />
-      <_ContentIncludedByDefault Remove="tools\out\V1ServiceOwnerDialogsPatchDialog.json" />
-      <_ContentIncludedByDefault Remove="tools\out\V1ServiceOwnerDialogsUpdate_Dialog.json" />
-      <_ContentIncludedByDefault Remove="tools\out\V1ServiceOwnerDialogTransmissionsCreate_DialogTransmission.json" />
-      <_ContentIncludedByDefault Remove="tools\schema.json" />
-      <_ContentIncludedByDefault Remove="tools\swagger.json" />
-      <_ContentIncludedByDefault Remove="tools\swagger2.json" />
-      <_ContentIncludedByDefault Remove="tools\swagger3.json" />
+        <_ContentIncludedByDefault Remove="tools\out\V1EndUserDialogSystemLabelsSet_SetDialogSystemLabel.json"/>
+        <_ContentIncludedByDefault Remove="tools\out\V1ServiceOwnerDialogActivitiesCreate_DialogActivity.json"/>
+        <_ContentIncludedByDefault Remove="tools\out\V1ServiceOwnerDialogsCreate_Dialog.json"/>
+        <_ContentIncludedByDefault Remove="tools\out\V1ServiceOwnerDialogsPatchDialog.json"/>
+        <_ContentIncludedByDefault Remove="tools\out\V1ServiceOwnerDialogsUpdate_Dialog.json"/>
+        <_ContentIncludedByDefault Remove="tools\out\V1ServiceOwnerDialogTransmissionsCreate_DialogTransmission.json"/>
+        <_ContentIncludedByDefault Remove="tools\schema.json"/>
+        <_ContentIncludedByDefault Remove="tools\swagger.json"/>
+        <_ContentIncludedByDefault Remove="tools\swagger2.json"/>
+        <_ContentIncludedByDefault Remove="tools\swagger3.json"/>
     </ItemGroup>
 
 </Project>

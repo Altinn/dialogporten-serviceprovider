@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Rendering;
 
-namespace Digdir.BDB.Dialogporten.ServiceProvider.Components;
+namespace Digdir.BDB.Dialogporten.ServiceProvider.Components.Input;
 
 public class InputUri : InputBase<Uri?>
 {
