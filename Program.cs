@@ -3,6 +3,7 @@ using Digdir.BDB.Dialogporten.ServiceProvider;
 using Digdir.BDB.Dialogporten.ServiceProvider.Auth;
 using Digdir.BDB.Dialogporten.ServiceProvider.Clients;
 using Digdir.BDB.Dialogporten.ServiceProvider.Components;
+using Digdir.BDB.Dialogporten.ServiceProvider.Components.Account;
 using Digdir.BDB.Dialogporten.ServiceProvider.Data;
 using Digdir.BDB.Dialogporten.ServiceProvider.Services;
 using Microsoft.AspNetCore.Identity;
@@ -32,6 +33,7 @@ builder.Services
        .AddHostedService<EdDsaSecurityKeysCacheService>()
        .AddHostedService<QueuedHostedService>()
        .AddHostedService<RegClient>()
+       .AddCascadingAuthenticationState()
        .AddCors(options =>
        {
            options.AddPolicy("AllowedOriginsPolicy", builder =>
@@ -67,12 +69,13 @@ builder.Services
 // .ConfigurePrimaryHttpMessageHandler<TokenGeneratorMessageHandler>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(@"DataSource=Data\myApp.db;Cache=Shared"));
+    options.UseSqlite(@"DataSource=Data/myApp.db;Cache=Shared"));
 
-builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+builder.Services.AddIdentityCore<ApplicationUser>()
        .AddEntityFrameworkStores<ApplicationDbContext>()
        .AddSignInManager()
        .AddDefaultTokenProviders();
+
 
 var app = builder.Build();
 
@@ -91,5 +94,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
 app.MapControllers();
-
+app.MapAdditionalIdentityEndpoints();
 await app.RunAsync();

@@ -1,14 +1,9 @@
 using System.Security.Claims;
-using System.Text.Json;
 using Digdir.BDB.Dialogporten.ServiceProvider.Data;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Primitives;
 
-namespace Microsoft.AspNetCore.Routing;
+namespace Digdir.BDB.Dialogporten.ServiceProvider.Components.Account;
 
 internal static class IdentityComponentsEndpointRouteBuilderExtensions
 {

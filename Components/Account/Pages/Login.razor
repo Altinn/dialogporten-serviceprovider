@@ -1,22 +1,23 @@
 @page "/Account/Login"
-
+@attribute [Authorize(AuthenticationSchemes = "Identity.Application")]
 @using System.ComponentModel.DataAnnotations
 @using Digdir.BDB.Dialogporten.ServiceProvider.Data
 @using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity.EntityFrameworkCore
 
 @inject SignInManager<ApplicationUser> SignInManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject UserManager<ApplicationUser> UserManager
 @inject ILogger<Login> Logger
-@inject NavigationManager NavigationManager
-@inject IdentityRedirectManager RedirectManager
 
 <PageTitle>Log in</PageTitle>
-
+<AntiforgeryToken/>
 <h1>Log in</h1>
 <div class="row">
     <div class="col-lg-6">
         <section>
-            <StatusMessage Message="@errorMessage"/>
             <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
                 <DataAnnotationsValidator/>
                 <h2>Use a local account to log in.</h2>
@@ -43,18 +44,6 @@
                 <div>
                     <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
                 </div>
-                <div>
-                    <p>
-                        <a href="Account/ForgotPassword">Forgot your password?</a>
-                    </p>
-                    <p>
-                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register
-                            as a new user</a>
-                    </p>
-                    <p>
-                        <a href="Account/ResendEmailConfirmation">Resend email confirmation</a>
-                    </p>
-                </div>
             </EditForm>
         </section>
     </div>
@@ -62,13 +51,12 @@
         <section>
             <h3>Use another service to log in.</h3>
             <hr/>
-            <ExternalLoginPicker/>
+
         </section>
     </div>
 </div>
 
 @code {
-    private string? errorMessage;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -86,6 +74,20 @@
             // Clear the existing external cookie to ensure a clean login process
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
         }
+
+
+        // var admin = await UserStore.FindByNameAsync("admin", CancellationToken.None);
+        // if (admin is null)
+        // {
+        //     var user = Activator.CreateInstance<ApplicationUser>();
+        //     await UserStore.SetUserNameAsync(user, "admin", CancellationToken.None);
+        //     var result = await UserManager.CreateAsync(user, "Admin123!");
+        //
+        //     if (!result.Succeeded)
+        //     {
+        //         throw new Exception(result.Errors.First().Description);
+        //     }
+        // }
     }
 
     public async Task LoginUser()
@@ -96,18 +98,12 @@
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");
-            RedirectManager.RedirectTo(ReturnUrl);
-        }
-        else
-        {
-            errorMessage = "Error: Invalid login attempt.";
         }
     }
 
     private sealed class InputModel
     {
         [Required]
-        [EmailAddress]
         public string Email { get; set; } = "";
 
         [Required]
@@ -117,7 +113,6 @@
         [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
     }
-
 
 
 }
