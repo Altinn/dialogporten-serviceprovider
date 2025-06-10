@@ -7,7 +7,16 @@
 </div>
 
 @code {
-   
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        if (Value is not null)
+        {
+            _date = DateOnly.FromDateTime(Value.Value.DateTime);
+            _time = TimeOnly.FromDateTime(Value.Value.DateTime);
+        }
+    }
+
     private DateTime? ConvertedValue { get; set; }
     private void UpdateDateTime()
     {
