@@ -26,6 +26,7 @@ builder.Services
        .AddIdportenAuthentication(builder.Configuration)
        .AddSimpleAuth()
        .AddDialogTokenAuthentication()
+       .AddScoped<IdentityRedirectManager>()
        .AddTransient<TokenGeneratorMessageHandler>()
        .AddTransient<ConsoleLoggingMessageHandler>()
        .AddSingleton<ITokenGenerator, TokenGenerator>()
@@ -44,6 +45,17 @@ builder.Services
                       .AllowAnyHeader()
                       .AllowAnyMethod()
                       .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
+           });
+       })
+       .AddAuthorization(options =>
+       {
+           options.AddPolicy("SimpleAuth", policy =>
+           {
+               policy.RequireAuthenticatedUser();
+               policy.AuthenticationSchemes =
+               [
+                   IdentityConstants.ApplicationScheme
+               ];
            });
        })
        .AddDialogportenClient(dialogportenSettings);
@@ -93,6 +105,6 @@ app.UseCors("AllowedOriginsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
-app.MapControllers();
 app.MapAdditionalIdentityEndpoints();
+app.MapControllers();
 await app.RunAsync();

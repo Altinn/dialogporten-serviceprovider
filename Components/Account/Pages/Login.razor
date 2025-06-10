@@ -1,16 +1,12 @@
 @page "/Account/Login"
-@attribute [Authorize(AuthenticationSchemes = "Identity.Application")]
 @using System.ComponentModel.DataAnnotations
 @using Digdir.BDB.Dialogporten.ServiceProvider.Data
-@using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
-@using Microsoft.AspNetCore.Identity.EntityFrameworkCore
-
 @inject SignInManager<ApplicationUser> SignInManager
-@inject IUserStore<ApplicationUser> UserStore
-@inject UserManager<ApplicationUser> UserManager
 @inject ILogger<Login> Logger
+@attribute [AllowAnonymous]
+
 
 <PageTitle>Log in</PageTitle>
 <AntiforgeryToken/>
@@ -69,11 +65,11 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (HttpMethods.IsGet(HttpContext.Request.Method))
-        {
-            // Clear the existing external cookie to ensure a clean login process
-            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-        }
+        // if (HttpMethods.IsGet(HttpContext.Request.Method))
+        // {
+        //     // Clear the existing external cookie to ensure a clean login process
+        //     await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+        // }
 
 
         // var admin = await UserStore.FindByNameAsync("admin", CancellationToken.None);
@@ -94,6 +90,7 @@
     {
         // This doesn't count login failures towards account lockout
         // To enable password failures to trigger account lockout, set lockoutOnFailure: true
+        SignInManager.AuthenticationScheme = IdentityConstants.ApplicationScheme;
         var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         if (result.Succeeded)
         {

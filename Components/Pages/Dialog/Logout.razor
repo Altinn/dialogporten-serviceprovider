@@ -1,0 +1,24 @@
+@using Digdir.BDB.Dialogporten.ServiceProvider.Data
+@using Microsoft.AspNetCore.Identity
+@inject NavigationManager NavigationManager;
+@inject SignInManager<ApplicationUser> SignInManager;
+@rendermode InteractiveServer
+@{
+    Console.WriteLine("ss"); 
+}
+<button @onclick="Clikked" class="nav-link">
+    <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+</button>
+
+@code {
+    
+    private async Task Clikked()
+    {
+        Console.WriteLine("hei!");
+        
+        // SignInManager.AuthenticationScheme = IdentityConstants.ApplicationScheme;
+        // await SignInManager.SignOutAsync();
+        // NavigationManager.NavigateTo("/login");
+        NavigationManager.NavigateTo("/Account/Logout?returnUrl=/", true);
+    }
+}
