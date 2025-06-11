@@ -12,7 +12,7 @@ public static class PrefillExtensions
         {
             case DialogPrefill.Empty:
                 break;
-            case DialogPrefill.Skattemeldig:
+            case DialogPrefill.SkatteMelding:
                 dialog.ServiceResource = "urn:altinn:resource:ske-innrapportering-boligselskap";
                 dialog.Party = "urn:altinn:person:identifier-no:20815497741";
 
@@ -304,5 +304,5 @@ public enum GuiActionPrefill
 public enum DialogPrefill
 {
     Empty,
-    Skattemeldig
+    SkatteMelding
 }

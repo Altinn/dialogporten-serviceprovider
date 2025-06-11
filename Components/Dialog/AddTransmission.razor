@@ -131,10 +131,8 @@
         if (firstRender)
         {
             var temp = await ProtectedLocalStore.GetAsync<Dictionary<Guid, List<Guid>>>("transmissions");
-            Console.WriteLine("Getting Dialogs with transmissions from localstorage");
             if (temp.Success)
             {
-                Console.WriteLine(temp.Value!.Count());
                 _dialogs = temp.Value!;
                 StateHasChanged();
             }
@@ -145,7 +143,6 @@
         var response = await ServiceOwnerApi.V1ServiceOwnerDialogTransmissionsCreateDialogTransmission(SelectedDialog, CreateTransmissionCommand, null);
         if (response.IsSuccessful)
         {
-            Console.WriteLine(response.Content);
             Guid.TryParse(response.Content.Trim('"'), out var guid);
             var transmissionsStorageResult = await ProtectedLocalStore.GetAsync<Dictionary<Guid, List<Guid>>>("transmissions");
 
@@ -166,10 +163,6 @@
             _dialogs = transmissionDict;
             _ = ProtectedLocalStore.SetAsync("transmissions", transmissionDict);
 
-        }
-        else
-        {
-            Console.WriteLine(response.Error.Content);
         }
     }
 

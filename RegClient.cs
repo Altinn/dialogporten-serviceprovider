@@ -2,13 +2,13 @@ using System.Text.Json;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider;
 
-public class RegClient : IHostedService
+public class RegClient(IHttpClientFactory httpClientFactory, ILogger<RegClient> logger) : IHostedService
 {
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<RegClient> _logger;
+    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+    private readonly ILogger<RegClient> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public static List<MaskinportenSchemaResource> Resources => _resources;
-    private static volatile List<MaskinportenSchemaResource> _resources = new();
+    private static volatile List<MaskinportenSchemaResource> _resources = [];
 
     // Amund: en eller annen form for config
     private const string Endpoint = "https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/resourcelist";
@@ -17,12 +17,6 @@ public class RegClient : IHostedService
     {
         PropertyNameCaseInsensitive = true
     };
-
-    public RegClient(IHttpClientFactory httpClientFactory, ILogger<RegClient> logger)
-    {
-        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -52,8 +46,7 @@ public class RegClient : IHostedService
         }
         catch
         {
-            // Amund: Proper log kanskje?
-            _logger.LogWarning("Something went wrong");
+            _logger.LogWarning($"Failed to refresh resource list from endpoint {Endpoint}");
         }
 
         _resources = resources;

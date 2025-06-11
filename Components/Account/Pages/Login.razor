@@ -3,8 +3,11 @@
 @using Digdir.BDB.Dialogporten.ServiceProvider.Data
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity.EntityFrameworkCore
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject UserManager<ApplicationUser> UserManager
 @inject ILogger<Login> Logger
 @attribute [AllowAnonymous]
 <PageTitle>Log in</PageTitle>
@@ -64,31 +67,19 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // if (HttpMethods.IsGet(HttpContext.Request.Method))
-        // {
-        //     // Clear the existing external cookie to ensure a clean login process
-        //     await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-        // }
+        var user = Activator.CreateInstance<ApplicationUser>();
+        // Amund: User secrets? Burde dette skje her?
+        await UserStore.SetUserNameAsync(user, "admin", CancellationToken.None);
+        var result = await UserManager.CreateAsync(user, "Admin123!");
 
-
-        // var admin = await UserStore.FindByNameAsync("admin", CancellationToken.None);
-        // if (admin is null)
-        // {
-        //     var user = Activator.CreateInstance<ApplicationUser>();
-        //     await UserStore.SetUserNameAsync(user, "admin", CancellationToken.None);
-        //     var result = await UserManager.CreateAsync(user, "Admin123!");
-        //
-        //     if (!result.Succeeded)
-        //     {
-        //         throw new Exception(result.Errors.First().Description);
-        //     }
-        // }
+        if (!result.Succeeded)
+        {
+            Logger.LogInformation("Admin already created");
+        }
     }
 
     public async Task LoginUser()
     {
-        // This doesn't count login failures towards account lockout
-        // To enable password failures to trigger account lockout, set lockoutOnFailure: true
         SignInManager.AuthenticationScheme = IdentityConstants.ApplicationScheme;
         var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         if (result.Succeeded)

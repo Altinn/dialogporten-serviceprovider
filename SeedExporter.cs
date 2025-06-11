@@ -244,6 +244,11 @@ public static class SeedExporter
                 seedParts.Add($"{field}:httpmethod={guiAction.HttpMethod}");
             }
 
+            if (guiAction.Url is not null)
+            {
+                seedParts.Add($"{field}:url={guiAction.Url}");
+            }
+
             seedParts.Add($"{field}:priority={guiAction.Priority}");
 
             seedParts.Add($"{field}:isdeletedialogaction={guiAction.IsDeleteDialogAction.ToString().ToLower()}");

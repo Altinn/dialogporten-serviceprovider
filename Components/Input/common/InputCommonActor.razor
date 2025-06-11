@@ -64,7 +64,6 @@
             Value.ActorName = null!;
         }
         ValueChanged.InvokeAsync(Value);
-        Console.WriteLine($"Value changed: {Value}");
 
         EditContext.NotifyFieldChanged(FieldIdentifier);
 

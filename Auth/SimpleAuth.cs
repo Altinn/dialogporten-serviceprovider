@@ -4,7 +4,7 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider.Auth;
 
 public static class SimpleAuth
 {
-    public static IServiceCollection AddSimpleAuth(this IServiceCollection services)
+    public static IServiceCollection AddBasicAuthentication(this IServiceCollection services)
     {
         services
             .AddAuthentication()

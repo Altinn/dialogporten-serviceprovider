@@ -10,6 +10,15 @@
 
     [Parameter] public bool Required { get; set; }
 
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        if (Value is not null)
+        {
+            _value = Value.ToString();
+        }
+    }
+
     protected override bool TryParseValueFromString(string? value, out Uri? result, [NotNullWhen(false)] out string? validationErrorMessage)
     {
         result = null;
@@ -20,7 +29,7 @@
     private void Parse()
     {
         if (!Uri.TryCreate(_value, UriKind.RelativeOrAbsolute, out var result)) return;
-       
+
         Value = result;
         ValueChanged.InvokeAsync(Value);
 

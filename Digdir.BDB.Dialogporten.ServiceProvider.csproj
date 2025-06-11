@@ -46,14 +46,7 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
-    <ItemGroup>
-      <_ContentIncludedByDefault Remove="jsonFiles\Array.json" />
-      <_ContentIncludedByDefault Remove="jsonFiles\full.json" />
-      <_ContentIncludedByDefault Remove="jsonFiles\json.json" />
-      <_ContentIncludedByDefault Remove="jsonFiles\object.json" />
-      <_ContentIncludedByDefault Remove="jsonFiles\schema.json" />
-      <_ContentIncludedByDefault Remove="jsonFiles\V1ServiceOwnerDialogsCreate_Dialog.json" />
-      <_ContentIncludedByDefault Remove="jsonFiles\V1ServiceOwnerDialogsPatchDialog.json" />
-    </ItemGroup>
+
+
 
 </Project>

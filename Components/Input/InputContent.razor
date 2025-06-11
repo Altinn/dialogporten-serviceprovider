@@ -47,7 +47,6 @@
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
-        Console.WriteLine(Value == null);
         if (Value == null)
         {
             Value = new V1ServiceOwnerDialogsCommandsCreate_Content();
@@ -64,7 +63,6 @@
     private void NotifyValueChanged()
     {
         ValueChanged.InvokeAsync(Value);
-        Console.WriteLine($"Value changed: {Value}");
 
         if (EditContext != null)
         {

@@ -7,7 +7,7 @@ public static class SeedImporter
 {
     public static void ParseSeed(V1ServiceOwnerDialogsCommandsCreate_Dialog createDialogCommand, string seed)
     {
-        // Amund: Cleaning av CreateDialogCommand
+        createDialogCommand.Prefill(DialogPrefill.Empty);
         var parts = seed.Split(";");
 
         foreach (var part in parts)

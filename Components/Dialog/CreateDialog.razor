@@ -163,6 +163,17 @@
     <fieldset>
         <legend>Attachment</legend>
         <table>
+            <thead>
+            @if (CreateDialogCommand.Attachments.Any())
+            {
+
+                <th>Id</th>
+                <th>URls</th>
+                <th>Display Name</th>
+                <th>Action</th>
+            }
+            </thead>
+            <tbody>
             @foreach (var attachment in CreateDialogCommand.Attachments)
             {
                 <tr>
@@ -181,6 +192,7 @@
                     </td>
                 </tr>
             }
+            </tbody>
         </table>
         <button type="button" @onclick="AddAttachment">Add Attachment</button>
     </fieldset>
@@ -260,14 +272,12 @@
 
     private void ValidateContentValue(V1CommonContent_ContentValue? content, string name)
     {
-        Console.WriteLine($"name: {name}");
         if (content is null) return;
 
         if ((content.Value == null || !content.Value.Any()) && !string.IsNullOrEmpty(content.MediaType))
         {
             var fieldId = new FieldIdentifier(CreateDialogCommand, $"Content.{name}.Value");
             _messageStore.Add(fieldId, $"{name} requires at least one localization");
-            Console.WriteLine($"Validation error added for {name}");
             return;
         }
 
@@ -275,7 +285,6 @@
         {
             var fieldId = new FieldIdentifier(CreateDialogCommand, $"Content.{name}.Value");
             _messageStore.Add(fieldId, $"{name} requires mediaType if you have any localization");
-            Console.WriteLine($"Validation error added for {name}");
         }
 
     }
@@ -382,7 +391,7 @@
 
     private void Prefill()
     {
-        CreateDialogCommand.Prefill(DialogPrefill.Skattemeldig);
+        CreateDialogCommand.Prefill(DialogPrefill.SkatteMelding);
         StateHasChanged();
     }
 

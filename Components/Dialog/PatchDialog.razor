@@ -104,10 +104,8 @@
         if (firstRender)
         {
             var temp = await ProtectedLocalStore.GetAsync<List<Guid>>("dialogs");
-            Console.WriteLine("Getting Dialogs from localstorage");
             if (temp.Success)
             {
-                Console.WriteLine(temp.Value!.Count());
                 _dialogs = temp.Value!;
                 DialogId = _dialogs.FirstOrDefault();
                 StateHasChanged();
@@ -138,7 +136,6 @@
             _header = response.StatusCode.ToString();
             _message = response.IsSuccessStatusCode ? "No Content" : response.Error.Content;
             _showPopUp = true;
-            Console.WriteLine(response);
         }
 
     }

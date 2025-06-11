@@ -6,19 +6,14 @@
 @{
     Console.WriteLine("ss"); 
 }
-<button @onclick="Clikked" class="nav-link">
+<button @onclick="LogoutUser" class="nav-link">
     <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
 </button>
 
 @code {
     
-    private async Task Clikked()
+    private void LogoutUser()
     {
-        Console.WriteLine("hei!");
-        
-        // SignInManager.AuthenticationScheme = IdentityConstants.ApplicationScheme;
-        // await SignInManager.SignOutAsync();
-        // NavigationManager.NavigateTo("/login");
         NavigationManager.NavigateTo("/Account/Logout?returnUrl=/", true);
     }
 }

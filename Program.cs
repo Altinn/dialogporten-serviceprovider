@@ -24,7 +24,7 @@ builder.Services
        .AddEndpointsApiExplorer()
        .AddSwaggerGen()
        .AddIdportenAuthentication(builder.Configuration)
-       .AddSimpleAuth()
+       .AddBasicAuthentication()
        .AddDialogTokenAuthentication()
        .AddScoped<IdentityRedirectManager>()
        .AddTransient<TokenGeneratorMessageHandler>()
@@ -59,26 +59,6 @@ builder.Services
            });
        })
        .AddDialogportenClient(dialogportenSettings);
-// .AddRefitClient<IDialogporten>(_ => new RefitSettings
-// {
-//     ContentSerializer = new SystemTextJsonContentSerializer(new JsonSerializerOptions
-//     {
-//         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-//
-//         PropertyNameCaseInsensitive = true,
-//         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-//         Converters = {
-//             new ObjectToInferredTypesConverter(),
-//             new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
-//         }
-//     })
-// })
-// .ConfigureHttpClient(configuration =>
-// {
-//     configuration.BaseAddress = new Uri(builder.Configuration["Dialogporten:BaseUrl"]!);
-// })
-// .AddHttpMessageHandler<ConsoleLoggingMessageHandler>()
-// .ConfigurePrimaryHttpMessageHandler<TokenGeneratorMessageHandler>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(@"DataSource=Data/myApp.db;Cache=Shared"));

@@ -6,22 +6,20 @@
     <table>
         <thead>
         <tr>
-            <th></th>
-            <th></th>
-            <th></th>
-            <th></th>
+            <th>URL</th>
+            <th>Media Type</th>
+            <th>Consumer Type</th>
+            <th>Action</th>
         </tr>
         </thead>
         <tbody>
         @foreach (var url in Value!)
         {
             <tr>
-                <label>URL</label>
                 <td>
                     <InputUri @bind-Value="url.Url"></InputUri>
                     <ValidationMessage For="@(() => url.Url)"></ValidationMessage>
                 </td>
-                <label>Media Type</label>
                 <td>
                     <InputText @bind-Value="@url.MediaType"></InputText>
                     <ValidationMessage For="@(() => url.MediaType)"></ValidationMessage>
@@ -29,7 +27,6 @@
                 <td>
 
                     <div>
-                        <label>Consumer Type</label>
                         <InputSelect @bind-Value="@url.ConsumerType">
                             @foreach (var label in Enum.GetValues<Attachments_AttachmentUrlConsumerType>())
                             {
@@ -40,7 +37,7 @@
                     </div>
                 </td>
                 <td>
-                    <button @onclick="() => RemoveAttachmentUrl(url)">Remove url</button>
+                    <Button type="button" @onclick="() => RemoveAttachmentUrl(url)">Remove url</Button>
                 </td>
             </tr>
         }
