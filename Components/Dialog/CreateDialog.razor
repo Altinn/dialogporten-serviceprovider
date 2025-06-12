@@ -215,6 +215,34 @@
         <!-- Activities -->
         <InputActivites @bind-Value="CreateDialogCommand.Activities"/>
     </fieldset>
+
+    <div>
+        <!-- ServiceOwner label -->
+        <fieldset>
+            <legend>ServiceOwnerLabels</legend>
+            <table>
+                @foreach (var serviceOwnerLabel in CreateDialogCommand.ServiceOwnerContext.ServiceOwnerLabels)
+                {
+                    <tr>
+                        <td>
+                            <InputText @bind-Value="serviceOwnerLabel.Value"></InputText>
+                            <ValidationMessage For="@(() => serviceOwnerLabel.Value)"></ValidationMessage>
+                        </td>
+                        <td>
+                            <button type="button"
+                                    @onclick="() => CreateDialogCommand.ServiceOwnerContext.ServiceOwnerLabels.Remove(serviceOwnerLabel)">
+                                Remove
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </table>
+            <button type="button"
+                    onclick="@(() => CreateDialogCommand.ServiceOwnerContext.ServiceOwnerLabels.Add(new V1ServiceOwnerDialogsCommandsCreate_ServiceOwnerLabel()))">
+                Add ServiceOwner Label
+            </button>
+        </fieldset>
+    </div>
     <button type="submit">Submit</button>
 </EditForm>
 <label For="dialog-seed">Seed:</label>
@@ -244,7 +272,6 @@
     {
         var seed = SeedExporter.ExportSeed(CreateDialogCommand);
         await Js.InvokeVoidAsync("navigator.clipboard.writeText", seed);
-        // You could also show a notification that the seed was copied
     }
     private void ValidateForm(object? sender, ValidationRequestedEventArgs e)
     {
@@ -305,6 +332,11 @@
         base.OnInitialized();
         var deleteButton = new V1ServiceOwnerDialogsCommandsCreate_GuiAction();
         deleteButton.Prefill(GuiActionPrefill.DeleteButton);
+        CreateDialogCommand.ServiceOwnerContext = new V1ServiceOwnerDialogsCommandsCreate_DialogServiceOwnerContext
+        {
+            ServiceOwnerLabels = []
+        };
+        
 
         CreateDialogCommand.Attachments = [];
         CreateDialogCommand.SearchTags =

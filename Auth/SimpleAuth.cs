@@ -25,4 +25,6 @@ public static class SimpleAuth
 
         return services;
     }
+
+
 }

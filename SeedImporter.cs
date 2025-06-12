@@ -133,6 +133,12 @@ public static class SeedImporter
                 case "activity":
                     ParseActivity(createDialogCommand, fieldData, value);
                     break;
+                case "serviceonwerlabel":
+                    createDialogCommand.ServiceOwnerContext.ServiceOwnerLabels.Add(new V1ServiceOwnerDialogsCommandsCreate_ServiceOwnerLabel
+                    {
+                        Value = value
+                    });
+                    break;
                 default:
                     throw new InvalidParameterException($"Field: {seedData.First()}, is not supported");
             }

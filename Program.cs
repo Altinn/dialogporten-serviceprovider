@@ -87,4 +87,8 @@ app.UseAuthorization();
 app.UseAntiforgery();
 app.MapAdditionalIdentityEndpoints();
 app.MapControllers();
+using (var scope = app.Services.CreateScope())
+{
+   await scope.ServiceProvider.AddDefaultAccount();
+}
 await app.RunAsync();

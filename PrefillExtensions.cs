@@ -11,6 +11,17 @@ public static class PrefillExtensions
         switch (prefillType)
         {
             case DialogPrefill.Empty:
+                dialog = new V1ServiceOwnerDialogsCommandsCreate_Dialog
+                {
+                    Activities = [],
+                    ApiActions = [],
+                    Attachments = [],
+                    Transmissions = [],
+                    GuiActions = [],
+                    SearchTags = [],
+                    ServiceOwnerContext = new V1ServiceOwnerDialogsCommandsCreate_DialogServiceOwnerContext(),
+                    Content = new V1ServiceOwnerDialogsCommandsCreate_Content()
+                };
                 break;
             case DialogPrefill.SkatteMelding:
                 dialog.ServiceResource = "urn:altinn:resource:ske-innrapportering-boligselskap";
@@ -163,7 +174,7 @@ public static class PrefillExtensions
                                 [
                                     new V1CommonLocalizations_Localization
                                     {
-                                        Value = "http://nrk.no",
+                                        Value = "https://nrk.no",
                                         LanguageCode = "nb"
                                     }
                                 ],

@@ -3,11 +3,8 @@
 @using Digdir.BDB.Dialogporten.ServiceProvider.Data
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
-@using Microsoft.AspNetCore.Identity.EntityFrameworkCore
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
-@inject IUserStore<ApplicationUser> UserStore
-@inject UserManager<ApplicationUser> UserManager
 @inject ILogger<Login> Logger
 @attribute [AllowAnonymous]
 <PageTitle>Log in</PageTitle>
@@ -64,19 +61,6 @@
 
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
-
-    protected override async Task OnInitializedAsync()
-    {
-        var user = Activator.CreateInstance<ApplicationUser>();
-        // Amund: User secrets? Burde dette skje her?
-        await UserStore.SetUserNameAsync(user, "admin", CancellationToken.None);
-        var result = await UserManager.CreateAsync(user, "Admin123!");
-
-        if (!result.Succeeded)
-        {
-            Logger.LogInformation("Admin already created");
-        }
-    }
 
     public async Task LoginUser()
     {

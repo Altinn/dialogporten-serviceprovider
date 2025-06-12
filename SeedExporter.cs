@@ -96,6 +96,9 @@ public static class SeedExporter
 
         // Search Tags
         seedParts.AddRange(createDialogCommand.SearchTags.Select(tag => $"searchtag={tag.Value}"));
+        
+        // ServiceOwnerLabels
+        seedParts.AddRange(createDialogCommand.ServiceOwnerContext.ServiceOwnerLabels.Select(label => $"serviceownerlabel={label.Value}"));
 
         // Attachments
         ExportAttachments(seedParts, createDialogCommand.Attachments);
