@@ -33,7 +33,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Update="Data\myApp.db" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true"/>
+        <None Update="Data\Accounts.db" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true"/>
     </ItemGroup>
     <ItemGroup>
         <None Update="Attachments\sample.docx">

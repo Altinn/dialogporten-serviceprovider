@@ -6,3 +6,4 @@ riderModule.iml
 .idea
 /Digdir.BDB.Dialogporten.ServiceProvider.sln.DotSettings.user
 /tools/node_modules/*
+/Data/*.db

@@ -61,8 +61,8 @@ builder.Services
        .AddDialogportenClient(dialogportenSettings);
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    // options.UseSqlite(@"DataSource=Data/myApp.db;Cache=Shared"));
-    options.UseSqlite(builder.Configuration.GetConnectionString("sqlite")));
+    options.UseSqlite(@"DataSource=Data/Accounts.db;Cache=Shared"));
+
 
 builder.Services.AddIdentityCore<ApplicationUser>()
        .AddEntityFrameworkStores<ApplicationDbContext>()
