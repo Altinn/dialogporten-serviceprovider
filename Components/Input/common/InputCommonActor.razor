@@ -3,6 +3,7 @@
 @using Altinn.ApiClients.Dialogporten.Features.V1
 <fieldset>
 
+    @{ if (Value is null) throw new ArgumentNullException(); }
     <div>
         <label>Actor Type</label>
         <InputSelect @bind-Value="@_value.ActorType" @bind-Value:after="NotifyValueChanged">

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Migrations
 {
     /// <inheritdoc />
-    public partial class create : Migration
+    public partial class AddUserAccounts : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

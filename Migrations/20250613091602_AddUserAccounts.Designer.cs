@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250606104411_create")]
-    partial class create
+    [Migration("20250613091602_AddUserAccounts")]
+    partial class AddUserAccounts
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
