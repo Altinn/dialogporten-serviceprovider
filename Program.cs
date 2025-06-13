@@ -33,7 +33,7 @@ builder.Services
        .AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>()
        .AddHostedService<EdDsaSecurityKeysCacheService>()
        .AddHostedService<QueuedHostedService>()
-       .AddHostedService<RegClient>()
+       .AddHostedService<ResourceRegistryClient>()
        .AddCascadingAuthenticationState()
        .AddCors(options =>
        {
@@ -61,7 +61,8 @@ builder.Services
        .AddDialogportenClient(dialogportenSettings);
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(@"DataSource=Data/myApp.db;Cache=Shared"));
+    // options.UseSqlite(@"DataSource=Data/myApp.db;Cache=Shared"));
+    options.UseSqlite(builder.Configuration.GetConnectionString("sqlite")));
 
 builder.Services.AddIdentityCore<ApplicationUser>()
        .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -89,6 +90,6 @@ app.MapAdditionalIdentityEndpoints();
 app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
-   await scope.ServiceProvider.AddDefaultAccount();
+    await scope.ServiceProvider.AddDefaultAccount();
 }
 await app.RunAsync();

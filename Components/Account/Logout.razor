@@ -3,15 +3,12 @@
 @inject NavigationManager NavigationManager;
 @inject SignInManager<ApplicationUser> SignInManager;
 @rendermode InteractiveServer
-@{
-    Console.WriteLine("ss"); 
-}
 <button @onclick="LogoutUser" class="nav-link">
     <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
 </button>
 
 @code {
-    
+
     private void LogoutUser()
     {
         NavigationManager.NavigateTo("/Account/Logout?returnUrl=/", true);

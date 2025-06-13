@@ -5,7 +5,7 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider.Components.Account;
 
 internal sealed class IdentityRedirectManager(NavigationManager navigationManager)
 {
-    public const string StatusCookieName = "Identity.StatusMessage";
+    private const string StatusCookieName = "Identity.StatusMessage";
 
     private static readonly CookieBuilder StatusCookieBuilder = new()
     {

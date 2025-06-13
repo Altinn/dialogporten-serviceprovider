@@ -1,10 +1,9 @@
 using Digdir.BDB.Dialogporten.ServiceProvider.Data;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Components.Account;
 
-internal static class DefaultAccountExtensions
+internal static class DefaultAccount
 {
     public static async Task AddDefaultAccount(this IServiceProvider services)
     {
@@ -13,7 +12,6 @@ internal static class DefaultAccountExtensions
         var configuration = services.GetRequiredService<IConfiguration>();
         var logger = services.GetRequiredService<ILogger<ApplicationUser>>();
 
-        // Get default credentials from configuration or use fallback values
         var defaultUsername = configuration.GetValue<string>("DefaultAccount:Username");
         var defaultPassword = configuration.GetValue<string>("DefaultAccount:Password");
 
@@ -27,7 +25,7 @@ internal static class DefaultAccountExtensions
         logger.LogInformation("Creating default account");
         if (admin == null)
         {
-            var user = Activator.CreateInstance<ApplicationUser>();
+            var user = new ApplicationUser();
             await userStore.SetUserNameAsync(user, defaultUsername, CancellationToken.None);
             var result = await userManager.CreateAsync(user, defaultPassword);
             if (!result.Succeeded)

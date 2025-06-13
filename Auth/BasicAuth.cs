@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Auth;
 
-public static class SimpleAuth
+public static class BasicAuth
 {
     public static IServiceCollection AddBasicAuthentication(this IServiceCollection services)
     {
@@ -15,13 +15,6 @@ public static class SimpleAuth
                     options.AccessDeniedPath = "/error";
                 }
             );
-        // .AddCookie("Identity.External", options =>
-        // {
-        //     options.LoginPath = "/account/login";
-        //     options.LogoutPath = "/account/logout";
-        //     options.AccessDeniedPath = "/error";
-        // }
-
 
         return services;
     }

@@ -30,7 +30,7 @@
                     <ValidationMessage For="() => transmission.Id"/>
                 </td>
 
-                <td> <!-- Amund: Husk å bytte ved CreatedAt fix -->
+                <td> <!-- Can't use DateInputWrapper since it is not nullable -->
                     <InputDate @bind-Value="@transmission.CreatedAt"/>
                     <ValidationMessage For="() => transmission.CreatedAt"/>
                 </td>

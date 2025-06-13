@@ -390,7 +390,6 @@ public static class SeedExporter
         }
     }
 
-    // Amund: Escape ; in values URL enconding?
     private static void ExportContent(List<string> parts, V1ServiceOwnerDialogsCommandsCreate_Content content)
     {
         foreach (var propertyInfo in content.GetType().GetProperties())

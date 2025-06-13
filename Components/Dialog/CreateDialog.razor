@@ -2,6 +2,7 @@
 @using Altinn.ApiClients.Dialogporten.Features.V1
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
+@using Digdir.BDB.Dialogporten.ServiceProvider.Services
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inject IServiceownerApi ServiceOwnerApi
@@ -30,7 +31,7 @@
         <label>Service Resource</label>
         <InputSelect @bind-Value="@CreateDialogCommand.ServiceResource">
             <option value="" disabled selected>Select your option</option>
-            @foreach (var status in RegClient.Resources)
+            @foreach (var status in ResourceRegistryClient.Resources)
             {
                 <option value=@("urn:altinn:resource:" + status.Identifier)>@status.Identifier</option>
             }

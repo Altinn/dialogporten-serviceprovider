@@ -1,17 +1,16 @@
 using System.Text.Json;
 
-namespace Digdir.BDB.Dialogporten.ServiceProvider;
+namespace Digdir.BDB.Dialogporten.ServiceProvider.Services;
 
-public class RegClient(IHttpClientFactory httpClientFactory, ILogger<RegClient> logger) : IHostedService
+public class ResourceRegistryClient(IHttpClientFactory httpClientFactory, ILogger<ResourceRegistryClient> logger, IConfiguration configuration) : IHostedService
 {
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-    private readonly ILogger<RegClient> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ILogger<ResourceRegistryClient> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public static List<MaskinportenSchemaResource> Resources => _resources;
     private static volatile List<MaskinportenSchemaResource> _resources = [];
 
-    // Amund: en eller annen form for config
-    private const string Endpoint = "https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/resourcelist";
+    private readonly string _endpoint = configuration.GetValue<string>("dialogporten:registry:url") ?? throw new ArgumentNullException($"dialogporten:registry:url");
 
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -35,7 +34,7 @@ public class RegClient(IHttpClientFactory httpClientFactory, ILogger<RegClient> 
 
         try
         {
-            var response = await httpClient.GetStringAsync(Endpoint, cancellationToken);
+            var response = await httpClient.GetStringAsync(_endpoint, cancellationToken);
 
             var deserializedResponse = JsonSerializer.Deserialize<List<MaskinportenSchemaResource>>(response, Options);
             if (deserializedResponse != null)
@@ -46,7 +45,7 @@ public class RegClient(IHttpClientFactory httpClientFactory, ILogger<RegClient> 
         }
         catch
         {
-            _logger.LogWarning($"Failed to refresh resource list from endpoint {Endpoint}");
+            _logger.LogWarning("Failed to refresh resource list from endpoint {Endpoint}", _endpoint);
         }
 
         _resources = resources;

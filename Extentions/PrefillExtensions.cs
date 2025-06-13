@@ -116,7 +116,6 @@ public static class PrefillExtensions
                 //GuiActions
                 dialog.GuiActions = [new V1ServiceOwnerDialogsCommandsCreate_GuiAction(), new V1ServiceOwnerDialogsCommandsCreate_GuiAction()];
 
-                // Amund: Føles feil ut på et fundamentalt nivå
                 var enumerator = dialog.GuiActions.GetEnumerator();
                 enumerator.MoveNext();
                 enumerator.Current.Prefill(GuiActionPrefill.ReadConfirmation);
@@ -125,7 +124,6 @@ public static class PrefillExtensions
                 enumerator.Current.Priority = DialogsEntitiesActions_DialogGuiActionPriority.Secondary;
                 enumerator.Dispose();
 
-                // Amund: temp
                 dialog.Transmissions =
                 [
                     new V1ServiceOwnerDialogsCommandsCreate_Transmission
