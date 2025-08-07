@@ -1,4 +1,6 @@
 using System.Text;
+using Altinn.ApiClients.Dialogporten;
+using Altinn.ApiClients.Dialogporten.Features.V1;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
@@ -11,9 +13,23 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 [EnableCors("AllowedOriginsPolicy")]
 public class FrontChannelEmbedController : ControllerBase
 {
+    
+    private readonly IServiceownerApi _dialogporten;
+    private readonly IDialogTokenValidator _dialogTokenValidator;
     [HttpGet]
     public IActionResult Get([FromQuery] bool html = false)
     {
+        var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+        string? jwtToken;
+        if (authHeader != null && authHeader.StartsWith("Bearer "))
+        {
+            jwtToken = authHeader["Bearer ".Length..].Trim();
+            var result = _dialogTokenValidator.Validate(jwtToken);
+            if (result.IsValid)
+            {
+                var dialogIdClaim = result.ClaimsPrincipal.Claims.FirstOrDefault(c => c.Type == "i");
+            }
+        }
         var sb = new StringBuilder();
         foreach (var claim in User.Claims)
         {
