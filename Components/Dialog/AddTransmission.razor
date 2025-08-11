@@ -109,7 +109,7 @@
 
 @code {
 
-    public V1ServiceOwnerDialogTransmissionsCreate_TransmissionRequest CreateTransmissionCommand { get; } = new()
+    public V1ServiceOwnerDialogsCommandsCreateTransmission_TransmissionRequest CreateTransmissionCommand { get; } = new()
     {
         Content = new V1ServiceOwnerDialogsCommandsUpdate_TransmissionContent(),
         Attachments = []
@@ -140,7 +140,7 @@
     }
     private async Task Submit()
     {
-        var response = await ServiceOwnerApi.V1ServiceOwnerDialogTransmissionsCreateDialogTransmission(SelectedDialog, CreateTransmissionCommand, null);
+        var response = await ServiceOwnerApi.V1ServiceOwnerDialogsCommandsCreateTransmissionDialogTransmission(SelectedDialog, CreateTransmissionCommand, null);
         if (response.IsSuccessful)
         {
             Guid.TryParse(response.Content.Trim('"'), out var guid);

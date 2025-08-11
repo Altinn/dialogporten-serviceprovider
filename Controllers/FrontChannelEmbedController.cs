@@ -39,7 +39,7 @@ public class FrontChannelEmbedController : ControllerBase
                     throw new InvalidParameterException("Cant parse DialogId from DialogToken");
                 }
 
-                var createActivity = new V1ServiceOwnerDialogActivitiesCreate_ActivityRequest
+                var createActivity = new V1ServiceOwnerDialogsCommandsCreateActivity_ActivityRequest()
                 {
                     Type = DialogsEntitiesActivities_DialogActivityType.TransmissionOpened,
                     TransmissionId = transmissionId,
@@ -51,7 +51,7 @@ public class FrontChannelEmbedController : ControllerBase
                     Description = []
                 };
 
-                _ = _dialogporten.V1ServiceOwnerDialogActivitiesCreateDialogActivity(dialogId, createActivity, null, CancellationToken.None);
+                _ = _dialogporten.V1ServiceOwnerDialogsCommandsCreateActivityDialogActivity(dialogId, createActivity, null, CancellationToken.None);
             }
         }
         var sb = new StringBuilder();

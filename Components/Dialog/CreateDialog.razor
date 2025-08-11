@@ -369,7 +369,7 @@
 
     private async Task Submit()
     {
-        var response = await ServiceOwnerApi.V1ServiceOwnerDialogsCreateDialog(CreateDialogCommand);
+        var response = await ServiceOwnerApi.V1ServiceOwnerDialogsCommandsCreateDialog(CreateDialogCommand);
         _header = response.StatusCode.ToString();
         _message = response.IsSuccessStatusCode ? response.Content : response.Error.Content;
         _showPopUp = true;
@@ -382,7 +382,7 @@
             Guid.TryParse(guidString, out var guid);
             if (CreateDialogCommand.Transmissions.Any())
             {
-                var getDialog = await ServiceOwnerApi.V1ServiceOwnerDialogsGetDialog(guid, null!);
+                var getDialog = await ServiceOwnerApi.V1ServiceOwnerDialogsQueriesGetDialog(guid, null!);
                 if (getDialog.IsSuccessStatusCode)
                 {
                     // Get all transmission Id

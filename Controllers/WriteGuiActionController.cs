@@ -82,7 +82,7 @@ public class WriteGuiActionController : Controller
         }
 
         return await PerformMaybeBackgroundOperation(queueInBackground, () =>
-            _dialogporten.V1ServiceOwnerDialogsDeleteDialog(GetDialogId(), null, CancellationToken.None));
+            _dialogporten.V1ServiceOwnerDialogsCommandsDeleteDialog(GetDialogId(), null, CancellationToken.None));
     }
 
     private JsonPatchOperations_Operation GetReplaceGuiActionsOp()

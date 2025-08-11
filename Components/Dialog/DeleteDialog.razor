@@ -51,7 +51,7 @@
 
         if (Guid.TryParse(DialogId, out var guid))
         {
-            var response = await ServiceOwnerApi.V1ServiceOwnerDialogsDeleteDialog(guid, null);
+            var response = await ServiceOwnerApi.V1ServiceOwnerDialogsCommandsDeleteDialog(guid, null);
 
             if (response.IsSuccessStatusCode)
             {

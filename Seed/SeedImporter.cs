@@ -94,7 +94,7 @@ public static class SeedImporter
                     }
                     break;
                 case "status":
-                    if (Enum.TryParse<DialogsEntities_DialogStatus>(value, out var status))
+                    if (Enum.TryParse<V1ServiceOwnerCommonDialogStatuses_DialogStatusInput>(value, out var status))
                     {
                         createDialogCommand.Status = status;
                     }
