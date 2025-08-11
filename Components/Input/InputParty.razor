@@ -1,0 +1,37 @@
+@using System.Diagnostics.CodeAnalysis
+@inherits InputBase<string?>
+<div>
+    <InputText @bind-Value="_value" @bind-Value:after="@(UpdateValue)"></InputText>
+    <InputSelect @bind-Value="_value" @bind-Value:after="@(UpdateValue)">
+        <option value="" disabled selected>Select your option</option>
+        @foreach (var values in _parties)
+        {
+            <option value="@values.Value">@values.Key @values.Value</option>
+        }
+    </InputSelect>
+</div>
+
+@code {
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        _value = Value;
+    }
+   
+    private string? _value;
+    private readonly Dictionary<string, string> _parties = new()
+    {
+        { "person", "urn:altinn:person:identifier-no:08895699684" },
+        { "Org", "urn:altinn:organization:identifier-no:313345475" },
+        { "Lekker Nitrogen", "urn:altinn:person:identifier-no:20815497741" }
+    };
+
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out string? result, [NotNullWhen(false)] out string? validationErrorMessage) => throw new NotImplementedException();
+
+    private void UpdateValue()
+    {
+        Value = _value;
+        ValueChanged.InvokeAsync(Value);
+    }
+
+}

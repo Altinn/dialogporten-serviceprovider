@@ -1,0 +1,142 @@
+@using System.Diagnostics
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedLocalStorage ProtectedLocalStore
+@inject IServiceownerApi ServiceOwnerApi
+@rendermode InteractiveServer
+@page "/dialog/patch"
+<h3>PatchDialog</h3>
+<EditForm Model="PatchDocuments" FormName="patch" OnSubmit="Submit">
+    @if (PatchDocuments is null) throw new UnreachableException("PatchDocuments is null, this should never happen");
+    <div>
+        <InputSelect @bind-Value="@DialogId">
+            @foreach (var status in _dialogs)
+            {
+                <option value=@(status)>@status</option>
+            }
+        </InputSelect>
+
+        @foreach (var patchDocument in PatchDocuments)
+        {
+            <div style="border: 2px solid black">
+
+                <div>
+                    <!-- Type -->
+                    <label>Type:</label>
+                    <InputSelect @bind-Value="@patchDocument.OperationType"
+                                 bind-Value:after="@(patchDocument.Op = patchDocument.OperationType.ToString())">
+                        @foreach (var type in Enum.GetValues<JsonPatchOperations_OperationType>())
+                        {
+                            <option value=@(type)>@type</option>
+                        }
+                    </InputSelect>
+                </div>
+
+                <div>
+                    <!-- Path -->
+                    <label>Path:</label>
+                    <InputText AdditionalAttributes="_additionalProperties" @bind-Value="@patchDocument.Path"/>
+                </div>
+
+                @if (patchDocument.OperationType is JsonPatchOperations_OperationType.Move or JsonPatchOperations_OperationType.Copy)
+                {
+                    <div>
+                        <!-- From -->
+                        <label>From:</label>
+                        <InputText @bind-Value="@patchDocument.From"/>
+                    </div>
+                }
+
+                <div>
+                    <!-- Value -->
+                    @{
+                        var valueString = patchDocument.Value?.ToString() ?? string.Empty;
+                    }
+                    <InputTextArea
+                        @bind-Value="valueString"
+                        @bind-Value:after="@(() => patchDocument.Value = valueString)"/>
+                </div>
+                <div>
+
+                    <button type="button" onclick="@(() => RemovePatchDocument(patchDocument))">Remove</button>
+                </div>
+
+            </div>
+        }
+        <div>
+            <button type="button" onclick="@AddPatchDocument">Add</button>
+        </div>
+
+    </div>
+    <button type="submit">Patch</button>
+
+</EditForm>
+
+@if (_showPopUp)
+{
+    <PopUpMessage Header="@_header" Message="@_message" OnClick="() => _showPopUp = false"></PopUpMessage>
+}
+
+
+@code {
+    private readonly Dictionary<string, object> _additionalProperties = new()
+    {
+        {
+            "required", true
+        }
+    };
+
+    private ICollection<JsonPatchOperations_Operation>? PatchDocuments { get; set; }
+    private Guid DialogId { get; set; } = Guid.Empty;
+    private List<Guid> _dialogs = [];
+    private string _header = "";
+    private string? _message = "";
+    private bool _showPopUp = false;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        PatchDocuments ??= new List<JsonPatchOperations_Operation>();
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender)
+        {
+            var temp = await ProtectedLocalStore.GetAsync<List<Guid>>("dialogs");
+            if (temp.Success)
+            {
+                _dialogs = temp.Value!;
+                DialogId = _dialogs.FirstOrDefault();
+                StateHasChanged();
+            }
+        }
+    }
+
+    private void AddPatchDocument()
+    {
+        if (PatchDocuments is null) throw new UnreachableException();
+        PatchDocuments.Add(new JsonPatchOperations_Operation());
+        StateHasChanged();
+    }
+
+    private void RemovePatchDocument(JsonPatchOperations_Operation patchDocument)
+    {
+        if (PatchDocuments is null) throw new UnreachableException();
+        PatchDocuments.Remove(patchDocument);
+        StateHasChanged();
+    }
+
+    private async Task Submit()
+    {
+        if (PatchDocuments is null) throw new UnreachableException();
+        {
+            var response = await ServiceOwnerApi.V1ServiceOwnerDialogsPatchDialog(DialogId, PatchDocuments, null);
+
+            _header = response.StatusCode.ToString();
+            _message = response.IsSuccessStatusCode ? "No Content" : response.Error.Content;
+            _showPopUp = true;
+        }
+
+    }
+}

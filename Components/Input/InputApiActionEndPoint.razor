@@ -1,0 +1,112 @@
+@using System.Diagnostics
+@using System.Diagnostics.CodeAnalysis
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@inherits InputBase<ICollection<V1ServiceOwnerDialogsCommandsCreate_ApiActionEndpoint>>
+@if (Value is null) throw new UnreachableException();
+<fieldset>
+    <table>
+        <thead>
+        @if (Value.Any())
+        {
+            <tr>
+                <th>Version</th>
+                <th>Url</th>
+                <th>Http Method</th>
+                <th>Docs URl</th>
+                <th>Request schema</th>
+                <th>Response schema</th>
+                <th>Deprecated</th>
+                <th>sunset</th>
+                <th>Action</th>
+            </tr>
+        }
+        </thead>
+        <tbody>
+        @foreach (var apiActionEndpoint in Value)
+        {
+            <tr>
+
+                <td>
+                    <InputText @bind-Value="@apiActionEndpoint.Version"/>
+                </td>
+
+                <td>
+                    <InputUri @bind-Value="@apiActionEndpoint.Url"/>
+                </td>
+
+                <td>
+
+                    <div>
+                        <InputSelect @bind-Value="@apiActionEndpoint.HttpMethod">
+                            @foreach (var label in Enum.GetValues<Http_HttpVerb>())
+                            {
+                                <option value="@label">@label</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => apiActionEndpoint.HttpMethod)"></ValidationMessage>
+                    </div>
+                </td>
+
+                <td>
+                    <InputUri @bind-Value="@apiActionEndpoint.DocumentationUrl"/>
+                    <ValidationMessage For="@(() => apiActionEndpoint.DocumentationUrl)"/>
+                </td>
+
+                <td>
+                    <InputUri @bind-Value="@apiActionEndpoint.RequestSchema"/>
+                    <ValidationMessage For="@(() => apiActionEndpoint.RequestSchema)"/>
+                </td>
+
+                <td>
+                    <InputUri @bind-Value="@apiActionEndpoint.ResponseSchema"/>
+                    <ValidationMessage For="@(() => apiActionEndpoint.ResponseSchema)"/>
+                </td>
+
+                <td>
+                    <InputCheckbox @bind-Value="@apiActionEndpoint.Deprecated"/>
+                </td>
+
+                <td>
+                    <DateInputWrapper @bind-Value="@apiActionEndpoint.SunsetAt"/>
+                    <ValidationMessage For="@(() => apiActionEndpoint.SunsetAt)"/>
+                </td>
+
+                <td>
+                    <button type="button" @onclick="() => Remove(apiActionEndpoint)">Remove ApiAction Endpoint</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+        <div>
+            <button type="button" @onclick="Add">Add ApiAction Endpoint</button>
+        </div>
+    </table>
+
+</fieldset>
+
+@code {
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        Value ??= new List<V1ServiceOwnerDialogsCommandsCreate_ApiActionEndpoint>();
+    }
+
+    protected override bool TryParseValueFromString(string? value,
+        [MaybeNullWhen(false)] out ICollection<V1ServiceOwnerDialogsCommandsCreate_ApiActionEndpoint> result,
+        [NotNullWhen(false)] out string? validationErrorMessage) =>
+        throw new NotImplementedException();
+
+    private void Add()
+    {
+        if (Value is null) throw new UnreachableException();
+        Value.Add(new V1ServiceOwnerDialogsCommandsCreate_ApiActionEndpoint());
+        ValueChanged.InvokeAsync(Value);
+    }
+
+    private void Remove(V1ServiceOwnerDialogsCommandsCreate_ApiActionEndpoint apiActionEndpoint)
+    {
+        if (Value is null) throw new UnreachableException();
+        Value.Remove(apiActionEndpoint);
+        ValueChanged.InvokeAsync(Value);
+    }
+}

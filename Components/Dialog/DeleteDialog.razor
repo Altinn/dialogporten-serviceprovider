@@ -1,0 +1,71 @@
+@page "/dialog/delete"
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedLocalStorage ProtectedLocalStore
+@inject IServiceownerApi ServiceOwnerApi
+@rendermode InteractiveServer
+<h3>DeleteDialog</h3>
+<EditForm Model="DialogId" OnValidSubmit="Submit" FormName="Delete Dialog">
+    <div>
+        <InputSelect @bind-Value="@DialogId">
+            @foreach (var status in _dialogs)
+            {
+                <option value=@(status)>@status</option>
+            }
+        </InputSelect>
+    </div>
+
+    <div>
+        <button type="submit">Delete Dialog</button>
+    </div>
+</EditForm>
+
+@if (_showPopUp)
+{
+    <PopUpMessage Header="@_header" Message="@_message" OnClick="() => _showPopUp = false"></PopUpMessage>
+}
+
+@code {
+
+    private List<string> _dialogs = [];
+    private string DialogId { get; set; } = "";
+    private string _header = "";
+    private string? _message = "";
+    private bool _showPopUp = false;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender)
+        {
+            var temp = await ProtectedLocalStore.GetAsync<List<string?>>("dialogs");
+            if (temp.Success)
+            {
+                _dialogs = temp.Value!;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task Submit()
+    {
+
+        if (Guid.TryParse(DialogId, out var guid))
+        {
+            var response = await ServiceOwnerApi.V1ServiceOwnerDialogsCommandsDeleteDialog(guid, null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var dialogs = await ProtectedLocalStore.GetAsync<List<string>>("dialogs");
+                if (dialogs is { Success: true, Value: not null })
+                {
+                    dialogs.Value.Remove(DialogId);
+                    _ = ProtectedLocalStore.SetAsync("dialogs", dialogs.Value);
+                }
+            }
+            _header = response.StatusCode.ToString();
+            _message = response.IsSuccessStatusCode ? "No Content" : response.Error.Content;
+            _showPopUp = true;
+        }
+
+    }
+}

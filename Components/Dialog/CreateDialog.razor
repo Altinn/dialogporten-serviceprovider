@@ -1,0 +1,436 @@
+@page "/dialog/create"
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input
+@using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
+@using Digdir.BDB.Dialogporten.ServiceProvider.Services
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedLocalStorage ProtectedLocalStore
+@inject IServiceownerApi ServiceOwnerApi
+@inject IJSRuntime Js
+@rendermode InteractiveServer
+<h3>CreateDialogTest</h3>
+
+<EditForm Model="CreateDialogCommand" OnValidSubmit="@(() => Submit())" FormName="CreateDialogTest" @ref="_form">
+    <DataAnnotationsValidator/>
+    <ValidationSummary/>
+
+    <button type="button" onclick="@Prefill">prefill</button>
+    <div>
+        <label>Id</label>
+        <InputGuid @bind-Value="@CreateDialogCommand.Id"></InputGuid>
+        <ValidationMessage For="@(() => CreateDialogCommand.Id)"/>
+    </div>
+
+    <div>
+        <label>Idempotent Key</label>
+        <InputText @bind-Value="@CreateDialogCommand.IdempotentKey"></InputText>
+        <ValidationMessage For="@(() => CreateDialogCommand.IdempotentKey)"/>
+    </div>
+
+    <div>
+        <label>Service Resource</label>
+        <InputSelect @bind-Value="@CreateDialogCommand.ServiceResource">
+            <option value="" disabled selected>Select your option</option>
+            @foreach (var status in ResourceRegistryClient.Resources)
+            {
+                <option value=@("urn:altinn:resource:" + status.Identifier)>@status.Identifier</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => CreateDialogCommand.ServiceResource)"/>
+    </div>
+
+    <div>
+        <label>Party</label>
+        @* <InputText AdditionalAttributes="@_req" @bind-Value="@CreateDialogCommand.Party"></InputText> *@
+        <InputParty @bind-Value="CreateDialogCommand.Party"></InputParty>
+        <ValidationMessage For="@(() => CreateDialogCommand.Party)"/>
+    </div>
+
+    <div>
+        <label>Progress</label>
+        <InputNumber @bind-Value="@CreateDialogCommand.Progress"></InputNumber>
+        <ValidationMessage For="@(() => CreateDialogCommand.Progress)"/>
+    </div>
+
+    <div>
+        <label for="extendedStatus">Extended Status</label>
+        <InputText id="extendedStatus" @bind-Value="@CreateDialogCommand.ExtendedStatus"></InputText>
+        <ValidationMessage For="@(() => CreateDialogCommand.ExtendedStatus)"/>
+    </div>
+
+    <div>
+        <label for="externalReference">External Reference</label>
+        <InputText id="externalReference" @bind-Value="@CreateDialogCommand.ExternalReference"></InputText>
+        <ValidationMessage For="@(() => CreateDialogCommand.ExternalReference)"/>
+    </div>
+
+    <div>
+        <label for="visibleFrom">Visible From</label>
+        <DateInputWrapper id="visibleFrom" @bind-Value="@CreateDialogCommand.VisibleFrom"/>
+        <ValidationMessage For="@(() => CreateDialogCommand.VisibleFrom)"/>
+    </div>
+
+    <div>
+        <label for="dueAt">Due At</label>
+        <DateInputWrapper id="dueAt" @bind-Value="@CreateDialogCommand.DueAt"/>
+        <ValidationMessage For="@(() => CreateDialogCommand.DueAt)"/>
+    </div>
+
+    <div>
+        <label for="process">Process</label>
+        <InputText id="process" @bind-Value="@CreateDialogCommand.Process"></InputText>
+        <ValidationMessage For="@(() => CreateDialogCommand.Process)"/>
+    </div>
+
+    <div>
+        <label for="precedingProcess">Preceding Process</label>
+        <InputText id="precedingProcess" @bind-Value="@CreateDialogCommand.PrecedingProcess"></InputText>
+        <ValidationMessage For="@(() => CreateDialogCommand.PrecedingProcess)"/>
+    </div>
+
+    <div>
+        <label>Api Only</label>
+        <InputCheckbox @bind-Value="CreateDialogCommand.IsApiOnly"/>
+    </div>
+
+    <div>
+        <label for="expiresAt">Expires At</label>
+        <DateInputWrapper id="expiresAt" @bind-Value="@CreateDialogCommand.ExpiresAt"></DateInputWrapper>
+        <ValidationMessage For="@(() => CreateDialogCommand.ExpiresAt)"/>
+    </div>
+
+    <div>
+        <label for="createdAt">Created At</label>
+        <DateInputWrapper id="createdAt" @bind-Value="@CreateDialogCommand.CreatedAt"></DateInputWrapper>
+        <ValidationMessage For="@(() => CreateDialogCommand.CreatedAt)"/>
+    </div>
+
+    <div>
+        <label for="updatedAt">Updated At</label>
+        <DateInputWrapper id="updatedAt" @bind-Value="@CreateDialogCommand.UpdatedAt"></DateInputWrapper>
+        <ValidationMessage For="@(() => CreateDialogCommand.UpdatedAt)"/>
+    </div>
+
+    <div>
+        <label for="status">Status</label>
+        <InputSelect id="status" @bind-Value="@CreateDialogCommand.Status">
+            @foreach (var status in Enum.GetValues<DialogsEntities_DialogStatus>())
+            {
+                <option value="@status">@status</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => CreateDialogCommand.Status)"/>
+    </div>
+
+    <div>
+        <label for="systemLabel">System Label:</label>
+        <InputSelect id="systemLabel" @bind-Value="@CreateDialogCommand.SystemLabel">
+            @foreach (var label in Enum.GetValues<DialogEndUserContextsEntities_SystemLabel>())
+            {
+                <option value="@label">@label</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => CreateDialogCommand.SystemLabel)"/>
+    </div>
+
+    <div>
+        <label>Content</label>
+        <InputContent AdditionalAttributes="@_req" @bind-Value="@CreateDialogCommand.Content"/>
+    </div>
+
+    <fieldset>
+        <legend>Search Tags</legend>
+        <table>
+            @foreach (var tag in CreateDialogCommand.SearchTags)
+            {
+                <tr>
+                    <td>
+                        <InputText @bind-Value="tag.Value"></InputText>
+                        <ValidationMessage For="@(() => tag.Value)"></ValidationMessage>
+                    </td>
+                    <td>
+                        <button type="button" @onclick="() => CreateDialogCommand.SearchTags.Remove(tag)">Remove
+                        </button>
+                    </td>
+                </tr>
+            }
+        </table>
+        <button type="button"
+                @onclick="() => CreateDialogCommand.SearchTags.Add(new V1ServiceOwnerDialogsCommandsCreate_Tag())">
+            Add SearchTag
+        </button>
+    </fieldset>
+
+    <fieldset>
+        <legend>Attachment</legend>
+        <table>
+            <thead>
+            @if (CreateDialogCommand.Attachments.Any())
+            {
+
+                <th>Id</th>
+                <th>URls</th>
+                <th>Display Name</th>
+                <th>Action</th>
+            }
+            </thead>
+            <tbody>
+            @foreach (var attachment in CreateDialogCommand.Attachments)
+            {
+                <tr>
+                    <td>
+                        <InputGuid @bind-Value="@attachment.Id"/>
+                        <ValidationMessage For="@(() => attachment.Id)"/>
+                    </td>
+                    <td>
+                        <InputAttachmentUrl @bind-Value="@attachment.Urls"/>
+                    </td>
+                    <td>
+                        <InputLocalization @bind-Value="attachment.DisplayName"/>
+                    </td>
+                    <td>
+                        <button type="button" @onclick="() => RemoveAttachment(attachment)">Remove</button>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+        <button type="button" @onclick="AddAttachment">Add Attachment</button>
+    </fieldset>
+
+    <div>
+        <InputTransmission @bind-Value="@CreateDialogCommand.Transmissions"/>
+    </div>
+
+    <fieldset>
+        <!-- Gui actions -->
+        <InputGuiActions @bind-Value="CreateDialogCommand.GuiActions"/>
+    </fieldset>
+
+    <fieldset>
+        <!-- Api actions -->
+        <InputApiAction @bind-Value="CreateDialogCommand.ApiActions"/>
+    </fieldset>
+
+    <fieldset>
+        <!-- Activities -->
+        <InputActivites @bind-Value="CreateDialogCommand.Activities"/>
+    </fieldset>
+
+    <div>
+        <!-- ServiceOwner label -->
+        <fieldset>
+            <legend>ServiceOwnerLabels</legend>
+            <table>
+                @foreach (var serviceOwnerLabel in CreateDialogCommand.ServiceOwnerContext.ServiceOwnerLabels)
+                {
+                    <tr>
+                        <td>
+                            <InputText @bind-Value="serviceOwnerLabel.Value"></InputText>
+                            <ValidationMessage For="@(() => serviceOwnerLabel.Value)"></ValidationMessage>
+                        </td>
+                        <td>
+                            <button type="button"
+                                    @onclick="() => CreateDialogCommand.ServiceOwnerContext.ServiceOwnerLabels.Remove(serviceOwnerLabel)">
+                                Remove
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </table>
+            <button type="button"
+                    onclick="@(() => CreateDialogCommand.ServiceOwnerContext.ServiceOwnerLabels.Add(new V1ServiceOwnerDialogsCommandsCreate_ServiceOwnerLabel()))">
+                Add ServiceOwner Label
+            </button>
+        </fieldset>
+    </div>
+    <button type="submit">Submit</button>
+</EditForm>
+<label For="dialog-seed">Seed:</label>
+<InputTextArea id="dialog-seed" @bind-Value="Seed"/>
+<button type="button" @onclick="Import">Import</button>
+<button type="button" @onclick="ExportSeedToClipboard">Export Seed</button>
+@if (_showPopUp)
+{
+
+    <PopUpMessage Header="@_header" Message="@_message" OnClick="() => _showPopUp = false"></PopUpMessage>
+}
+
+@code {
+    private EditForm _form = null!;
+    private string Seed { get; set; } = "";
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _messageStore = new ValidationMessageStore(_form.EditContext ?? throw new NullReferenceException());
+            _form.EditContext.OnValidationRequested += ValidateForm;
+        }
+    }
+
+    private async Task ExportSeedToClipboard()
+    {
+        var seed = SeedExporter.ExportSeed(CreateDialogCommand);
+        await Js.InvokeVoidAsync("navigator.clipboard.writeText", seed);
+    }
+    private void ValidateForm(object? sender, ValidationRequestedEventArgs e)
+    {
+        var context = (EditContext)sender!;
+
+        _messageStore.Clear();
+
+        ValidateContentValue(CreateDialogCommand.Content.Title, nameof(CreateDialogCommand.Content.Title));
+        ValidateContentValue(CreateDialogCommand.Content.NonSensitiveTitle, nameof(CreateDialogCommand.Content.NonSensitiveTitle));
+
+        ValidateContentValue(CreateDialogCommand.Content.Summary, nameof(CreateDialogCommand.Content.Summary));
+        ValidateContentValue(CreateDialogCommand.Content.NonSensitiveSummary, nameof(CreateDialogCommand.Content.NonSensitiveSummary));
+
+        ValidateContentValue(CreateDialogCommand.Content.SenderName, nameof(CreateDialogCommand.Content.SenderName));
+
+        ValidateContentValue(CreateDialogCommand.Content.AdditionalInfo, nameof(CreateDialogCommand.Content.AdditionalInfo));
+
+        ValidateContentValue(CreateDialogCommand.Content.ExtendedStatus, nameof(CreateDialogCommand.Content.ExtendedStatus));
+
+        ValidateContentValue(CreateDialogCommand.Content.MainContentReference, nameof(CreateDialogCommand.Content.MainContentReference));
+
+        context.NotifyValidationStateChanged();
+
+    }
+
+    private void ValidateContentValue(V1CommonContent_ContentValue? content, string name)
+    {
+        if (content is null) return;
+
+        if ((content.Value == null || !content.Value.Any()) && !string.IsNullOrEmpty(content.MediaType))
+        {
+            var fieldId = new FieldIdentifier(CreateDialogCommand, $"Content.{name}.Value");
+            _messageStore.Add(fieldId, $"{name} requires at least one localization");
+            return;
+        }
+
+        if (content.Value != null && content.Value.Any() && string.IsNullOrEmpty(content.MediaType))
+        {
+            var fieldId = new FieldIdentifier(CreateDialogCommand, $"Content.{name}.Value");
+            _messageStore.Add(fieldId, $"{name} requires mediaType if you have any localization");
+        }
+
+    }
+
+    V1ServiceOwnerDialogsCommandsCreate_Dialog CreateDialogCommand { get; set; } = new();
+    private readonly Dictionary<string, object?> _req = new()
+    {
+        { "required", true }
+    };
+
+    bool _showPopUp;
+    private string? _header;
+    private string? _message;
+    private ValidationMessageStore _messageStore = null!;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        var deleteButton = new V1ServiceOwnerDialogsCommandsCreate_GuiAction();
+        deleteButton.Prefill(GuiActionPrefill.DeleteButton);
+        CreateDialogCommand.ServiceOwnerContext = new V1ServiceOwnerDialogsCommandsCreate_DialogServiceOwnerContext
+        {
+            ServiceOwnerLabels = []
+        };
+        
+
+        CreateDialogCommand.Attachments = [];
+        CreateDialogCommand.SearchTags =
+        [
+            new V1ServiceOwnerDialogsCommandsCreate_Tag
+            {
+                Value = "SOv0.1"
+            }
+        ];
+        CreateDialogCommand.Transmissions = [];
+        CreateDialogCommand.GuiActions = [deleteButton];
+        CreateDialogCommand.ApiActions = [];
+        CreateDialogCommand.Activities = [];
+    }
+    private void AddAttachment()
+    {
+        CreateDialogCommand.Attachments.Add(new V1ServiceOwnerDialogsCommandsCreate_Attachment
+        {
+            Id = null,
+            DisplayName = [],
+            Urls = []
+        });
+    }
+
+    private void RemoveAttachment(V1ServiceOwnerDialogsCommandsCreate_Attachment attachment)
+    {
+        CreateDialogCommand.Attachments.Remove(attachment);
+    }
+
+    private async Task Submit()
+    {
+        var response = await ServiceOwnerApi.V1ServiceOwnerDialogsCommandsCreateDialog(CreateDialogCommand);
+        _header = response.StatusCode.ToString();
+        _message = response.IsSuccessStatusCode ? response.Content : response.Error.Content;
+        _showPopUp = true;
+        if (response.IsSuccessStatusCode)
+        {
+
+            var guidString = response.Content!;
+            guidString = guidString.Trim('"');
+
+            Guid.TryParse(guidString, out var guid);
+            if (CreateDialogCommand.Transmissions.Any())
+            {
+                var getDialog = await ServiceOwnerApi.V1ServiceOwnerDialogsQueriesGetDialog(guid, null!);
+                if (getDialog.IsSuccessStatusCode)
+                {
+                    // Get all transmission Id
+                    var transmissionIds = getDialog.Content!.Transmissions.Select(x => x.Id).ToList();
+                    var transmissionsStorageResult = await ProtectedLocalStore.GetAsync<Dictionary<Guid, List<Guid>>>("transmissions");
+
+                    var transmissions = new List<Guid>();
+                    var transmissionDict = new Dictionary<Guid, List<Guid>>();
+
+                    if (transmissionsStorageResult is { Success: true, Value: not null })
+                    {
+                        transmissionDict = transmissionsStorageResult.Value;
+                        if (transmissionDict.TryGetValue(guid, out var value))
+                        {
+                            transmissions = value;
+                        }
+                    }
+
+                    transmissions.AddRange(transmissionIds);
+                    transmissionDict[guid] = transmissions;
+                    _ = ProtectedLocalStore.SetAsync("transmissions", transmissionDict);
+                }
+
+            }
+
+            var dialogStorageResult = await ProtectedLocalStore.GetAsync<List<Guid>>("dialogs");
+            List<Guid> dialogs = [];
+
+            if (dialogStorageResult is { Success: true, Value: not null })
+            {
+                dialogs = dialogStorageResult.Value;
+            }
+
+            dialogs.Add(guid);
+
+            _ = ProtectedLocalStore.SetAsync("dialogs", dialogs);
+        }
+    }
+
+    private void Prefill()
+    {
+        CreateDialogCommand.Prefill(DialogPrefill.SkatteMelding);
+        StateHasChanged();
+    }
+
+    private void Import()
+    {
+        SeedImporter.ParseSeed(CreateDialogCommand, Seed);
+        StateHasChanged();
+    }
+}

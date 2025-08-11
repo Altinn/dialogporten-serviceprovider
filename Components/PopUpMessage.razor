@@ -1,0 +1,28 @@
+<div tabindex="-1" class="modal" role="dialog" style="display:block">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>response</h3>
+                <button onclick="@OnClick">Close</button>
+            </div>
+            <div class="modal-body">
+                <h4>@Header</h4>
+                <br/>
+
+                @Message
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? Header { get; set; }
+
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public Action OnClick { get; set; } = () => { };
+
+}

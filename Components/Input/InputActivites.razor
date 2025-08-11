@@ -1,0 +1,103 @@
+@using System.Diagnostics
+@using System.Diagnostics.CodeAnalysis
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
+@inherits InputBase<ICollection<V1ServiceOwnerDialogsCommandsCreate_Activity>>
+
+<fieldset>
+    @if (Value is null) throw new UnreachableException();
+    <table>
+        <thead>
+        @if (Value.Any())
+        {
+            <tr>
+                <th>Id</th>
+                <th>Created At</th>
+                <th>Extended Type</th>
+                <th>Type</th>
+                <th>Transmission Id</th>
+                <th>Performed By</th>
+                <th>Description</th>
+                <th>Action</th>
+            </tr>
+        }
+        </thead>
+        <tbody>
+        @foreach (var activity in Value)
+        {
+            <tr>
+                <td>
+                    <InputGuid @bind-Value="@activity.Id"/>
+                    <ValidationMessage For="@(() => activity.Id)"/>
+                </td>
+
+                <td>
+                    <DateInputWrapper @bind-Value="@activity.CreatedAt"/>
+                    <ValidationMessage For="@(() => activity.CreatedAt)"/>
+                </td>
+
+                <td>
+                    <InputUri @bind-Value="@activity.ExtendedType"/>
+                    <ValidationMessage For="@(() => activity.ExtendedType)"/>
+                </td>
+
+                <td>
+                    <div>
+                        <InputSelect @bind-Value="@activity.Type">
+                            @foreach (var label in Enum.GetValues<DialogsEntitiesActivities_DialogActivityType>())
+                            {
+                                <option value="@label">@label</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => activity.Type)"></ValidationMessage>
+                    </div>
+                </td>
+
+                <td>
+                    <InputGuid @bind-Value="@activity.TransmissionId"/>
+                    <ValidationMessage For="@(() => activity.TransmissionId)"/>
+                </td>
+
+                <td>
+                    <InputCommonActor @bind-Value="@activity.PerformedBy"/>
+                </td>
+               
+                <td>
+                    <InputLocalization @bind-Value="@activity.Description"/>
+                </td>
+
+                <td>
+                    <button type="button" @onclick="() => Remove(activity)">Remove Activity</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+        <button type="button" @onclick="Add">Add Activity</button>
+    </table>
+</fieldset>
+
+@code {
+    protected override bool TryParseValueFromString(string? value,
+        [MaybeNullWhen(false)] out ICollection<V1ServiceOwnerDialogsCommandsCreate_Activity> result,
+        [NotNullWhen(false)] out string? validationErrorMessage) =>
+        throw new NotImplementedException();
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        Value ??= [];
+    }
+    private void Remove(V1ServiceOwnerDialogsCommandsCreate_Activity activity)
+    {
+        if (Value is null) throw new UnreachableException();
+        Value.Remove(activity);
+        ValueChanged.InvokeAsync(Value);
+    }
+
+    private void Add()
+    {
+        if (Value is null) throw new UnreachableException();
+        Value.Add(new V1ServiceOwnerDialogsCommandsCreate_Activity());
+        ValueChanged.InvokeAsync(Value);
+    }
+}

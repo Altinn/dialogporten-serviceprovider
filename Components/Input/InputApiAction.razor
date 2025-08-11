@@ -1,0 +1,81 @@
+@using System.Diagnostics
+@using System.Diagnostics.CodeAnalysis
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@inherits InputBase<ICollection<V1ServiceOwnerDialogsCommandsCreate_ApiAction>>
+<fieldset>
+    @if (Value is null)
+    {
+        throw new UnreachableException("ApiAction is null, this should never happen");
+    }
+    <table>
+        <thead>
+        @if (Value.Any())
+        {
+            <tr>
+                <th>Id</th>
+                <th>Action</th>
+                <th>Authorization Attribute</th>
+                <th>Name</th>
+                <th>Endpoints</th>
+                <th>Action</th>
+            </tr>
+        }
+        </thead>
+        <tbody>
+        @foreach (var apiAction in Value)
+        {
+            <td>
+                <InputGuid @bind-Value="@apiAction.Id"/>
+            </td>
+
+            <td>
+                <InputText @bind-Value="@apiAction.Action"/>
+            </td>
+
+            <td>
+                <InputText @bind-Value="@apiAction.AuthorizationAttribute"/>
+            </td>
+
+            <td>
+                <InputText @bind-Value="@apiAction.Name"/>
+            </td>
+
+            <td>
+                <InputApiActionEndPoint @bind-Value="@apiAction.Endpoints"/>
+            </td>
+
+            <td>
+                <button type="button" @onclick="() => Remove(apiAction)">Remove Api Action</button>
+            </td>
+        }
+        </tbody>
+        <button type="button" @onclick="Add">Add Api Action</button>
+    </table>
+</fieldset>
+
+@code {
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        Value ??= new List<V1ServiceOwnerDialogsCommandsCreate_ApiAction>();
+    }
+
+    protected override bool TryParseValueFromString(string? value,
+        [MaybeNullWhen(false)] out ICollection<V1ServiceOwnerDialogsCommandsCreate_ApiAction> result,
+        [NotNullWhen(false)] out string? validationErrorMessage) => throw new NotImplementedException();
+
+    private void Add()
+    {
+        if (Value is null) throw new UnreachableException();
+        Value.Add(new V1ServiceOwnerDialogsCommandsCreate_ApiAction());
+        ValueChanged.InvokeAsync(Value);
+    }
+
+    private void Remove(V1ServiceOwnerDialogsCommandsCreate_ApiAction apiAction)
+    {
+        if (Value is null) throw new UnreachableException();
+        Value.Remove(apiAction);
+        ValueChanged.InvokeAsync(Value);
+    }
+}

@@ -1,0 +1,65 @@
+@inherits InputBase<ICollection<V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl>>
+@using System.Diagnostics.CodeAnalysis
+@using Altinn.ApiClients.Dialogporten.Features.V1
+<div>
+    <label for=""></label>
+    <table>
+        <thead>
+        <tr>
+            <th>URL</th>
+            <th>Media Type</th>
+            <th>Consumer Type</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var url in Value!)
+        {
+            <tr>
+                <td>
+                    <InputUri @bind-Value="url.Url"></InputUri>
+                    <ValidationMessage For="@(() => url.Url)"></ValidationMessage>
+                </td>
+                <td>
+                    <InputText @bind-Value="@url.MediaType"></InputText>
+                    <ValidationMessage For="@(() => url.MediaType)"></ValidationMessage>
+                </td>
+                <td>
+
+                    <div>
+                        <InputSelect @bind-Value="@url.ConsumerType">
+                            @foreach (var label in Enum.GetValues<Attachments_AttachmentUrlConsumerType>())
+                            {
+                                <option value="@label">@label</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => url.ConsumerType)"></ValidationMessage>
+                    </div>
+                </td>
+                <td>
+                    <button type="button" @onclick="() => RemoveAttachmentUrl(url)">Remove url</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <div>
+        <button @onclick="AddAttachmentUrl">Add URL</button>
+    </div>
+</div>
+
+@code {
+
+    private void AddAttachmentUrl()
+    {
+        Value!.Add(new V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl());
+        ValueChanged.InvokeAsync(Value);
+    }
+
+    private void RemoveAttachmentUrl(V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl url)
+    {
+        Value!.Remove(url);
+        ValueChanged.InvokeAsync(Value);
+    }
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out ICollection<V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl> result, [NotNullWhen(false)] out string? validationErrorMessage) => throw new NotImplementedException();
+}

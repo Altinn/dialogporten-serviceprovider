@@ -1,0 +1,38 @@
+@using System.Diagnostics.CodeAnalysis
+@inherits InputBase<Uri?>
+<InputText @bind-Value="_value" @bind-Value:after="Parse"/>
+
+@code {
+
+    private string _value = string.Empty;
+
+    [Parameter] public string ValidationMessage { get; set; } = "Cant parse into URI";
+
+    [Parameter] public bool Required { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        if (Value is not null)
+        {
+            _value = Value.ToString();
+        }
+    }
+
+    protected override bool TryParseValueFromString(string? value, out Uri? result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        result = null;
+        validationErrorMessage = ValidationMessage;
+        return false;
+    }
+
+    private void Parse()
+    {
+        if (!Uri.TryCreate(_value, UriKind.RelativeOrAbsolute, out var result)) return;
+
+        Value = result;
+        ValueChanged.InvokeAsync(Value);
+
+    }
+
+}
