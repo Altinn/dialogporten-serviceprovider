@@ -14,7 +14,6 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 [EnableCors("AllowedOriginsPolicy")]
 public class FrontChannelEmbedController : ControllerBase
 {
-
     private readonly IServiceownerApi _dialogporten;
     private readonly IDialogTokenValidator _dialogTokenValidator;
     public FrontChannelEmbedController(IServiceownerApi dialogporten, IDialogTokenValidator dialogTokenValidator)
