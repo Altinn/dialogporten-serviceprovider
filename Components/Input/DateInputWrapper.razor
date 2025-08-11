@@ -1,0 +1,33 @@
+@inherits InputBase<DateTimeOffset?>
+@using System.Diagnostics.CodeAnalysis
+@using BlazorBootstrap
+<div>
+    <DateInput @bind-Value="_date" @bind-Value:after="UpdateDateTime"/>
+    <TimeInput @bind-Value="_time" @bind-Value:after="UpdateDateTime"/>
+</div>
+
+@code {
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        if (Value is not null)
+        {
+            _date = DateOnly.FromDateTime(Value.Value.DateTime);
+            _time = TimeOnly.FromDateTime(Value.Value.DateTime);
+        }
+    }
+
+    private DateTime? ConvertedValue { get; set; }
+    private void UpdateDateTime()
+    {
+        if (_date is null) return;
+        if (_time is null) return;
+
+        ConvertedValue = new DateTime(_date.Value, _time.Value);
+        Value = ConvertedValue;
+        ValueChanged.InvokeAsync(ConvertedValue);
+    }
+    private DateOnly? _date;
+    private TimeOnly? _time;
+    protected override bool TryParseValueFromString(string? value, out DateTimeOffset? result, [NotNullWhen(false)] out string? validationErrorMessage) => throw new NotImplementedException();
+}

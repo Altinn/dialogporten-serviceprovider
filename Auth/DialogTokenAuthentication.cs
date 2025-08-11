@@ -38,12 +38,13 @@ public class EdDsaSecurityKeysCacheService : IHostedService, IDisposable
 
     private readonly TimeSpan _refreshInterval = TimeSpan.FromHours(12);
 
+
     // In this service we allow keys for all non-production environments for
     // simplicity. Usually one would only allow a single environment (issuer) here,
     // which we could get from an injected IConfiguration/IOptions
     private readonly List<string> _wellKnownEndpoints =
     [
-        //"https://localhost:7214/api/v1/.well-known/jwks.json",
+        // "https://localhost:7214/api/v1/.well-known/jwks.json",
         "https://altinn-dev-api.azure-api.net/dialogporten/api/v1/.well-known/jwks.json",
         "https://platform.tt02.altinn.no/dialogporten/api/v1/.well-known/jwks.json"
     ];

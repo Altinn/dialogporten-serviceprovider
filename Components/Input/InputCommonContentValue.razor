@@ -1,0 +1,72 @@
+@inherits InputBase<V1CommonContent_ContentValue?>
+@using System.Diagnostics.CodeAnalysis
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
+<fieldset>
+    <div>
+        <label>Media Type:</label>
+        <InputText
+            AdditionalAttributes="@AdditionalAttributes"
+            @bind-Value="_value.MediaType"
+            @bind-Value:after="NotifyValueChanged"
+        />
+        <InputLocalization @bind-Value="@_value.Value"
+                           @bind-Value:after="NotifyValueChanged"
+        />
+        <ValidationMessage For="@(() => _value.Value)"/>
+    </div>
+
+</fieldset>
+
+@code {
+    private V1CommonContent_ContentValue _value = new()
+    {
+        Value = [],
+        MediaType = ""
+    };
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        var isRequired = false;
+        if (AdditionalAttributes != null)
+        {
+            AdditionalAttributes.TryGetValue("required", out var required);
+            isRequired = required is true;
+        }
+
+        if (Value == null && isRequired)
+        {
+            Value = new V1CommonContent_ContentValue
+            {
+                MediaType = isRequired ? "text/plain" : "",
+                Value = []
+            };
+            _value = Value;
+            NotifyValueChanged();
+        }
+        else if (Value != null)
+        {
+            _value = Value;
+        }
+    }
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out V1CommonContent_ContentValue result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        result = Value!;
+        validationErrorMessage = "";
+        return true;
+    }
+
+
+    private void NotifyValueChanged()
+    {
+        if (_value.MediaType == "" && !_value.Value.Any())
+        {
+            Value = null;
+        }
+        else
+        {
+            Value = _value;
+        }
+        ValueChanged.InvokeAsync(Value);
+    }
+}

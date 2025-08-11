@@ -1,0 +1,69 @@
+@inherits InputBase<ICollection<V1CommonLocalizations_Localization>>
+@using System.Diagnostics
+@using System.Diagnostics.CodeAnalysis
+@using Altinn.ApiClients.Dialogporten.Features.V1
+<div>
+    <table>
+        <thead>
+        @if ((Value ?? throw new InvalidOperationException()).Any())
+        {
+            <tr>
+                <th>Language Code</th>
+                <th>Text</th>
+                <th>Actions</th>
+            </tr>
+        }
+        </thead>
+        <tbody>
+        @foreach (var localization in Value!)
+        {
+            <tr>
+                <td>
+                    <InputText @bind-Value="localization.LanguageCode" placeholder="Language Code"/>
+                </td>
+                <td>
+                    <InputText @bind-Value="localization.Value" placeholder="Localized Value"/>
+                </td>
+                <td>
+                    <button type="button" @onclick="() => Remove(localization)">Remove</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    <div>
+        <button type="button" @onclick="Add">Add Localization</button>
+    </div>
+</div>
+
+@code{
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        Value ??= new List<V1CommonLocalizations_Localization>();
+    }
+
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out ICollection<V1CommonLocalizations_Localization> result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        result = CurrentValue ?? new List<V1CommonLocalizations_Localization>();
+        validationErrorMessage = "";
+        return true;
+    }
+
+    private void Add()
+    {
+        if (Value is null) throw new UnreachableException("Localization is Null when removing, This should not be possible");
+        Value.Add(new V1CommonLocalizations_Localization { LanguageCode = "", Value = "" });
+        ValueChanged.InvokeAsync(Value);
+    }
+
+    private void Remove(V1CommonLocalizations_Localization localization)
+    {
+        if (Value is null) throw new UnreachableException("Localization is Null when Adding, This should not be possible");
+        Value.Remove(localization);
+
+        ValueChanged.InvokeAsync(Value);
+    }
+}

@@ -1,0 +1,191 @@
+@page "/dialog/transmission/add"
+@inject ProtectedLocalStorage ProtectedLocalStore
+@inject IServiceownerApi ServiceOwnerApi
+@rendermode InteractiveServer
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input
+@using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
+<h3>AddTransmission</h3>
+
+<EditForm Model="CreateTransmissionCommand" OnValidSubmit="Submit">
+    <div>
+        <label>Dialog:</label>
+        <InputSelect @bind-Value="@SelectedDialog">
+            <option value="@Guid.Empty" disabled selected>Select your option</option>
+            @foreach (var dialogId in _dialogs.Keys)
+            {
+                <option value=@(dialogId)>@dialogId</option>
+            }
+        </InputSelect>
+    </div>
+
+
+    <div>
+        <label>Created At:</label>
+        <InputDate @bind-Value="CreateTransmissionCommand.CreatedAt"/>
+        <ValidationMessage For="() => CreateTransmissionCommand.CreatedAt"/>
+    </div>
+
+    <div>
+        <label>Authorization Attribute:</label>
+        <InputText @bind-Value="CreateTransmissionCommand.AuthorizationAttribute"/>
+        <ValidationMessage For="() => CreateTransmissionCommand.AuthorizationAttribute"/>
+    </div>
+
+    <div>
+        <label>Extended Type:</label>
+        <InputUri @bind-Value="@CreateTransmissionCommand.ExtendedType"/>
+        <ValidationMessage For="() => CreateTransmissionCommand.ExtendedType"/>
+    </div>
+
+    <div>
+        <label>Related Transmission:</label>
+        <InputSelect @bind-Value="@SelectedTransmission" @bind-Value:after="UpdateRelatedTransmission">
+
+            <option value="@Guid.Empty" selected>Select Optional</option>
+            @if (SelectedDialog != Guid.Empty)
+            {
+                @foreach (var transmissionId in Transmissions)
+                {
+                    <option value=@(transmissionId)>@transmissionId</option>
+                }
+            }
+        </InputSelect>
+    </div>
+
+    <div>
+        <label>Transmission Type:</label>
+        <InputSelect @bind-Value="@CreateTransmissionCommand.Type">
+            @foreach (var transmissionType in Enum.GetValues<DialogsEntitiesTransmissions_DialogTransmissionType>())
+            {
+                <option value=@(transmissionType)>@transmissionType</option>
+            }
+        </InputSelect>
+    </div>
+
+    <div>
+        <label>Sender:</label>
+        <InputCommonActor @bind-Value="@CreateTransmissionCommand.Sender"/>
+    </div>
+
+    <div>
+        <label>Content:</label>
+        <fieldset>
+            <label>Title:</label>
+            <InputCommonContentValue @bind-Value="@CreateTransmissionCommand.Content.Title"/>
+            <label>Summary:</label>
+            <InputCommonContentValue @bind-Value="@CreateTransmissionCommand.Content.Summary"/>
+            <label>Content Reference:</label>
+            <InputCommonContentValue @bind-Value="@CreateTransmissionCommand.Content.ContentReference"/>
+        </fieldset>
+    </div>
+    <div>
+        <table>
+            <tbody>
+            @foreach (var attachment in CreateTransmissionCommand.Attachments)
+            {
+                <td>
+                    <InputGuid @bind-Value="@attachment.Id"/>
+                </td>
+                <td>
+                    <InputLocalization @bind-Value="@attachment.DisplayName"/>
+                </td>
+                <td>
+                    <InputTransmissionAttachmentUrlUpdate @bind-Value="@attachment.Urls"/>
+                </td>
+                <button type="button"
+                        @onclick="() => RemoveAttachment(attachment)">Remove
+                </button>
+            }
+            </tbody>
+            <tfoot>
+            <button type="button" onclick="@AddAttachment">Add attachment</button>
+            </tfoot>
+        </table>
+    </div>
+    <button type="submit">Submit</button>
+</EditForm>
+
+@code {
+
+    public V1ServiceOwnerDialogsCommandsCreateTransmission_TransmissionRequest CreateTransmissionCommand { get; } = new()
+    {
+        Content = new V1ServiceOwnerDialogsCommandsUpdate_TransmissionContent(),
+        Attachments = []
+    };
+
+    private Dictionary<Guid, List<Guid>> _dialogs = null!;
+    private Guid SelectedDialog { get; set; } = Guid.Empty;
+    private Guid SelectedTransmission { get; set; } = Guid.Empty;
+    private List<Guid> Transmissions => _dialogs[SelectedDialog];
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        _dialogs = [];
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender)
+        {
+            var temp = await ProtectedLocalStore.GetAsync<Dictionary<Guid, List<Guid>>>("transmissions");
+            if (temp.Success)
+            {
+                _dialogs = temp.Value!;
+                StateHasChanged();
+            }
+        }
+    }
+    private async Task Submit()
+    {
+        var response = await ServiceOwnerApi.V1ServiceOwnerDialogsCommandsCreateTransmissionDialogTransmission(SelectedDialog, CreateTransmissionCommand, null);
+        if (response.IsSuccessful)
+        {
+            Guid.TryParse(response.Content.Trim('"'), out var guid);
+            var transmissionsStorageResult = await ProtectedLocalStore.GetAsync<Dictionary<Guid, List<Guid>>>("transmissions");
+
+            var transmissions = new List<Guid>();
+            var transmissionDict = new Dictionary<Guid, List<Guid>>();
+
+            if (transmissionsStorageResult is { Success: true, Value: not null })
+            {
+                transmissionDict = transmissionsStorageResult.Value;
+                if (transmissionDict.TryGetValue(SelectedDialog, out var value))
+                {
+                    transmissions = value;
+                }
+            }
+
+            transmissions.Add(guid);
+            transmissionDict[SelectedDialog] = transmissions;
+            _dialogs = transmissionDict;
+            _ = ProtectedLocalStore.SetAsync("transmissions", transmissionDict);
+
+        }
+    }
+
+    private void UpdateRelatedTransmission()
+    {
+        if (SelectedDialog == Guid.Empty)
+        {
+            CreateTransmissionCommand.RelatedTransmissionId = null;
+        }
+        else
+        {
+            CreateTransmissionCommand.RelatedTransmissionId = SelectedTransmission;
+        }
+    }
+    private void RemoveAttachment(V1ServiceOwnerDialogsCommandsUpdate_TransmissionAttachment attachment)
+    {
+        CreateTransmissionCommand.Attachments.Remove(attachment);
+        StateHasChanged();
+    }
+
+    private void AddAttachment()
+    {
+        CreateTransmissionCommand.Attachments.Add(new V1ServiceOwnerDialogsCommandsUpdate_TransmissionAttachment());
+        StateHasChanged();
+    }
+}

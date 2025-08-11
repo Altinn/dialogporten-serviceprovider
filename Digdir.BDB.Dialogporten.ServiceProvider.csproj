@@ -1,38 +1,51 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-      <UserSecretsId>cc40a47d-a09e-4b68-bb88-8da04fd2cd39</UserSecretsId>
-      <AssemblyName>Digdir.BDB.Dialogporten.ServiceProvider</AssemblyName>
-      <RootNamespace>Digdir.BDB.Dialogporten.ServiceProvider</RootNamespace>
-  </PropertyGroup>
+        <UserSecretsId>cc40a47d-a09e-4b68-bb88-8da04fd2cd39</UserSecretsId>
+        <AssemblyName>Digdir.BDB.Dialogporten.ServiceProvider</AssemblyName>
+        <RootNamespace>Digdir.BDB.Dialogporten.ServiceProvider</RootNamespace>
+    </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.2.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.8" />
-        <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.8" />
-        <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.0.2" />
-        <PackageReference Include="Refit.HttpClientFactory" Version="7.1.2" />
-        <PackageReference Include="ScottBrady.IdentityModel" Version="4.0.0" />
-        <PackageReference Include="ScottBrady.IdentityModel.AspNetCore" Version="2.1.0" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+        <PackageReference Include="Altinn.ApiClients.Dialogporten" Version="1.76.2" />
+        <PackageReference Include="Blazor.Bootstrap" Version="3.3.1"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.2.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.8"/>
+        <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.5"/>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.8"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.5"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.0.2"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
+        <PackageReference Include="Refit.HttpClientFactory" Version="8.0.0"/>
+        <PackageReference Include="ScottBrady.IdentityModel" Version="4.0.0"/>
+        <PackageReference Include="ScottBrady.IdentityModel.AspNetCore" Version="2.1.0"/>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
+    </ItemGroup>
+    <ItemGroup>
+        <None Update="Attachments\sample.docx">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Attachments\sample.pdf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Attachments\sample.zip">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Migrations\" />
     </ItemGroup>
 
-    <ItemGroup>
-      <None Update="Attachments\sample.docx">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Attachments\sample.pdf">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Attachments\sample.zip">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
+
 
 </Project>

@@ -1,0 +1,143 @@
+@using System.Diagnostics
+@using System.Diagnostics.CodeAnalysis
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
+@inherits InputBase<ICollection<V1ServiceOwnerDialogsCommandsCreate_GuiAction>>
+
+<fieldset>
+    <table>
+
+        @if (Value != null && Value.Any())
+        {
+            <thead>
+            <th>Id</th>
+            <th>Action</th>
+            <th>URL</th>
+            <th>Authorization Attribute</th>
+            <th>Is Delete Dialog Action</th>
+            <th>HTTP Method</th>
+            <th>Priority</th>
+            <th>Title</th>
+            <th>Prompt</th>
+            </thead>
+        }
+        <tbody>
+        @if (Value != null)
+        {
+            @foreach (var guiAction in Value)
+            {
+
+                <button type="button" onclick="@(() => Prefill(guiAction, GuiActionPrefill.Empty))">Clear
+                </button>
+
+                <button type="button" onclick="@(() => Prefill(guiAction, GuiActionPrefill.ReadConfirmation))">Read
+                    confirmation
+                </button>
+
+                <button type="button" onclick="@(() => Prefill(guiAction, GuiActionPrefill.DeleteButton))">Delete
+                </button>
+
+                <button type="button" onclick="@(() => Prefill(guiAction, GuiActionPrefill.Information))">Information
+                </button>
+                <tr>
+                    <td>
+                        <InputGuid @bind-Value="@guiAction.Id"/>
+                        <ValidationMessage For="() => guiAction.Id"/>
+                    </td>
+
+                    <td>
+                        <InputText @bind-Value="@guiAction.Action"/>
+                        <ValidationMessage For="() => guiAction.Action"/>
+                    </td>
+
+                    <td>
+                        <InputUri @bind-Value="@guiAction.Url"/>
+                        <ValidationMessage For="() => guiAction.Url"/>
+                    </td>
+
+                    <td>
+                        <InputText @bind-Value="@guiAction.AuthorizationAttribute"/>
+                        <ValidationMessage For="() => guiAction.AuthorizationAttribute"/>
+                    </td>
+
+                    <td>
+                        <InputCheckbox @bind-Value="@guiAction.IsDeleteDialogAction"/>
+                        <ValidationMessage For="() => guiAction.IsDeleteDialogAction"/>
+                    </td>
+
+                    <td>
+                        <InputSelect @bind-Value="@guiAction.HttpMethod">
+                            @foreach (var type in Enum.GetValues<Http_HttpVerb>())
+                            {
+                                <option value="@type">@type</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => guiAction.HttpMethod)"/>
+                    </td>
+
+                    <td>
+                        <InputSelect @bind-Value="@guiAction.Priority">
+                            @foreach (var type in Enum.GetValues<DialogsEntitiesActions_DialogGuiActionPriority>())
+                            {
+                                <option value="@type">@type</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => guiAction.Priority)"/>
+                    </td>
+
+                    <td>
+                        <InputLocalization @bind-Value="@guiAction.Title"/>
+                        <ValidationMessage For="() => guiAction.Title"/>
+                    </td>
+
+                    <td>
+                        <InputLocalization @bind-Value="@guiAction.Prompt"/>
+                        <ValidationMessage For="() => guiAction.Prompt"/>
+                    </td>
+                    <td>
+                        <button type="button" @onclick="() => Remove(guiAction)">Remove</button>
+                    </td>
+                </tr>
+            }
+        }
+        </tbody>
+        <button type="button" @onclick="Add">Add GUI Action</button>
+    </table>
+</fieldset>
+
+@code {
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        Value ??= new List<V1ServiceOwnerDialogsCommandsCreate_GuiAction>();
+    }
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out ICollection<V1ServiceOwnerDialogsCommandsCreate_GuiAction> result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        result = CurrentValue ?? new List<V1ServiceOwnerDialogsCommandsCreate_GuiAction>();
+        validationErrorMessage = "";
+        return true;
+    }
+
+    private void Remove(V1ServiceOwnerDialogsCommandsCreate_GuiAction action)
+    {
+        if (Value is null) throw new UnreachableException("GUI Actions is Null when removing Action, This should not be possible");
+        Value.Remove(action);
+        ValueChanged.InvokeAsync(Value);
+    }
+
+    private void Add()
+    {
+        if (Value is null) throw new UnreachableException("GUI Actions is Null when Adding Action, This should not be possible");
+        Value.Add(new V1ServiceOwnerDialogsCommandsCreate_GuiAction());
+        ValueChanged.InvokeAsync(Value);
+    }
+
+    private void Prefill(V1ServiceOwnerDialogsCommandsCreate_GuiAction guiAction, GuiActionPrefill prefill)
+    {
+        guiAction.Prefill(prefill);
+        StateHasChanged();
+    }
+
+
+}
+
