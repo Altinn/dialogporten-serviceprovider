@@ -12,8 +12,8 @@ internal static class DefaultAccount
         var configuration = services.GetRequiredService<IConfiguration>();
         var logger = services.GetRequiredService<ILogger<ApplicationUser>>();
 
-        var defaultUsername = configuration.GetValue<string>("DefaultAccount:Username");
-        var defaultPassword = configuration.GetValue<string>("DefaultAccount:Password");
+        var defaultUsername = configuration.GetValue<string>("ServiceProvider:DefaultAccount:Username");
+        var defaultPassword = configuration.GetValue<string>("ServiceProvider:DefaultAccount:Password");
 
         if (defaultUsername == null || defaultPassword == null)
         {
@@ -32,8 +32,11 @@ internal static class DefaultAccount
             {
                 logger.LogInformation("Default account already created!");
             }
+            else
+            {
+                logger.LogInformation("Created default account");
+            }
         }
-        logger.LogInformation("Created default account");
     }
 
 }

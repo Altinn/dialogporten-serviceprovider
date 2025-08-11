@@ -10,7 +10,7 @@ public class ResourceRegistryClient(IHttpClientFactory httpClientFactory, ILogge
     public static List<MaskinportenSchemaResource> Resources => _resources;
     private static volatile List<MaskinportenSchemaResource> _resources = [];
 
-    private readonly string _endpoint = configuration.GetValue<string>("registryUri") ?? throw new ArgumentNullException($"registryUri");
+    private readonly string _endpoint = configuration.GetValue<string>("ServiceProvider:registryUri") ?? throw new ArgumentNullException($"registryUri");
 
     private static readonly JsonSerializerOptions Options = new()
     {
