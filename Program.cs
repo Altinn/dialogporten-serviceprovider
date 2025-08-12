@@ -59,9 +59,10 @@ builder.Services
     })
     .AddDialogportenClient(dialogportenSettings);
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(@"DataSource=Data/Accounts.db;Cache=Shared"));
+// builder.Services.AddDbContext<ApplicationDbContext>(options =>
+//     options.UseSqlite(@"DataSource=Data/Accounts.db;Cache=Shared"));
 
+builder.Services.AddSingleton<InMemoryUserStore>();
 
 builder.Services.AddIdentityCore<ApplicationUser>(o =>
     {
@@ -70,7 +71,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(o =>
         o.Password.RequireUppercase = false;
         o.Password.RequireNonAlphanumeric = false;
     })
-    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddUserStore<InMemoryUserStore>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
@@ -93,8 +94,8 @@ app.UseAuthorization();
 app.UseAntiforgery();
 app.MapAdditionalIdentityEndpoints();
 app.MapControllers();
-using (var scope = app.Services.CreateScope())
-{
-    await scope.ServiceProvider.AddDefaultAccount();
-}
+// using (var scope = app.Services.CreateScope())
+// {
+//     await scope.ServiceProvider.AddDefaultAccount();
+// }
 await app.RunAsync();
