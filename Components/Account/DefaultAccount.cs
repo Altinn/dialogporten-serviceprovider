@@ -15,13 +15,13 @@ internal static class DefaultAccount
         var defaultUsername = configuration.GetValue<string>("ServiceProvider:DefaultAccount:Username");
         var defaultPassword = configuration.GetValue<string>("ServiceProvider:DefaultAccount:Password");
 
-        if (defaultUsername == null || defaultPassword == null)
+        if (string.IsNullOrEmpty(defaultPassword) || string.IsNullOrEmpty(defaultUsername))
         {
             logger.LogWarning("no default account configuration found");
             return;
         }
 
-        var admin = await userManager.FindByNameAsync(defaultPassword);
+        var admin = await userManager.FindByNameAsync(defaultUsername);
         logger.LogInformation("Creating default account");
         if (admin == null)
         {
