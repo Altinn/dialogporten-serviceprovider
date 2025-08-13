@@ -58,7 +58,7 @@ builder.Services
     })
     .AddDialogportenClient(dialogportenSettings);
 
-builder.Services.AddSingleton<MyStore>();
+builder.Services.AddSingleton<InMemoryUserStoreContext>();
 
 builder.Services.AddIdentityCore<ApplicationUser>(o =>
     {

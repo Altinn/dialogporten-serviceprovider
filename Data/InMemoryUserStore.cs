@@ -1,9 +1,8 @@
-using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Identity;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Data;
 
-public class InMemoryUserStore(MyStore store) :
+public class InMemoryUserStore(InMemoryUserStoreContext userStore) :
     IUserPasswordStore<ApplicationUser>
 {
 
@@ -12,18 +11,18 @@ public class InMemoryUserStore(MyStore store) :
         user.NormalizedUserName = user.UserName?.ToUpperInvariant();
         
 
-        return Task.FromResult(store.TryAddUser(user) ? IdentityResult.Success : IdentityResult.Failed());
+        return Task.FromResult(userStore.TryAddUser(user) ? IdentityResult.Success : IdentityResult.Failed());
     }
 
     public Task<IdentityResult> UpdateAsync(ApplicationUser user, CancellationToken cancellationToken)
     {
-        return Task.FromResult(store.TryUpdateUser(user.Id, user) ? IdentityResult.Success : IdentityResult.Failed());
+        return Task.FromResult(userStore.TryUpdateUser(user.Id, user) ? IdentityResult.Success : IdentityResult.Failed());
     }
 
     public Task<IdentityResult> DeleteAsync(ApplicationUser user, CancellationToken cancellationToken)
     {
-        store.TryRemoveUser(user.Id, out _);
-        store.TryRemovePassword(user.Id, out _);
+        userStore.TryRemoveUser(user.Id, out _);
+        userStore.TryRemovePassword(user.Id, out _);
         return Task.FromResult(IdentityResult.Success);
     }
 
@@ -50,13 +49,13 @@ public class InMemoryUserStore(MyStore store) :
     }
     public Task<ApplicationUser?> FindByIdAsync(string userId, CancellationToken cancellationToken)
     {
-        var user = store.FindUserById(userId);
+        var user = userStore.FindUserById(userId);
         return Task.FromResult(user);
     }
 
     public Task<ApplicationUser?> FindByNameAsync(string name, CancellationToken cancellationToken)
     {
-        var user = store.FindUserByName(name);
+        var user = userStore.FindUserByName(name);
         return Task.FromResult(user);
     }
 
@@ -64,19 +63,19 @@ public class InMemoryUserStore(MyStore store) :
     {
         if (passwordHash != null)
         {
-            store.SetPasswordHash(user.Id, passwordHash);
+            userStore.SetPasswordHash(user.Id, passwordHash);
         }
         return Task.CompletedTask;
     }
 
     public Task<string?> GetPasswordHashAsync(ApplicationUser user, CancellationToken cancellationToken)
     {
-        store.TryGetPasswordHash(user.Id, out var passwordHash);
+        userStore.TryGetPasswordHash(user.Id, out var passwordHash);
         return Task.FromResult(passwordHash);
     }
 
     public Task<bool> HasPasswordAsync(ApplicationUser user, CancellationToken cancellationToken) =>
-        Task.FromResult(store.HasPassword(user.Id));
+        Task.FromResult(userStore.HasPassword(user.Id));
 
     public void Dispose() { }
 }
