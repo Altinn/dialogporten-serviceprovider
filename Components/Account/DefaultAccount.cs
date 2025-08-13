@@ -21,22 +21,14 @@ internal static class DefaultAccount
             return;
         }
 
-        // var admin = await userManager.FindByNameAsync(defaultUsername);
         logger.LogInformation("Creating default account");
-        // if (admin == null)
-        // {
-            var user = new ApplicationUser();
-            await userStore.SetUserNameAsync(user, defaultUsername, CancellationToken.None);
-            var result = await userManager.CreateAsync(user, defaultPassword);
-            if (!result.Succeeded)
-            {
-                logger.LogInformation("Default account already created!");
-            }
-            else
-            {
-                logger.LogInformation("Created default account");
-            }
-        // }
+        var user = new ApplicationUser();
+        await userStore.SetUserNameAsync(user, defaultUsername, CancellationToken.None);
+        var result = await userManager.CreateAsync(user, defaultPassword);
+        if (result.Succeeded)
+            logger.LogInformation("Created default account");
+        else
+            logger.LogInformation("Something went wrong creating default account");
     }
 
 }

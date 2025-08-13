@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Data;
 
-public class InMemoryUserStore(InMemoryUserStoreContext userStore) :
+public sealed class InMemoryUserStore(InMemoryUserStoreContext userStore) :
     IUserPasswordStore<ApplicationUser>
 {
 

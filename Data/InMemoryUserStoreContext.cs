@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Data;
 
-public class InMemoryUserStoreContext
+public sealed class InMemoryUserStoreContext
 {
     private readonly ConcurrentDictionary<string, ApplicationUser> _users = new();
     private readonly ConcurrentDictionary<string, string> _passwords = new();
