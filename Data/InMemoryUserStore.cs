@@ -3,31 +3,27 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Data;
 
-public class InMemoryUserStore :
+public class InMemoryUserStore(MyStore store) :
     IUserPasswordStore<ApplicationUser>
 {
 
-    private readonly ConcurrentDictionary<string, ApplicationUser> _users = new();
-    private readonly ConcurrentDictionary<string, string> _passwords = new();
-
     public Task<IdentityResult> CreateAsync(ApplicationUser user, CancellationToken cancellationToken)
     {
-        user.Id = Guid.NewGuid().ToString();
         user.NormalizedUserName = user.UserName?.ToUpperInvariant();
-        _users.TryAdd(user.Id, user);
-        return Task.FromResult(IdentityResult.Success);
+        
+
+        return Task.FromResult(store.TryAddUser(user) ? IdentityResult.Success : IdentityResult.Failed());
     }
 
     public Task<IdentityResult> UpdateAsync(ApplicationUser user, CancellationToken cancellationToken)
     {
-        _users.TryUpdate(user.Id, user, user);
-        return Task.FromResult(IdentityResult.Success);
+        return Task.FromResult(store.TryUpdateUser(user.Id, user) ? IdentityResult.Success : IdentityResult.Failed());
     }
 
     public Task<IdentityResult> DeleteAsync(ApplicationUser user, CancellationToken cancellationToken)
     {
-        _users.TryRemove(user.Id, out _);
-        _passwords.TryRemove(user.Id, out _);
+        store.TryRemoveUser(user.Id, out _);
+        store.TryRemovePassword(user.Id, out _);
         return Task.FromResult(IdentityResult.Success);
     }
 
@@ -54,13 +50,13 @@ public class InMemoryUserStore :
     }
     public Task<ApplicationUser?> FindByIdAsync(string userId, CancellationToken cancellationToken)
     {
-        _users.TryGetValue(userId, out var user);
+        var user = store.FindUserById(userId);
         return Task.FromResult(user);
     }
 
     public Task<ApplicationUser?> FindByNameAsync(string name, CancellationToken cancellationToken)
     {
-        var user = _users.Values.FirstOrDefault(u => u.NormalizedUserName == name);
+        var user = store.FindUserByName(name);
         return Task.FromResult(user);
     }
 
@@ -68,19 +64,19 @@ public class InMemoryUserStore :
     {
         if (passwordHash != null)
         {
-            _passwords[user.Id] = passwordHash;
+            store.SetPasswordHash(user.Id, passwordHash);
         }
         return Task.CompletedTask;
     }
 
     public Task<string?> GetPasswordHashAsync(ApplicationUser user, CancellationToken cancellationToken)
     {
-        _passwords.TryGetValue(user.Id, out string? passwordHash);
+        store.TryGetPasswordHash(user.Id, out var passwordHash);
         return Task.FromResult(passwordHash);
     }
 
     public Task<bool> HasPasswordAsync(ApplicationUser user, CancellationToken cancellationToken) =>
-        Task.FromResult(_passwords.ContainsKey(user.Id));
+        Task.FromResult(store.HasPassword(user.Id));
 
     public void Dispose() { }
 }

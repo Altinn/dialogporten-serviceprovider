@@ -6,7 +6,6 @@ using Digdir.BDB.Dialogporten.ServiceProvider.Components.Account;
 using Digdir.BDB.Dialogporten.ServiceProvider.Data;
 using Digdir.BDB.Dialogporten.ServiceProvider.Services;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddUserSecrets<Program>();
@@ -59,10 +58,7 @@ builder.Services
     })
     .AddDialogportenClient(dialogportenSettings);
 
-// builder.Services.AddDbContext<ApplicationDbContext>(options =>
-//     options.UseSqlite(@"DataSource=Data/Accounts.db;Cache=Shared"));
-
-builder.Services.AddSingleton<InMemoryUserStore>();
+builder.Services.AddSingleton<MyStore>();
 
 builder.Services.AddIdentityCore<ApplicationUser>(o =>
     {
@@ -94,8 +90,8 @@ app.UseAuthorization();
 app.UseAntiforgery();
 app.MapAdditionalIdentityEndpoints();
 app.MapControllers();
-// using (var scope = app.Services.CreateScope())
-// {
-//     await scope.ServiceProvider.AddDefaultAccount();
-// }
+using (var scope = app.Services.CreateScope())
+{
+    await scope.ServiceProvider.AddDefaultAccount();
+}
 await app.RunAsync();

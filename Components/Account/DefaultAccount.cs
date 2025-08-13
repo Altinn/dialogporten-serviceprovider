@@ -21,10 +21,10 @@ internal static class DefaultAccount
             return;
         }
 
-        var admin = await userManager.FindByNameAsync(defaultUsername);
+        // var admin = await userManager.FindByNameAsync(defaultUsername);
         logger.LogInformation("Creating default account");
-        if (admin == null)
-        {
+        // if (admin == null)
+        // {
             var user = new ApplicationUser();
             await userStore.SetUserNameAsync(user, defaultUsername, CancellationToken.None);
             var result = await userManager.CreateAsync(user, defaultPassword);
@@ -36,7 +36,7 @@ internal static class DefaultAccount
             {
                 logger.LogInformation("Created default account");
             }
-        }
+        // }
     }
 
 }
