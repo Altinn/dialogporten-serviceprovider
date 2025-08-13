@@ -20,7 +20,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
 
         accountGroup.MapPost("/Logout", async (
             ClaimsPrincipal user,
-            [FromServices] SignInManager<ApplicationUser> signInManager,
+            [FromServices] SignInManager<IdentityUser> signInManager,
             [FromForm] string returnUrl) =>
         {
             signInManager.AuthenticationScheme = IdentityConstants.ApplicationScheme;
@@ -30,7 +30,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
 
         accountGroup.MapGet("/Logout", async (
             ClaimsPrincipal user,
-            [FromServices] SignInManager<ApplicationUser> signInManager) =>
+            [FromServices] SignInManager<IdentityUser> signInManager) =>
         {
             signInManager.AuthenticationScheme = IdentityConstants.ApplicationScheme;
             await signInManager.SignOutAsync();

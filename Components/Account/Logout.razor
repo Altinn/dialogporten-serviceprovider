@@ -1,7 +1,7 @@
 @using Digdir.BDB.Dialogporten.ServiceProvider.Data
 @using Microsoft.AspNetCore.Identity
 @inject NavigationManager NavigationManager;
-@inject SignInManager<ApplicationUser> SignInManager;
+@inject SignInManager<IdentityUser> SignInManager;
 @rendermode InteractiveServer
 <button @onclick="LogoutUser" class="nav-link">
     <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout

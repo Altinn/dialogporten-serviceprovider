@@ -1,24 +1,25 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.AspNetCore.Identity;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Data;
 
 public sealed class InMemoryUserStoreContext
 {
-    private readonly ConcurrentDictionary<string, ApplicationUser> _users = new();
+    private readonly ConcurrentDictionary<string, IdentityUser> _users = new();
     private readonly ConcurrentDictionary<string, string> _passwords = new();
 
-    public bool TryAddUser(ApplicationUser user)
+    public bool TryAddUser(IdentityUser user)
     {
         user.NormalizedUserName = user.UserName!.ToUpperInvariant();
         return _users.TryAdd(user.Id, user);
     }
 
-    public bool TryUpdateUser(string userId, ApplicationUser user)
+    public bool TryUpdateUser(string userId, IdentityUser user)
     {
         return _users.TryUpdate(userId, user, user);
     }
-    public bool TryRemoveUser(string userId, out ApplicationUser? user)
+    public bool TryRemoveUser(string userId, out IdentityUser? user)
     {
         return _users.TryRemove(userId, out user);
     }
@@ -26,12 +27,12 @@ public sealed class InMemoryUserStoreContext
     {
         return _passwords.TryRemove(userId, out password);
     }
-    public ApplicationUser? FindUserById(string userId)
+    public IdentityUser? FindUserById(string userId)
     {
         _users.TryGetValue(userId, out var user);
         return user;
     }
-    public ApplicationUser? FindUserByName(string name)
+    public IdentityUser? FindUserByName(string name)
     {
         return _users.Values.FirstOrDefault(u => u.NormalizedUserName == name);
     }

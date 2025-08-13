@@ -60,7 +60,7 @@ builder.Services
 
 builder.Services.AddSingleton<InMemoryUserStoreContext>();
 
-builder.Services.AddIdentityCore<ApplicationUser>(o =>
+    builder.Services.AddIdentityCore<IdentityUser>(o =>
     {
         o.Password.RequireDigit = false;
         o.Password.RequireLowercase = false;
