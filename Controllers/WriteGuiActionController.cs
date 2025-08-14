@@ -129,7 +129,6 @@ public class WriteGuiActionController : Controller
         {
             Op = "add",
             Path = "/attachments/-",
-            // Value = new UpdateDialogDialogAttachmentDto
             Value = new V1ServiceOwnerDialogsCommandsUpdate_Attachment
             {
                 DisplayName = new List<V1CommonLocalizations_Localization>
