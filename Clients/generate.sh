@@ -1,1 +1,0 @@
-refitter https://altinn-dev-api.azure-api.net/dialogporten/swagger/v1/swagger.json --namespace "Digdir.BDB.Dialogporten.ServiceProvider.Clients" --tag Serviceowner --output DialogportenClient.cs --no-banner --cancellation-tokens --use-api-response

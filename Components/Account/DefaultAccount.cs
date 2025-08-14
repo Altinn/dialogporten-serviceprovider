@@ -1,4 +1,3 @@
-using Digdir.BDB.Dialogporten.ServiceProvider.Data;
 using Microsoft.AspNetCore.Identity;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Components.Account;
@@ -7,10 +6,10 @@ internal static class DefaultAccount
 {
     public static async Task AddDefaultAccount(this IServiceProvider services)
     {
-        var userStore = services.GetRequiredService<IUserStore<ApplicationUser>>();
-        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var userStore = services.GetRequiredService<IUserStore<IdentityUser>>();
+        var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
         var configuration = services.GetRequiredService<IConfiguration>();
-        var logger = services.GetRequiredService<ILogger<ApplicationUser>>();
+        var logger = services.GetRequiredService<ILogger<IdentityUser>>();
 
         var defaultUsername = configuration.GetValue<string>("ServiceProvider:DefaultAccount:Username");
         var defaultPassword = configuration.GetValue<string>("ServiceProvider:DefaultAccount:Password");
@@ -21,22 +20,14 @@ internal static class DefaultAccount
             return;
         }
 
-        var admin = await userManager.FindByNameAsync(defaultUsername);
         logger.LogInformation("Creating default account");
-        if (admin == null)
-        {
-            var user = new ApplicationUser();
-            await userStore.SetUserNameAsync(user, defaultUsername, CancellationToken.None);
-            var result = await userManager.CreateAsync(user, defaultPassword);
-            if (!result.Succeeded)
-            {
-                logger.LogInformation("Default account already created!");
-            }
-            else
-            {
-                logger.LogInformation("Created default account");
-            }
-        }
+        var user = new IdentityUser();
+        await userStore.SetUserNameAsync(user, defaultUsername, CancellationToken.None);
+        var result = await userManager.CreateAsync(user, defaultPassword);
+        if (result.Succeeded)
+            logger.LogInformation("Created default account");
+        else
+            logger.LogInformation("Something went wrong creating default account");
     }
 
 }
