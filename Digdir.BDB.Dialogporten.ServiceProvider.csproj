@@ -23,7 +23,7 @@
         <PackageReference Include="Refit.HttpClientFactory" Version="8.0.0"/>
         <PackageReference Include="ScottBrady.IdentityModel" Version="4.0.0"/>
         <PackageReference Include="ScottBrady.IdentityModel.AspNetCore" Version="2.1.0"/>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6"/>
     </ItemGroup>
     <ItemGroup>
         <None Update="Attachments\sample.docx">
