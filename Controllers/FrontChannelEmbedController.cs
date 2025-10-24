@@ -55,9 +55,23 @@ public class FrontChannelEmbedController : ControllerBase
             }
         }
         var sb = new StringBuilder();
+        sb.AppendLine("User claims:");
         foreach (var claim in User.Claims)
         {
             sb.AppendLine($"* {claim.Type}: {claim.Value}");
+        }
+
+        if (Request.Query.Count > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine("Query parameters:");
+            foreach (var queryParameter in Request.Query)
+            {
+                foreach (var value in queryParameter.Value)
+                {
+                    sb.AppendLine($"* {queryParameter.Key}: {value}");
+                }
+            }
         }
 
         return Task.FromResult(html ? HtmlContent(sb.ToString()) : MarkdownContent(sb.ToString()));
