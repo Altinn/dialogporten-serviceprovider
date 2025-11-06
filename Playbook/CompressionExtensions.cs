@@ -15,34 +15,18 @@ public static class CompressionExtensions
         {
             brotliStream.Write(bytes, 0, bytes.Length);
         }
-        var aa = Encoding.UTF8.GetString(Base64Url.EncodeToUtf8(memoryStream.ToArray()));
-        return aa;
+        return Encoding.UTF8.GetString(Base64Url.EncodeToUtf8(memoryStream.ToArray()));
     }
 
-    // public static byte[] Compress(this byte[] input)
-    // {
-    //     using var memoryStream = new MemoryStream(input);
-    //     using (var brotliStream = new BrotliStream(memoryStream, CompressionLevel.Optimal))
-    //     {
-    //         brotliStream.Write(input, 0, input.Length);
-    //         brotliStream.
-    //     }
-    //
-    //
-    // }
     public static async Task<byte[]> DecompressBytesAsync(byte[] bytes, CancellationToken cancel = default(CancellationToken))
     {
-        using (var inputStream = new MemoryStream(bytes))
+        using var inputStream = new MemoryStream(bytes);
+        using var outputStream = new MemoryStream();
+        await using (var compressionStream = new BrotliStream(inputStream, CompressionMode.Decompress))
         {
-            using (var outputStream = new MemoryStream())
-            {
-                using (var compressionStream = new BrotliStream(inputStream, CompressionMode.Decompress))
-                {
-                    await compressionStream.CopyToAsync(outputStream, cancel);
-                }
-                return outputStream.ToArray();
-            }
+            await compressionStream.CopyToAsync(outputStream, cancel);
         }
+        return outputStream.ToArray();
     }
     public static async Task<byte[]> CompressBytesAsync(byte[] bytes, CancellationToken cancel = default(CancellationToken))
     {
@@ -53,5 +37,5 @@ public static class CompressionExtensions
         }
         return outputStream.ToArray();
     }
-  
+
 }
