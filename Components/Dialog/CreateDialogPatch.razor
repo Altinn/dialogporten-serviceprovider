@@ -15,7 +15,7 @@
 @rendermode InteractiveServer
 <h3>CreateDialogTest</h3>
 
-<EditForm Model="CreateDialogCommand" OnValidSubmit="@(() => Submit())" FormName="CreateDialogTest" @ref="_form">
+<EditForm Model="CreateDialogCommand" OnValidSubmit="@(() => Save())" FormName="CreateDialogTest" @ref="_form">
     <DataAnnotationsValidator/>
     <ValidationSummary/>
 
@@ -255,7 +255,7 @@
 <button type="button" @onclick="Import">Import</button>
 <button type="button" @onclick="ExportSeedToClipboard">Export Seed</button>
 <button type="button" @onclick="CreatePatch">Patch</button>
-<button type="button" @onclick="Submit">Save</button>
+<button type="button" @onclick="Save">Save</button>
 
 <InputTextArea
     @bind-Value="PatchString"
@@ -380,7 +380,7 @@
         CreateDialogCommand.Attachments.Remove(attachment);
     }
 
-    private void Submit()
+    private void Save()
     {
         Old = CreateDialogCommand;
         var json = JsonSerializer.Serialize(CreateDialogCommand);
