@@ -1,9 +1,14 @@
-@page "/dialog/create"
+@page "/dialog/create/patch"
 @using Altinn.ApiClients.Dialogporten.Features.V1
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
 @using Digdir.BDB.Dialogporten.ServiceProvider.Services
+@using JsonDiffPatchDotNet
+@using JsonDiffPatchDotNet.Formatters.JsonPatch
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Newtonsoft.Json
+@using Newtonsoft.Json.Linq
+@using JsonSerializer = System.Text.Json.JsonSerializer
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inject IServiceownerApi ServiceOwnerApi
 @inject IJSRuntime Js
@@ -244,12 +249,17 @@
             </button>
         </fieldset>
     </div>
-    <button type="submit">Submit</button>
 </EditForm>
 <label For="dialog-seed">Seed:</label>
 <InputTextArea id="dialog-seed" @bind-Value="Seed"/>
 <button type="button" @onclick="Import">Import</button>
 <button type="button" @onclick="ExportSeedToClipboard">Export Seed</button>
+<button type="button" @onclick="CreatePatch">Patch</button>
+<button type="button" @onclick="Submit">Save</button>
+
+<InputTextArea
+    @bind-Value="PatchString"
+/>
 @if (_showPopUp)
 {
 
@@ -257,8 +267,11 @@
 }
 
 @code {
+    private string PatchString { get; set; } = "";
     private EditForm _form = null!;
     private string Seed { get; set; } = "";
+    private V1ServiceOwnerDialogsCommandsCreate_Dialog Old = null!;
+    private List<Operation> Patches = null!;
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -367,59 +380,11 @@
         CreateDialogCommand.Attachments.Remove(attachment);
     }
 
-    private async Task Submit()
+    private void Submit()
     {
-        var response = await ServiceOwnerApi.V1ServiceOwnerDialogsCommandsCreateDialog(CreateDialogCommand);
-        _header = response.StatusCode.ToString();
-        _message = response.IsSuccessStatusCode ? response.Content : response.Error.Content;
-        _showPopUp = true;
-        if (response.IsSuccessStatusCode)
-        {
-
-            var guidString = response.Content!;
-            guidString = guidString.Trim('"');
-
-            Guid.TryParse(guidString, out var guid);
-            if (CreateDialogCommand.Transmissions.Any())
-            {
-                var getDialog = await ServiceOwnerApi.V1ServiceOwnerDialogsQueriesGetDialog(guid, null!);
-                if (getDialog.IsSuccessStatusCode)
-                {
-                    // Get all transmission Id
-                    var transmissionIds = getDialog.Content!.Transmissions.Select(x => x.Id).ToList();
-                    var transmissionsStorageResult = await ProtectedLocalStore.GetAsync<Dictionary<Guid, List<Guid>>>("transmissions");
-
-                    var transmissions = new List<Guid>();
-                    var transmissionDict = new Dictionary<Guid, List<Guid>>();
-
-                    if (transmissionsStorageResult is { Success: true, Value: not null })
-                    {
-                        transmissionDict = transmissionsStorageResult.Value;
-                        if (transmissionDict.TryGetValue(guid, out var value))
-                        {
-                            transmissions = value;
-                        }
-                    }
-
-                    transmissions.AddRange(transmissionIds);
-                    transmissionDict[guid] = transmissions;
-                    _ = ProtectedLocalStore.SetAsync("transmissions", transmissionDict);
-                }
-
-            }
-
-            var dialogStorageResult = await ProtectedLocalStore.GetAsync<List<Guid>>("dialogs");
-            List<Guid> dialogs = [];
-
-            if (dialogStorageResult is { Success: true, Value: not null })
-            {
-                dialogs = dialogStorageResult.Value;
-            }
-
-            dialogs.Add(guid);
-
-            _ = ProtectedLocalStore.SetAsync("dialogs", dialogs);
-        }
+        Old = CreateDialogCommand;
+        var json = JsonSerializer.Serialize(CreateDialogCommand);
+        CreateDialogCommand = JsonSerializer.Deserialize<V1ServiceOwnerDialogsCommandsCreate_Dialog>(json)!;
     }
 
     private void Prefill()
@@ -432,5 +397,23 @@
     {
         SeedImporter.ParseSeed(CreateDialogCommand, Seed);
         StateHasChanged();
+    }
+
+    private void CreatePatch()
+    {
+        Patches = new JsonDeltaFormatter()
+            .Format(new JsonDiffPatch()
+                .Diff(
+                    JToken.FromObject(Old),
+                    JToken.FromObject(CreateDialogCommand)))
+            .ToList();
+
+        PatchString = JsonConvert.SerializeObject(
+            Patches,
+            Formatting.Indented,
+            new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            });
     }
 }
