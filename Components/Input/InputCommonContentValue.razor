@@ -2,21 +2,26 @@
 @using System.Diagnostics.CodeAnalysis
 @using Altinn.ApiClients.Dialogporten.Features.V1
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
-<fieldset>
-    <div>
-        <label>Media Type:</label>
-        <InputText
-            AdditionalAttributes="@AdditionalAttributes"
-            @bind-Value="_value.MediaType"
-            @bind-Value:after="NotifyValueChanged"
-        />
-        <InputLocalization @bind-Value="@_value.Value"
-                           @bind-Value:after="NotifyValueChanged"
-        />
-        <ValidationMessage For="@(() => _value.Value)"/>
-    </div>
 
-</fieldset>
+<div class="content-value-component">
+    <div class="content-value-fields">
+        <div class="form-group">
+            <label class="form-label">Media Type</label>
+            <InputText
+                AdditionalAttributes="@_mergedAttributes"
+                @bind-Value="_value.MediaType"
+                @bind-Value:after="NotifyValueChanged"
+            />
+        </div>
+        <div class="form-group form-group--full">
+            <label class="form-label">Localizations</label>
+            <InputLocalization @bind-Value="@_value.Value"
+                               @bind-Value:after="NotifyValueChanged"
+            />
+            <ValidationMessage For="@(() => _value.Value)"/>
+        </div>
+    </div>
+</div>
 
 @code {
     private V1CommonContent_ContentValue _value = new()
@@ -24,9 +29,23 @@
         Value = [],
         MediaType = ""
     };
+
+    private Dictionary<string, object>? _mergedAttributes;
+
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
+
+        // Merge AdditionalAttributes with the class attribute
+        _mergedAttributes = AdditionalAttributes != null
+            ? new Dictionary<string, object>(AdditionalAttributes)
+            : new Dictionary<string, object>();
+
+        if (!_mergedAttributes.ContainsKey("class"))
+        {
+            _mergedAttributes["class"] = "form-input";
+        }
+
         var isRequired = false;
         if (AdditionalAttributes != null)
         {
@@ -70,3 +89,22 @@
         ValueChanged.InvokeAsync(Value);
     }
 }
+
+<style>
+    .content-value-component {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .content-value-fields {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .content-value-fields .form-group--full {
+        grid-column: 1 / -1;
+    }
+</style>

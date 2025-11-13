@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
 
+
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 
 [ApiController]

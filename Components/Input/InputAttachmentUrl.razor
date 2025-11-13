@@ -1,33 +1,26 @@
 @inherits InputBase<ICollection<V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl>>
 @using System.Diagnostics.CodeAnalysis
 @using Altinn.ApiClients.Dialogporten.Features.V1
-<div>
-    <label for=""></label>
-    <table>
-        <thead>
-        <tr>
-            <th>URL</th>
-            <th>Media Type</th>
-            <th>Consumer Type</th>
-            <th>Action</th>
-        </tr>
-        </thead>
-        <tbody>
+
+<div class="attachment-url-component">
+    <div class="url-list">
         @foreach (var url in Value!)
         {
-            <tr>
-                <td>
-                    <InputUri @bind-Value="url.Url"></InputUri>
-                    <ValidationMessage For="@(() => url.Url)"></ValidationMessage>
-                </td>
-                <td>
-                    <InputText @bind-Value="@url.MediaType"></InputText>
-                    <ValidationMessage For="@(() => url.MediaType)"></ValidationMessage>
-                </td>
-                <td>
-
-                    <div>
-                        <InputSelect @bind-Value="@url.ConsumerType">
+            <div class="url-item">
+                <div class="url-fields">
+                    <div class="form-group">
+                        <label class="form-label">URL</label>
+                        <InputUri @bind-Value="url.Url"></InputUri>
+                        <ValidationMessage For="@(() => url.Url)"></ValidationMessage>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Media Type</label>
+                        <InputText class="form-input" @bind-Value="@url.MediaType"></InputText>
+                        <ValidationMessage For="@(() => url.MediaType)"></ValidationMessage>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Consumer Type</label>
+                        <InputSelect class="form-select" @bind-Value="@url.ConsumerType">
                             @foreach (var label in Enum.GetValues<Attachments_AttachmentUrlConsumerType>())
                             {
                                 <option value="@label">@label</option>
@@ -35,17 +28,14 @@
                         </InputSelect>
                         <ValidationMessage For="@(() => url.ConsumerType)"></ValidationMessage>
                     </div>
-                </td>
-                <td>
-                    <button type="button" @onclick="() => RemoveAttachmentUrl(url)">Remove url</button>
-                </td>
-            </tr>
+                </div>
+                <div class="url-actions">
+                    <button type="button" class="btn btn-remove btn-small" @onclick="() => RemoveAttachmentUrl(url)">Remove</button>
+                </div>
+            </div>
         }
-        </tbody>
-    </table>
-    <div>
-        <button @onclick="AddAttachmentUrl">Add URL</button>
     </div>
+    <button type="button" class="btn btn-add btn-small" @onclick="AddAttachmentUrl">Add URL</button>
 </div>
 
 @code {
@@ -63,3 +53,60 @@
     }
     protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out ICollection<V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl> result, [NotNullWhen(false)] out string? validationErrorMessage) => throw new NotImplementedException();
 }
+
+<style>
+    .attachment-url-component {
+        margin-bottom: 0.5rem;
+    }
+
+    .url-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .url-item {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .url-fields {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    @@media (min-width: 768px) {
+        .url-fields {
+            grid-template-columns: 2fr 1fr 1fr;
+        }
+    }
+
+    .url-actions {
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 0.5rem;
+        border-top: 1px solid #dee2e6;
+    }
+
+    @@media (min-width: 768px) {
+        .url-item {
+            flex-direction: row;
+            align-items: flex-start;
+        }
+
+        .url-actions {
+            border-top: none;
+            padding-top: 0;
+            padding-left: 1rem;
+            border-left: 1px solid #dee2e6;
+            align-items: center;
+        }
+    }
+</style>

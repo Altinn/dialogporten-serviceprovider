@@ -1,4 +1,5 @@
 using Altinn.ApiClients.Dialogporten.Features.V1;
+using Digdir.BDB.Dialogporten.ServiceProvider.Extensions;
 using Org.BouncyCastle.Security;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider;

@@ -1,0 +1,837 @@
+@using System.Diagnostics.CodeAnalysis
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input
+@using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
+@using Digdir.BDB.Dialogporten.ServiceProvider.Extensions
+@using Digdir.BDB.Dialogporten.ServiceProvider.Services
+
+<div class="dialog-comp-container">
+    <h3 class="comp-title">Create Dialog</h3>
+
+    <EditForm Model="Value" OnValidSubmit="@(() => Submit())" FormName="CreateDialogTest" @ref="_form">
+        <DataAnnotationsValidator/>
+        <ValidationSummary class="validation-summary"/>
+
+        <button type="button" class="btn btn-prefill" onclick="@Prefill">Prefill</button>
+        <div class="form-section">
+            <h4 class="section-title">Basic Information</h4>
+
+            <div class="form-group">
+                <label class="form-label">Id</label>
+                <InputGuid @bind-Value="@Value.Id"></InputGuid>
+                <ValidationMessage For="@(() => Value.Id)"/>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Idempotent Key</label>
+                <InputText class="form-input" @bind-Value="@Value.IdempotentKey"></InputText>
+                <ValidationMessage For="@(() => Value.IdempotentKey)"/>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Service Resource</label>
+                <InputSelect class="form-select" @bind-Value="@Value.ServiceResource">
+                    <option value="" disabled selected>Select your option</option>
+                    @foreach (var status in ResourceRegistryClient.Resources)
+                    {
+                        <option value=@("urn:altinn:resource:" + status.Identifier)>@status.Identifier</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => Value.ServiceResource)"/>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Party</label>
+                <InputParty @bind-Value="Value.Party"></InputParty>
+                <ValidationMessage For="@(() => Value.Party)"/>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Progress</label>
+                <InputNumber class="form-input" @bind-Value="@Value.Progress"></InputNumber>
+                <ValidationMessage For="@(() => Value.Progress)"/>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="extendedStatus">Extended Status</label>
+                <InputText class="form-input" id="extendedStatus" @bind-Value="@Value.ExtendedStatus"></InputText>
+                <ValidationMessage For="@(() => Value.ExtendedStatus)"/>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="externalReference">External Reference</label>
+                <InputText class="form-input" id="externalReference" @bind-Value="@Value.ExternalReference"></InputText>
+                <ValidationMessage For="@(() => Value.ExternalReference)"/>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="process">Process</label>
+                <InputText class="form-input" id="process" @bind-Value="@Value.Process"></InputText>
+                <ValidationMessage For="@(() => Value.Process)"/>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="precedingProcess">Preceding Process</label>
+                <InputText class="form-input" id="precedingProcess" @bind-Value="@Value.PrecedingProcess"></InputText>
+                <ValidationMessage For="@(() => Value.PrecedingProcess)"/>
+            </div>
+
+            <div class="form-group form-group--checkbox">
+                <label class="form-label">Api Only</label>
+                <InputCheckbox class="form-checkbox" @bind-Value="Value.IsApiOnly"/>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="status">Status</label>
+                <InputSelect class="form-select" id="status" @bind-Value="@Value.Status">
+                    @foreach (var status in Enum.GetValues<DialogsEntities_DialogStatus>())
+                    {
+                        <option value="@status">@status</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => Value.Status)"/>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="systemLabel">System Label</label>
+                <InputSelect class="form-select" id="systemLabel" @bind-Value="@Value.SystemLabel">
+                    @foreach (var label in Enum.GetValues<DialogEndUserContextsEntities_SystemLabel>())
+                    {
+                        <option value="@label">@label</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => Value.SystemLabel)"/>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4 class="section-title">Dates & Times</h4>
+
+            <div class="form-group">
+                <label class="form-label" for="visibleFrom">Visible From</label>
+                <DateInputWrapper id="visibleFrom" @bind-Value="@Value.VisibleFrom"/>
+                <ValidationMessage For="@(() => Value.VisibleFrom)"/>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="dueAt">Due At</label>
+                <DateInputWrapper id="dueAt" @bind-Value="@Value.DueAt"/>
+                <ValidationMessage For="@(() => Value.DueAt)"/>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="expiresAt">Expires At</label>
+                <DateInputWrapper id="expiresAt" @bind-Value="@Value.ExpiresAt"></DateInputWrapper>
+                <ValidationMessage For="@(() => Value.ExpiresAt)"/>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="createdAt">Created At</label>
+                <DateInputWrapper id="createdAt" @bind-Value="@Value.CreatedAt"></DateInputWrapper>
+                <ValidationMessage For="@(() => Value.CreatedAt)"/>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="updatedAt">Updated At</label>
+                <DateInputWrapper id="updatedAt" @bind-Value="@Value.UpdatedAt"></DateInputWrapper>
+                <ValidationMessage For="@(() => Value.UpdatedAt)"/>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4 class="section-title">Content</h4>
+            <div class="form-group">
+                <InputContent AdditionalAttributes="@_req" @bind-Value="@Value.Content"/>
+            </div>
+        </div>
+
+        <fieldset class="fieldset">
+            <legend class="fieldset-legend">Search Tags</legend>
+            <div class="item-list">
+                @foreach (var tag in Value.SearchTags)
+                {
+                    <div class="item-card">
+                        <div class="item-content">
+                            <div class="form-group">
+                                <label class="form-label">Tag Value</label>
+                                <InputText class="form-input" @bind-Value="tag.Value"></InputText>
+                                <ValidationMessage For="@(() => tag.Value)"></ValidationMessage>
+                            </div>
+                        </div>
+                        <div class="item-actions">
+                            <button type="button" class="btn btn-remove" @onclick="() => Value.SearchTags.Remove(tag)">Remove</button>
+                        </div>
+                    </div>
+                }
+            </div>
+            <button type="button" class="btn btn-add"
+                    @onclick="() => Value.SearchTags.Add(new V1ServiceOwnerDialogsCommandsCreate_Tag())">
+                Add Search Tag
+            </button>
+        </fieldset>
+
+        <fieldset class="fieldset">
+            <legend class="fieldset-legend">Attachments</legend>
+            <div class="item-list">
+                @foreach (var attachment in Value.Attachments)
+                {
+                    <div class="item-card">
+                        <div class="item-content">
+                            <div class="form-group">
+                                <label class="form-label">Id</label>
+                                <InputGuid @bind-Value="@attachment.Id"/>
+                                <ValidationMessage For="@(() => attachment.Id)"/>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">URLs</label>
+                                <InputAttachmentUrl @bind-Value="@attachment.Urls"/>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Display Name</label>
+                                <InputLocalization @bind-Value="attachment.DisplayName"/>
+                            </div>
+                        </div>
+                        <div class="item-actions">
+                            <button type="button" class="btn btn-remove" @onclick="() => RemoveAttachment(attachment)">Remove</button>
+                        </div>
+                    </div>
+                }
+            </div>
+            <button type="button" class="btn btn-add" @onclick="AddAttachment">Add Attachment</button>
+        </fieldset>
+
+        <div class="form-section">
+            <h4 class="section-title">Transmissions</h4>
+            <InputTransmission @bind-Value="@Value.Transmissions"/>
+        </div>
+
+        <fieldset class="fieldset">
+            <legend class="fieldset-legend">GUI Actions</legend>
+            <InputGuiActions @bind-Value="Value.GuiActions"/>
+        </fieldset>
+
+        <fieldset class="fieldset">
+            <legend class="fieldset-legend">API Actions</legend>
+            <InputApiAction @bind-Value="Value.ApiActions"/>
+        </fieldset>
+
+        <fieldset class="fieldset">
+            <legend class="fieldset-legend">Activities</legend>
+            <InputActivites @bind-Value="Value.Activities"/>
+        </fieldset>
+
+        <fieldset class="fieldset">
+            <legend class="fieldset-legend">Service Owner Labels</legend>
+            <div class="item-list">
+                @foreach (var serviceOwnerLabel in Value.ServiceOwnerContext.ServiceOwnerLabels)
+                {
+                    <div class="item-card">
+                        <div class="item-content">
+                            <div class="form-group">
+                                <label class="form-label">Label Value</label>
+                                <InputText class="form-input" @bind-Value="serviceOwnerLabel.Value"></InputText>
+                                <ValidationMessage For="@(() => serviceOwnerLabel.Value)"></ValidationMessage>
+                            </div>
+                        </div>
+                        <div class="item-actions">
+                            <button type="button" class="btn btn-remove"
+                                    @onclick="() => Value.ServiceOwnerContext.ServiceOwnerLabels.Remove(serviceOwnerLabel)">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+            <button type="button" class="btn btn-add"
+                    onclick="@(() => Value.ServiceOwnerContext.ServiceOwnerLabels.Add(new V1ServiceOwnerDialogsCommandsCreate_ServiceOwnerLabel()))">
+                Add Service Owner Label
+            </button>
+        </fieldset>
+
+        <button type="submit" class="btn btn-submit">Submit</button>
+    </EditForm>
+</div>
+
+
+
+@code {
+    [Parameter]
+    public Action? Prefill { get; set; }
+
+    [Parameter]
+    public required Action Submit { get; set; }
+
+
+    [Parameter]
+    public required V1ServiceOwnerDialogsCommandsCreate_Dialog Value { get; set; }
+
+    private EditForm _form = null!;
+
+    private ValidationMessageStore _messageStore = null!;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _messageStore = new ValidationMessageStore(_form.EditContext ?? throw new NullReferenceException());
+            _form.EditContext.OnValidationRequested += ValidateForm;
+        }
+    }
+
+    private void ValidateForm(object? sender, ValidationRequestedEventArgs e)
+    {
+        var context = (EditContext)sender!;
+
+        _messageStore.Clear();
+
+        ValidateContentValue(Value.Content.Title, nameof(Value.Content.Title));
+        ValidateContentValue(Value.Content.NonSensitiveTitle, nameof(Value.Content.NonSensitiveTitle));
+
+        ValidateContentValue(Value.Content.Summary, nameof(Value.Content.Summary));
+        ValidateContentValue(Value.Content.NonSensitiveSummary, nameof(Value.Content.NonSensitiveSummary));
+
+        ValidateContentValue(Value.Content.SenderName, nameof(Value.Content.SenderName));
+
+        ValidateContentValue(Value.Content.AdditionalInfo, nameof(Value.Content.AdditionalInfo));
+
+        ValidateContentValue(Value.Content.ExtendedStatus, nameof(Value.Content.ExtendedStatus));
+
+        ValidateContentValue(Value.Content.MainContentReference, nameof(Value.Content.MainContentReference));
+
+        context.NotifyValidationStateChanged();
+
+    }
+
+    private void ValidateContentValue(V1CommonContent_ContentValue? content, string name)
+    {
+        if (content is null) return;
+
+        if ((content.Value == null || !content.Value.Any()) && !string.IsNullOrEmpty(content.MediaType))
+        {
+            var fieldId = new FieldIdentifier(Value, $"Content.{name}.Value");
+            _messageStore.Add(fieldId, $"{name} requires at least one localization");
+            return;
+        }
+
+        if (content.Value != null && content.Value.Any() && string.IsNullOrEmpty(content.MediaType))
+        {
+            var fieldId = new FieldIdentifier(Value, $"Content.{name}.Value");
+            _messageStore.Add(fieldId, $"{name} requires mediaType if you have any localization");
+        }
+
+    }
+    private readonly Dictionary<string, object?> _req = new()
+    {
+        { "required", true }
+    };
+
+
+    [SuppressMessage("ReSharper", "NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract")]
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        var deleteButton = new V1ServiceOwnerDialogsCommandsCreate_GuiAction();
+        deleteButton.Prefill(GuiActionPrefill.DeleteButton);
+        Value.ServiceOwnerContext ??= new V1ServiceOwnerDialogsCommandsCreate_DialogServiceOwnerContext
+        {
+            ServiceOwnerLabels = []
+        };
+
+
+        Value.Attachments ??= [];
+        Value.SearchTags ??=
+        [
+            new V1ServiceOwnerDialogsCommandsCreate_Tag
+            {
+                Value = "SOv0.1"
+            }
+        ];
+        Value.Transmissions ??= [];
+        Value.GuiActions ??= [deleteButton];
+        Value.ApiActions ??= [];
+        Value.Activities ??= [];
+    }
+
+
+    private void AddAttachment()
+    {
+        Value.Attachments.Add(new V1ServiceOwnerDialogsCommandsCreate_Attachment
+        {
+            Id = null,
+            DisplayName = [],
+            Urls = []
+        });
+    }
+
+    private void RemoveAttachment(V1ServiceOwnerDialogsCommandsCreate_Attachment attachment)
+    {
+        Value.Attachments.Remove(attachment);
+    }
+}
+
+<style>
+    .dialog-comp-container {
+        padding: 1rem;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        color: #1a1a1a;
+    }
+
+    .comp-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 1.5rem 0;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .validation-summary {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        color: #721c24;
+    }
+
+    .form-section {
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-group--checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 500;
+        font-size: 0.95rem;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-group--checkbox .form-label {
+        margin-bottom: 0;
+    }
+
+    .form-input,
+    .form-select {
+        width: 100%;
+        padding: 0.625rem 0.875rem;
+        border: 2px solid #dee2e6;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        background-color: #ffffff;
+        color: #1a1a1a;
+        transition: all 0.3s ease;
+    }
+
+    .form-input:focus,
+    .form-select:focus {
+        outline: none;
+        border-color: #007bff;
+        background-color: #ffffff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .form-select option {
+        background-color: #ffffff;
+        color: #1a1a1a;
+    }
+
+    .form-checkbox {
+        width: 1.25rem;
+        height: 1.25rem;
+        cursor: pointer;
+    }
+
+    .fieldset {
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .fieldset-legend {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        padding: 0 0.75rem;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1rem;
+        background-color: #ffffff;
+    }
+
+    .data-table tbody {
+        background-color: #ffffff;
+    }
+
+    .data-table tr {
+        background-color: #ffffff;
+    }
+
+    .table-header {
+        text-align: left;
+        padding: 0.75rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        border-bottom: 2px solid #dee2e6;
+        background-color: #f8f9fa !important;
+    }
+
+    .table-cell {
+        padding: 0.75rem;
+        border-bottom: 1px solid #dee2e6;
+        vertical-align: middle;
+        color: #1a1a1a;
+        background-color: #ffffff !important;
+    }
+
+    .table-cell--action {
+        width: 120px;
+        text-align: center;
+    }
+
+    .btn {
+        padding: 0.625rem 1.25rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn:active {
+        transform: translateY(0);
+    }
+
+    .btn-prefill {
+        background-color: #17a2b8;
+        color: white;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-prefill:hover {
+        background-color: #138496;
+    }
+
+    .btn-add {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .btn-add:hover {
+        background-color: #218838;
+    }
+
+    .btn-remove {
+        background-color: #dc3545;
+        color: white;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .btn-remove:hover {
+        background-color: #c82333;
+    }
+
+    .btn-submit {
+        background-color: #007bff;
+        color: white;
+        font-size: 1.05rem;
+        padding: 0.75rem 2rem;
+        margin-top: 1rem;
+    }
+
+    .btn-submit:hover {
+        background-color: #0056b3;
+    }
+
+    .item-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .item-card {
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .item-content {
+        display: grid;
+        gap: 1rem;
+        flex: 1;
+    }
+
+    .item-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+        padding-top: 0.5rem;
+        border-top: 1px solid #dee2e6;
+    }
+
+    @@media (min-width: 768px) {
+        .item-card {
+            flex-direction: row;
+            align-items: flex-start;
+        }
+
+        .item-actions {
+            border-top: none;
+            padding-top: 0;
+            padding-left: 1rem;
+            border-left: 1px solid #dee2e6;
+            align-items: center;
+        }
+    }
+</style>
+
+<style>
+    .dialog-comp-container {
+        padding: 1rem;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .comp-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 1.5rem 0;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .validation-summary {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        color: #721c24;
+    }
+
+    .form-section {
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-group--checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 500;
+        font-size: 0.95rem;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-group--checkbox .form-label {
+        margin-bottom: 0;
+    }
+
+    .form-input,
+    .form-select {
+        width: 100%;
+        padding: 0.625rem 0.875rem;
+        border: 2px solid #dee2e6;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        background-color: #ffffff;
+        color: #1a1a1a;
+        transition: all 0.3s ease;
+    }
+
+    .form-input:focus,
+    .form-select:focus {
+        outline: none;
+        border-color: #007bff;
+        background-color: #ffffff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .form-select option {
+        background-color: #ffffff;
+        color: #1a1a1a;
+    }
+
+    .form-checkbox {
+        width: 1.25rem;
+        height: 1.25rem;
+        cursor: pointer;
+    }
+
+    .fieldset {
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .fieldset-legend {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        padding: 0 0.75rem;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1rem;
+        background-color: #ffffff;
+    }
+
+    .data-table tbody {
+        background-color: #ffffff;
+    }
+
+    .data-table tr {
+        background-color: #ffffff;
+    }
+
+    .table-header {
+        text-align: left;
+        padding: 0.75rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        border-bottom: 2px solid #dee2e6;
+        background-color: #f8f9fa !important;
+    }
+
+    .table-cell {
+        padding: 0.75rem;
+        border-bottom: 1px solid #dee2e6;
+        vertical-align: middle;
+        color: #1a1a1a;
+        background-color: #ffffff !important;
+    }
+
+    .table-cell--action {
+        width: 120px;
+        text-align: center;
+    }
+
+    .btn {
+        padding: 0.625rem 1.25rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn:active {
+        transform: translateY(0);
+    }
+
+    .btn-prefill {
+        background-color: #17a2b8;
+        color: white;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-prefill:hover {
+        background-color: #138496;
+    }
+
+    .btn-add {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .btn-add:hover {
+        background-color: #218838;
+    }
+
+    .btn-remove {
+        background-color: #dc3545;
+        color: white;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .btn-remove:hover {
+        background-color: #c82333;
+    }
+
+    .btn-submit {
+        background-color: #007bff;
+        color: white;
+        font-size: 1.05rem;
+        padding: 0.75rem 2rem;
+        margin-top: 1rem;
+    }
+
+    .btn-submit:hover {
+        background-color: #0056b3;
+    }
+</style>

@@ -2,108 +2,99 @@
 @using System.Diagnostics.CodeAnalysis
 @using Altinn.ApiClients.Dialogporten.Features.V1
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input.common
+@using Digdir.BDB.Dialogporten.ServiceProvider.Extensions
 @inherits InputBase<ICollection<V1ServiceOwnerDialogsCommandsCreate_GuiAction>>
 
-<fieldset>
-    <table>
+<div class="input-component">
+    <legend class="input-legend">GUI Actions</legend>
 
-        @if (Value != null && Value.Any())
+    @if (Value != null)
+    {
+        @foreach (var guiAction in Value)
         {
-            <thead>
-            <th>Id</th>
-            <th>Action</th>
-            <th>URL</th>
-            <th>Authorization Attribute</th>
-            <th>Is Delete Dialog Action</th>
-            <th>HTTP Method</th>
-            <th>Priority</th>
-            <th>Title</th>
-            <th>Prompt</th>
-            </thead>
-        }
-        <tbody>
-        @if (Value != null)
-        {
-            @foreach (var guiAction in Value)
-            {
+            <div class="action-item">
+                <div class="prefill-buttons">
+                    <button type="button" class="btn btn-small btn-secondary" onclick="@(() => Prefill(guiAction, GuiActionPrefill.Empty))">Clear</button>
+                    <button type="button" class="btn btn-small btn-info" onclick="@(() => Prefill(guiAction, GuiActionPrefill.ReadConfirmation))">Read Confirmation</button>
+                    <button type="button" class="btn btn-small btn-danger" onclick="@(() => Prefill(guiAction, GuiActionPrefill.DeleteButton))">Delete</button>
+                    <button type="button" class="btn btn-small btn-info" onclick="@(() => Prefill(guiAction, GuiActionPrefill.Information))">Information</button>
+                </div>
 
-                <button type="button" onclick="@(() => Prefill(guiAction, GuiActionPrefill.Empty))">Clear
-                </button>
-
-                <button type="button" onclick="@(() => Prefill(guiAction, GuiActionPrefill.ReadConfirmation))">Read
-                    confirmation
-                </button>
-
-                <button type="button" onclick="@(() => Prefill(guiAction, GuiActionPrefill.DeleteButton))">Delete
-                </button>
-
-                <button type="button" onclick="@(() => Prefill(guiAction, GuiActionPrefill.Information))">Information
-                </button>
-                <tr>
-                    <td>
+                <div class="fields-grid">
+                    <div class="form-group">
+                        <label class="form-label">Id</label>
                         <InputGuid @bind-Value="@guiAction.Id"/>
                         <ValidationMessage For="() => guiAction.Id"/>
-                    </td>
+                    </div>
 
-                    <td>
-                        <InputText @bind-Value="@guiAction.Action"/>
+                    <div class="form-group">
+                        <label class="form-label">Action</label>
+                        <InputText class="form-input" @bind-Value="@guiAction.Action"/>
                         <ValidationMessage For="() => guiAction.Action"/>
-                    </td>
+                    </div>
 
-                    <td>
+                    <div class="form-group">
+                        <label class="form-label">URL</label>
                         <InputUri @bind-Value="@guiAction.Url"/>
                         <ValidationMessage For="() => guiAction.Url"/>
-                    </td>
+                    </div>
 
-                    <td>
-                        <InputText @bind-Value="@guiAction.AuthorizationAttribute"/>
+                    <div class="form-group">
+                        <label class="form-label">Authorization</label>
+                        <InputText class="form-input" @bind-Value="@guiAction.AuthorizationAttribute"/>
                         <ValidationMessage For="() => guiAction.AuthorizationAttribute"/>
-                    </td>
+                    </div>
 
-                    <td>
-                        <InputCheckbox @bind-Value="@guiAction.IsDeleteDialogAction"/>
+                    <div class="form-group">
+                        <label class="form-label">Delete Action</label>
+                        <InputCheckbox class="form-checkbox" @bind-Value="@guiAction.IsDeleteDialogAction"/>
                         <ValidationMessage For="() => guiAction.IsDeleteDialogAction"/>
-                    </td>
+                    </div>
 
-                    <td>
-                        <InputSelect @bind-Value="@guiAction.HttpMethod">
+                    <div class="form-group">
+                        <label class="form-label">HTTP Method</label>
+                        <InputSelect class="form-select" @bind-Value="@guiAction.HttpMethod">
                             @foreach (var type in Enum.GetValues<Http_HttpVerb>())
                             {
                                 <option value="@type">@type</option>
                             }
                         </InputSelect>
                         <ValidationMessage For="@(() => guiAction.HttpMethod)"/>
-                    </td>
+                    </div>
 
-                    <td>
-                        <InputSelect @bind-Value="@guiAction.Priority">
+                    <div class="form-group">
+                        <label class="form-label">Priority</label>
+                        <InputSelect class="form-select" @bind-Value="@guiAction.Priority">
                             @foreach (var type in Enum.GetValues<DialogsEntitiesActions_DialogGuiActionPriority>())
                             {
                                 <option value="@type">@type</option>
                             }
                         </InputSelect>
                         <ValidationMessage For="@(() => guiAction.Priority)"/>
-                    </td>
+                    </div>
 
-                    <td>
+                    <div class="form-group">
+                        <label class="form-label">Title</label>
                         <InputLocalization @bind-Value="@guiAction.Title"/>
                         <ValidationMessage For="() => guiAction.Title"/>
-                    </td>
+                    </div>
 
-                    <td>
+                    <div class="form-group">
+                        <label class="form-label">Prompt</label>
                         <InputLocalization @bind-Value="@guiAction.Prompt"/>
                         <ValidationMessage For="() => guiAction.Prompt"/>
-                    </td>
-                    <td>
-                        <button type="button" @onclick="() => Remove(guiAction)">Remove</button>
-                    </td>
-                </tr>
-            }
+                    </div>
+                </div>
+
+                <div class="item-actions">
+                    <button type="button" class="btn btn-remove" @onclick="() => Remove(guiAction)">Remove</button>
+                </div>
+            </div>
         }
-        </tbody>
-        <button type="button" @onclick="Add">Add GUI Action</button>
-    </table>
-</fieldset>
+    }
+
+    <button type="button" class="btn btn-add" @onclick="Add">Add GUI Action</button>
+</div>
 
 @code {
     protected override void OnParametersSet()
@@ -140,4 +131,103 @@
 
 
 }
+
+<style>
+    .input-component {
+        margin-bottom: 1rem;
+    }
+
+    .input-legend {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    .action-item {
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .prefill-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .btn-small {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .btn-info {
+        background-color: #17a2b8;
+        color: white;
+    }
+
+    .btn-info:hover {
+        background-color: #138496;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+    }
+
+    .table-cell--center {
+        text-align: center;
+    }
+
+    .input-component .data-table {
+        background-color: #ffffff !important;
+    }
+
+    .input-component .data-table tbody,
+    .input-component .data-table tr,
+    .input-component .table-cell {
+        background-color: #ffffff !important;
+    }
+
+    .input-component .table-header {
+        background-color: #f8f9fa !important;
+    }
+
+    .fields-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    @@media (min-width: 768px) {
+        .fields-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (min-width: 1024px) {
+        .fields-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    .item-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+        padding-top: 1rem;
+        margin-top: 1rem;
+        border-top: 1px solid #dee2e6;
+    }
+</style>
 

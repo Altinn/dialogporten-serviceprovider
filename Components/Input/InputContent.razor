@@ -1,46 +1,49 @@
 @inherits InputBase<V1ServiceOwnerDialogsCommandsCreate_Content>
 @using System.Diagnostics.CodeAnalysis
 @using Altinn.ApiClients.Dialogporten.Features.V1
-<fieldset>
-    <legend>Edit Content</legend>
 
-    <div>
-        <label>Title:</label>
-        <InputCommonContentValue AdditionalAttributes="AdditionalAttributes" @bind-Value="@Value!.Title"
-                                 @bind-Value:after="NotifyValueChanged"/>
-    </div>
+<div class="input-content-component">
+    <legend class="input-legend">Edit Content</legend>
 
-    <div>
-        <label>Non-Sensitive Title:</label>
-        <InputCommonContentValue @bind-Value="@Value.NonSensitiveTitle" @bind-Value:after="NotifyValueChanged"/>
-    </div>
+    <div class="content-grid">
+        <div class="form-group">
+            <label class="form-label">Title</label>
+            <InputCommonContentValue AdditionalAttributes="AdditionalAttributes" @bind-Value="@Value!.Title"
+                                     @bind-Value:after="NotifyValueChanged"/>
+        </div>
 
-    <div>
-        <label>Summary:</label>
-        <InputCommonContentValue AdditionalAttributes="AdditionalAttributes" @bind-Value="@Value.Summary"
-                                 @bind-Value:after="NotifyValueChanged"/>
-    </div>
+        <div class="form-group">
+            <label class="form-label">Non-Sensitive Title</label>
+            <InputCommonContentValue @bind-Value="@Value.NonSensitiveTitle" @bind-Value:after="NotifyValueChanged"/>
+        </div>
 
-    <div>
-        <label>Non-Sensitive Summary:</label>
-        <InputCommonContentValue @bind-Value="@Value.NonSensitiveSummary" @bind-Value:after="NotifyValueChanged"/>
-    </div>
+        <div class="form-group">
+            <label class="form-label">Summary</label>
+            <InputCommonContentValue AdditionalAttributes="AdditionalAttributes" @bind-Value="@Value.Summary"
+                                     @bind-Value:after="NotifyValueChanged"/>
+        </div>
 
-    <div>
-        <label>Sender Name:</label>
-        <InputCommonContentValue @bind-Value="@Value.SenderName" @bind-Value:after="NotifyValueChanged"/>
-    </div>
+        <div class="form-group">
+            <label class="form-label">Non-Sensitive Summary</label>
+            <InputCommonContentValue @bind-Value="@Value.NonSensitiveSummary" @bind-Value:after="NotifyValueChanged"/>
+        </div>
 
-    <div>
-        <label>Additional Info:</label>
-        <InputCommonContentValue @bind-Value="@Value.AdditionalInfo" @bind-Value:after="NotifyValueChanged"/>
-    </div>
+        <div class="form-group">
+            <label class="form-label">Sender Name</label>
+            <InputCommonContentValue @bind-Value="@Value.SenderName" @bind-Value:after="NotifyValueChanged"/>
+        </div>
 
-    <div>
-        <label>Main Content Reference:</label>
-        <InputCommonContentValue @bind-Value="@Value.MainContentReference" @bind-Value:after="NotifyValueChanged"/>
+        <div class="form-group">
+            <label class="form-label">Additional Info</label>
+            <InputCommonContentValue @bind-Value="@Value.AdditionalInfo" @bind-Value:after="NotifyValueChanged"/>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Main Content Reference</label>
+            <InputCommonContentValue @bind-Value="@Value.MainContentReference" @bind-Value:after="NotifyValueChanged"/>
+        </div>
     </div>
-</fieldset>
+</div>
 
 @code {
 
@@ -73,3 +76,14 @@
 
 
 }
+
+<style>
+    .input-content-component {
+        margin-bottom: 1rem;
+    }
+
+    .content-grid {
+        display: grid;
+        gap: 1rem;
+    }
+</style>
