@@ -53,54 +53,17 @@
         _header = response.StatusCode.ToString();
         _message = response.IsSuccessStatusCode ? response.Content : response.Error.Content;
         _showPopUp = true;
+
         if (response.IsSuccessStatusCode)
         {
-
             var guidString = response.Content!;
             guidString = guidString.Trim('"');
 
             Guid.TryParse(guidString, out var guid);
-            if (CreateDialogCommand.Transmissions.Any())
-            {
-                var getDialog = await ServiceOwnerApi.V1ServiceOwnerDialogsQueriesGetDialog(guid, null!);
-                if (getDialog.IsSuccessStatusCode)
-                {
-                    // Get all transmission Id
-                    var transmissionIds = getDialog.Content!.Transmissions.Select(x => x.Id).ToList();
-                    var transmissionsStorageResult = await ProtectedLocalStore.GetAsync<Dictionary<Guid, List<Guid>>>("transmissions");
-
-                    var transmissions = new List<Guid>();
-                    var transmissionDict = new Dictionary<Guid, List<Guid>>();
-
-                    if (transmissionsStorageResult is { Success: true, Value: not null })
-                    {
-                        transmissionDict = transmissionsStorageResult.Value;
-                        if (transmissionDict.TryGetValue(guid, out var value))
-                        {
-                            transmissions = value;
-                        }
-                    }
-
-                    transmissions.AddRange(transmissionIds);
-                    transmissionDict[guid] = transmissions;
-                    _ = ProtectedLocalStore.SetAsync("transmissions", transmissionDict);
-                }
-
-            }
-
-            var dialogStorageResult = await ProtectedLocalStore.GetAsync<List<Guid>>("dialogs");
-            List<Guid> dialogs = [];
-
-            if (dialogStorageResult is { Success: true, Value: not null })
-            {
-                dialogs = dialogStorageResult.Value;
-            }
-
-            dialogs.Add(guid);
-
-            _ = ProtectedLocalStore.SetAsync("dialogs", dialogs);
-            StateHasChanged();
+            _ = UpdateDialogIds(guid);
         }
+
+        StateHasChanged();
     }
 
     private void Prefill()
@@ -113,6 +76,54 @@
     {
         SeedImporter.ParseSeed(CreateDialogCommand, Seed);
         StateHasChanged();
+    }
+
+    private async Task UpdateTransmissionIds(Guid guid)
+    {
+        var getDialog = await ServiceOwnerApi.V1ServiceOwnerDialogsQueriesGetDialog(guid, null!);
+
+        if (!getDialog.IsSuccessStatusCode) return;
+
+        // Get all transmission Id
+        var transmissionIds = getDialog.Content!.Transmissions.Select(x => x.Id).ToList();
+        var transmissionsStorageResult = await ProtectedLocalStore.GetAsync<Dictionary<Guid, List<Guid>>>("transmissions");
+
+        var transmissions = new List<Guid>();
+        var transmissionDict = new Dictionary<Guid, List<Guid>>();
+
+        if (transmissionsStorageResult is { Success: true, Value: not null })
+        {
+            transmissionDict = transmissionsStorageResult.Value;
+            if (transmissionDict.TryGetValue(guid, out var value))
+            {
+                transmissions = value;
+            }
+        }
+
+        transmissions.AddRange(transmissionIds);
+        transmissionDict[guid] = transmissions;
+        _ = ProtectedLocalStore.SetAsync("transmissions", transmissionDict);
+    }
+
+    private async Task UpdateDialogIds(Guid dialogId)
+    {
+
+        if (CreateDialogCommand.Transmissions.Any())
+        {
+            _ = UpdateTransmissionIds(dialogId);
+        }
+
+        var dialogStorageResult = await ProtectedLocalStore.GetAsync<List<Guid>>("dialogs");
+        List<Guid> dialogs = [];
+
+        if (dialogStorageResult is { Success: true, Value: not null })
+        {
+            dialogs = dialogStorageResult.Value;
+        }
+
+        dialogs.Add(dialogId);
+
+        _ = ProtectedLocalStore.SetAsync("dialogs", dialogs);
     }
 }
 
