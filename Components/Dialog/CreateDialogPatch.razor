@@ -23,23 +23,33 @@
     <div class="command-section">
         <div class="command-card command-card--old">
             <h4 class="command-title">Old Command</h4>
-            <CreateDialogComp Prefill="() => Prefill(OldCreateDialogCommand)" Submit="Validate"
-                              Value="OldCreateDialogCommand"></CreateDialogComp>
+            <CreateDialogComp Prefill="() => Prefill(Book[_oldPointer])" Submit="Validate"
+                              Value="Book[_oldPointer]"></CreateDialogComp>
             <div class="button-group">
-                <button type="button" class="btn btn-success" @onclick="Save">Save to New</button>
+                <button type="button" class="btn btn-success" @onclick="@(() => Save(_newPointer, _oldPointer))">
+                    Save to New
+                </button>
             </div>
         </div>
 
         <div class="command-card command-card--new">
             <h4 class="command-title">New Command</h4>
-            <CreateDialogComp Prefill="() => Prefill(NewCreateDialogCommand)" Submit="Validate"
-                              Value="NewCreateDialogCommand"></CreateDialogComp>
+            <CreateDialogComp Prefill="() => Prefill(Book[_newPointer])" Submit="Validate"
+                              Value="Book[_newPointer]"></CreateDialogComp>
+            <button type="button" class="btn btn-success" @onclick="@(() => Save(_oldPointer, _newPointer))">
+                Save to old
+            </button>
         </div>
     </div>
 
+
     <div class="patch-section">
-        <button type="button" class="btn btn-patch" @onclick="CreatePatch">Generate Patch</button>
+        <InputNumber class="form-input" @bind-Value="@_cursor"></InputNumber>
+        <button type="button" @onclick="AddPatchState">Add patch</button>
+        <button type="button" class="btn" @onclick="AddNewState">Add</button>
+        <button type="button" class="btn btn-patch" @onclick="UpdatePatchString">Generate Patch</button>
         <InputTextArea class="patch-output" @bind-Value="PatchString"/>
+        <InputTextArea class="patch-output" @bind-Value="BookString"/>
     </div>
 </div>
 @if (_showPopUp)
@@ -59,38 +69,68 @@
     private string? _message;
     private ValidationMessageStore _messageStore = null!;
 
+    private List<V1ServiceOwnerDialogsCommandsCreate_Dialog> Book { get; set; } = [];
+    int _oldPointer = 0;
+    int _newPointer = 1;
+
+    int _cursor = 0;
+    private List<List<Operation>> BookPatches { get; set; } = [];
+    public string BookString { get; set; } = "";
 
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        CurrentCommand = OldCreateDialogCommand;
+        Book.Add(new V1ServiceOwnerDialogsCommandsCreate_Dialog());
+        Book.Add(new V1ServiceOwnerDialogsCommandsCreate_Dialog());
     }
 
     private async Task ExportSeedToClipboard()
     {
-        var seed = SeedExporter.ExportSeed(OldCreateDialogCommand);
+        var seed = SeedExporter.ExportSeed(Book[_oldPointer]);
         await Js.InvokeVoidAsync("navigator.clipboard.writeText", seed);
     }
 
-    V1ServiceOwnerDialogsCommandsCreate_Dialog OldCreateDialogCommand { get; set; } = new();
-    V1ServiceOwnerDialogsCommandsCreate_Dialog NewCreateDialogCommand { get; set; } = new();
-    V1ServiceOwnerDialogsCommandsCreate_Dialog CurrentCommand { get; set; } = new();
 
-    private void Save()
+    private void Save(int to, int from)
     {
-        NewCreateDialogCommand = OldCreateDialogCommand.Copy();
+        Book[to] = Book[from].Copy();
+        StateHasChanged();
+    }
+
+    private void AddNewState()
+    {
+        Book.Add(new V1ServiceOwnerDialogsCommandsCreate_Dialog());
+    }
+
+    private void AddPatchState()
+    {
+        // Index too far forward
+        if (_cursor > BookPatches.Count)
+        {
+            _message = "NO!";
+            _showPopUp = true;
+            return;
+        }
+
+        // Index is at end
+        if (_cursor == BookPatches.Count)
+        {
+            BookPatches.Add(CreatePatch());
+        }
+
+        // Index in middle
+        if (_cursor < BookPatches.Count)
+        {
+            BookPatches[_cursor] = CreatePatch();
+        }
+
+        BookString = CreateBookString();
         StateHasChanged();
     }
 
     private void Validate()
     {
 
-    }
-
-    private void Swap()
-    {
-        newCommand = !newCommand;
-        StateHasChanged();
     }
 
     private void Prefill(V1ServiceOwnerDialogsCommandsCreate_Dialog command)
@@ -101,26 +141,47 @@
 
     private void Import()
     {
-        SeedImporter.ParseSeed(OldCreateDialogCommand, Seed);
+        SeedImporter.ParseSeed(Book[_oldPointer], Seed);
         StateHasChanged();
     }
 
-    private void CreatePatch()
+    private void UpdatePatchString()
     {
-        Patches = new JsonDeltaFormatter()
-            .Format(new JsonDiffPatch()
-                .Diff(
-                    JToken.FromObject(OldCreateDialogCommand),
-                    JToken.FromObject(NewCreateDialogCommand)))
-            .ToList();
+        PatchString = CreateParchString();
+        BookString = CreateBookString();
+        StateHasChanged();
+    }
 
-        PatchString = JsonConvert.SerializeObject(
-            Patches,
+    private string CreateBookString()
+    {
+        return JsonConvert.SerializeObject(
+            BookPatches,
             Formatting.Indented,
             new JsonSerializerSettings
             {
                 NullValueHandling = NullValueHandling.Ignore
             });
+    }
+
+    private string CreateParchString()
+    {
+        return JsonConvert.SerializeObject(
+            CreatePatch(),
+            Formatting.Indented,
+            new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            });
+    }
+
+    private List<Operation> CreatePatch()
+    {
+        return new JsonDeltaFormatter()
+            .Format(new JsonDiffPatch()
+                .Diff(
+                    JToken.FromObject(Book[_oldPointer]),
+                    JToken.FromObject(Book[_newPointer])))
+            .ToList();
     }
 }
 
