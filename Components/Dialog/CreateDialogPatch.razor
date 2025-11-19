@@ -42,7 +42,6 @@
         </div>
     </div>
 
-
     <div class="patch-section">
         <InputNumber class="form-input" @bind-Value="@_cursor"></InputNumber>
         <button type="button" @onclick="AddPatchState">Add patch</button>
@@ -54,26 +53,21 @@
 </div>
 @if (_showPopUp)
 {
-
     <PopUpMessage Header="@_header" Message="@_message" OnClick="() => _showPopUp = false"></PopUpMessage>
 }
 
 @code {
     private string PatchString { get; set; } = "";
-    private EditForm _form = null!;
     private string Seed { get; set; } = "";
-    private List<Operation> Patches = null!;
-    private bool newCommand = false;
     bool _showPopUp;
     private string? _header;
     private string? _message;
-    private ValidationMessageStore _messageStore = null!;
 
     private List<V1ServiceOwnerDialogsCommandsCreate_Dialog> Book { get; set; } = [];
     int _oldPointer = 0;
     int _newPointer = 1;
 
-    int _cursor = 0;
+    int _cursor;
     private List<List<Operation>> BookPatches { get; set; } = [];
     public string BookString { get; set; } = "";
 

@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Altinn.ApiClients.Dialogporten.Features.V1;
+using Digdir.BDB.Dialogporten.ServiceProvider.Extensions;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
@@ -19,20 +20,7 @@ public class PlaybookController(IServiceownerApi dialogporten) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] JsonElement jsonBody)
     {
-        using var stream = new MemoryStream();
-        await using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions
-        {
-            Indented = false
-        });
-        jsonBody.WriteTo(writer);
-        await writer.FlushAsync();
-
-        var bytes = stream.ToArray();
-
-        var compressed = await CompressionExtensions.CompressBytesAsync(bytes);
-        var encoded = Base64UrlEncoder.Encode(compressed);
-
-        return Content(encoded, "text/plain", Encoding.UTF8);
+        return Content(await jsonBody.Encode(), "text/plain", Encoding.UTF8);
     }
 
 

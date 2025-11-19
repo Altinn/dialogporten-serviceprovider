@@ -42,5 +42,4 @@ public class PlaybookState(Guid dialogId, int cursor, JsonArray patches)
 
         return Base64UrlEncoder.Encode(compressed);
     }
-
 }
