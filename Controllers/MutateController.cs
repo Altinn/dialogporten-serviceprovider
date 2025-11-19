@@ -42,13 +42,13 @@ public class MutateController(IServiceownerApi dialogporten, IDialogTokenValidat
         }
 
 
-        var dialog = await dialogporten.V1ServiceOwnerDialogsQueriesGetDialog(playbookState.DialogId, null!, CancellationToken.None);
-        if (!dialog.IsSuccessful)
+        var dialogResponse = await dialogporten.V1ServiceOwnerDialogsQueriesGetDialog(playbookState.DialogId, null!, CancellationToken.None);
+        if (!dialogResponse.IsSuccessful)
         {
             return new BadRequestResult();
         }
 
-        compiler.Progress = dialog.Content!.Progress!.Value;
+        compiler.Progress = dialogResponse.Content!.Progress!.Value;
 
         var patches = await compiler.CompilePatches(playbookState);
         if (patches.Count == 0)
