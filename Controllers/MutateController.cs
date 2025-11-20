@@ -48,7 +48,7 @@ public class MutateController(IServiceownerApi dialogporten, IDialogTokenValidat
             return new BadRequestResult();
         }
 
-        compiler.Progress = dialogResponse.Content!.Progress!.Value;
+        compiler.Progress = dialogResponse.Content!.Progress is null ? 0 : dialogResponse.Content.Progress.Value;
 
         var patches = await compiler.CompilePatches(playbookState);
         if (patches.Count == 0)
