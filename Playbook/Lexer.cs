@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
 
 public enum CommandType
@@ -14,7 +16,19 @@ public record GotoIfProgressValue(int Goto, int Progress, int Else);
 public static class Lexer
 {
 
-    public static Command? ParseCommand(string value)
+    public static bool TryParseCommand([NotNullWhen(true)] string? value, [NotNullWhen(true)] out Command? command)
+    {
+        command = null;
+        if (value is null)
+        {
+            return false;
+        }
+        
+        command = ParseCommand(value);
+        return command is not null;
+
+    }
+    private static Command? ParseCommand(string value)
     {
         if (!value.StartsWith('$'))
         {

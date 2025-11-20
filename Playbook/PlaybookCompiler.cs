@@ -32,14 +32,38 @@ public class PlaybookCompiler
         }
         return compiledPatches;
     }
+
+    public async Task<V1ServiceOwnerDialogsCommandsCreate_GuiAction> CompileGuiAction(V1ServiceOwnerDialogsCommandsCreate_GuiAction guiAction, PlaybookState playbookState)
+    {
+        var gui = new V1ServiceOwnerDialogsCommandsCreate_GuiAction
+        {
+            Id = guiAction.Id,
+            Action = guiAction.Action,
+            AuthorizationAttribute = guiAction.AuthorizationAttribute,
+            IsDeleteDialogAction = guiAction.IsDeleteDialogAction,
+            HttpMethod = guiAction.HttpMethod,
+            Priority = guiAction.Priority,
+            Title = guiAction.Title,
+            Prompt = guiAction.Prompt
+        };
+
+        if (Lexer.TryParseCommand(guiAction.Url.ToString(), out var command))
+        {
+            gui.Url = new Uri(Path + await UpdateAndEncode(playbookState, command));
+            return gui;
+        }
+
+        gui.Url = guiAction.Url;
+        return gui;
+
+    }
     private async Task<JsonPatchOperations_Operation?> CompilePatch(JsonPatchOperations_Operation patch, PlaybookState playbookState)
     {
         switch (patch.Value)
         {
             case JsonElement { ValueKind: JsonValueKind.String } stringValue:
                 {
-                    var command = Lexer.ParseCommand(stringValue.GetString()!);
-                    if (command != null)
+                    if (Lexer.TryParseCommand(stringValue.GetString(), out var command))
                     {
                         return await CreateUpdatedPatch(patch, command, playbookState);
                     }
@@ -102,8 +126,7 @@ public class PlaybookCompiler
             {
                 case JsonValueKind.String:
                     {
-                        var command = Lexer.ParseCommand(property.Value.GetString()!);
-                        if (command != null)
+                        if (Lexer.TryParseCommand(property.Value.GetString(), out var command))
                         {
                             var compiledPlaybook = await UpdateAndEncode(playbookState, command);
                             value = JsonSerializer.SerializeToElement(Path + compiledPlaybook);

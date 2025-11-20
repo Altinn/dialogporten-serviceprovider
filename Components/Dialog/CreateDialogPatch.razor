@@ -27,8 +27,15 @@
     <div class="command-section">
         <div class="command-card command-card--old">
             <h4 class="command-title">Old Command</h4>
+            <InputSelect class="form-select" @bind-Value="@_oldPointer" @onchange="StateHasChanged">
+                @for (var i = 0; i < Book.Count; i++)
+                {
+                    <option value=@i>@i</option>
+                }
+            </InputSelect>
+
             <CreateDialogComp Prefill="() => Prefill(Book[_oldPointer])" Submit="Validate"
-                              Value="Book[_oldPointer]"></CreateDialogComp>
+                              Value="Book[_oldPointer]" @key="_oldPointer"></CreateDialogComp>
             <div class="button-group">
                 <button type="button" class="btn btn-success" @onclick="@(() => Save(_newPointer, _oldPointer))">
                     Save to New
@@ -38,8 +45,14 @@
 
         <div class="command-card command-card--new">
             <h4 class="command-title">New Command</h4>
+            <InputSelect class="form-select" @bind-Value="@_newPointer" @onchange="StateHasChanged">
+                @for (var i = 0; i < Book.Count; i++)
+                {
+                    <option value=@i>@i</option>
+                }
+            </InputSelect>
             <CreateDialogComp Prefill="() => Prefill(Book[_newPointer])" Submit="Validate"
-                              Value="Book[_newPointer]"></CreateDialogComp>
+                              Value="Book[_newPointer]" @key="_newPointer"></CreateDialogComp>
             <button type="button" class="btn btn-success" @onclick="@(() => Save(_oldPointer, _newPointer))">
                 Save to old
             </button>
@@ -70,6 +83,7 @@
     private List<V1ServiceOwnerDialogsCommandsCreate_Dialog> Book { get; set; } = [];
     int _oldPointer = 0;
     int _newPointer = 1;
+    int _basePointer = 0;
 
     int _cursor;
     private List<List<Operation>> BookPatches { get; set; } = [];
@@ -100,7 +114,7 @@
         Book.Add(new V1ServiceOwnerDialogsCommandsCreate_Dialog());
     }
 
-    private void AddPatchState()
+    private async Task AddPatchState()
     {
         // Index too far forward
         if (_cursor > BookPatches.Count)
@@ -123,8 +137,8 @@
         }
 
         BookString = CreateBookString();
+        await Encode();
         StateHasChanged();
-        Encode();
     }
 
     private void Validate()
@@ -182,18 +196,27 @@
                     JToken.FromObject(Book[_newPointer])))
             .ToList();
     }
-    
+
     private async Task Encode()
     {
+        var baseDialog = Book[_basePointer];
+        var compiler = new PlaybookCompiler();
         var patches = JsonSerializer.SerializeToNode(BookPatches);
-        if (patches!.GetValueKind() is JsonValueKind.Array)
+
+        if (patches!.GetValueKind() is not JsonValueKind.Array)
         {
-            var a = patches as JsonArray;
-            var state = new PlaybookState(Guid.Empty, _cursor, a);
-            var base64 = await state.EncodeToBase64();
-            _message = base64;
-            _showPopUp = true;
+            return;
         }
+        var state = new PlaybookState(Guid.Empty, _cursor, (patches as JsonArray)!);
+        var base64 = await state.EncodeToBase64();
+
+        baseDialog.GuiActions = await Task.WhenAll(
+            baseDialog.GuiActions
+                .Select(x => compiler.CompileGuiAction(x, state))
+        );
+
+        _message = base64;
+        _showPopUp = true;
     }
 }
 
