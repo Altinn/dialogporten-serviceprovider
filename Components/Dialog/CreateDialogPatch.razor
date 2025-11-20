@@ -188,7 +188,7 @@
         var patches = JsonSerializer.SerializeToNode(BookPatches);
         if (patches!.GetValueKind() is JsonValueKind.Array)
         {
-            var a = (JsonArray)patches;
+            var a = patches as JsonArray;
             var state = new PlaybookState(Guid.Empty, _cursor, a);
             var base64 = await state.EncodeToBase64();
             _message = base64;
