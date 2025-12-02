@@ -1,0 +1,382 @@
+/* === Base Components === */
+.input-component {
+    margin-bottom: 1rem;
+}
+
+.attachment-url-component,
+.transmission-component,
+.input-content-component {
+    margin-bottom: 1rem;
+}
+
+/* === Form Groups === */
+.form-group {
+}
+
+.form-group-gui,
+.form-group-api,
+.form-group-activity,
+.form-group-endpoint {
+    border: black solid 1px;
+}
+
+.form-group--checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.form-group--full {
+}
+
+/* === Labels === */
+.form-label {
+    display: block;
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: #000000 !important;
+    margin-bottom: 0.5rem;
+}
+
+.form-group--checkbox .form-label {
+    margin-bottom: 0;
+}
+
+/* === Legends === */
+.input-legend,
+.transmission-legend {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #000000 !important;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+/* === Form Inputs === */
+.form-input,
+.form-select {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background-color: #ffffff;
+    color: #000000 !important;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus,
+.form-select:focus {
+    outline: none;
+    border-color: #007bff;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-select option {
+    background-color: #ffffff;
+    color: #1a1a1a;
+}
+
+.form-checkbox {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+}
+
+/* === Action Items / Cards === */
+.action-item {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* === Buttons === */
+
+/* === Prefill Buttons === */
+.prefill-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* === Tables === */
+.table-cell--center {
+    text-align: center;
+}
+
+.input-component .data-table,
+.data-table tbody,
+.data-table tr {
+    background-color: #ffffff !important;
+}
+
+.input-component .data-table tbody,
+.input-component .data-table tr,
+.input-component .table-cell {
+    background-color: #ffffff !important;
+}
+
+.input-component .table-header {
+    background-color: #f8f9fa !important;
+}
+
+/* === Fields Grid === */
+.fields-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .fields-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .form-group--full {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (min-width: 1024px) {
+    .fields-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* === Content Grid === */
+.content-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+/* === Item Actions === */
+.item-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    margin-top: 1rem;
+    border-top: 1px solid #dee2e6;
+}
+
+/* === URL Components === */
+.url-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.url-item {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.url-fields {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .url-fields {
+        grid-template-columns: 2fr 1fr 1fr;
+    }
+}
+
+.url-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 0.5rem;
+    border-top: 1px solid #dee2e6;
+}
+
+@media (min-width: 768px) {
+    .url-item {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .url-actions {
+        border-top: none;
+        padding-top: 0;
+        padding-left: 1rem;
+        border-left: 1px solid #dee2e6;
+        align-items: center;
+    }
+}
+
+/* === Transmission Components === */
+.transmission-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.transmission-card {
+    background: #ffffff;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.transmission-fields {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .transmission-fields {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .transmission-fields {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.transmission-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    border-top: 1px solid #dee2e6;
+}
+
+/* === Attachments Section === */
+.attachments-section {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.attachments-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 1rem 0;
+}
+
+.attachment-item {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    display: grid;
+    gap: 1rem;
+}
+
+/* === Dialog Component Specific === */
+.dialog-comp-container {
+    padding: 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: #000000 !important;
+}
+
+.comp-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #000000 !important;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #000000 !important;
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.validation-summary {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    color: #721c24;
+}
+
+.form-section {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.fieldset {
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.fieldset-legend {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #000000 !important;
+    padding: 0 0.75rem;
+}
+
+.item-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 1rem;
+}
+
+.item-card {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.item-content {
+    display: grid;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+@media (min-width: 768px) {
+    .item-card {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .item-actions {
+        border-top: none;
+        padding-top: 0;
+        padding-left: 1rem;
+        align-items: center;
+    }
+}

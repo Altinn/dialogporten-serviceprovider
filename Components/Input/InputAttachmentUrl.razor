@@ -30,12 +30,12 @@
                     </div>
                 </div>
                 <div class="url-actions">
-                    <button type="button" class="btn btn-remove btn-small" @onclick="() => RemoveAttachmentUrl(url)">Remove</button>
+                    <button type="button"  @onclick="() => RemoveAttachmentUrl(url)">Remove</button>
                 </div>
             </div>
         }
     </div>
-    <button type="button" class="btn btn-add btn-small" @onclick="AddAttachmentUrl">Add URL</button>
+    <button type="button"  @onclick="AddAttachmentUrl">Add URL</button>
 </div>
 
 @code {
@@ -51,62 +51,12 @@
         Value!.Remove(url);
         ValueChanged.InvokeAsync(Value);
     }
-    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out ICollection<V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl> result, [NotNullWhen(false)] out string? validationErrorMessage) => throw new NotImplementedException();
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out ICollection<V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl> result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        result = CurrentValue ?? new List<V1ServiceOwnerDialogsCommandsCreate_AttachmentUrl>();
+        validationErrorMessage = "";
+        return true;
+    }
 }
 
-<style>
-    .attachment-url-component {
-        margin-bottom: 0.5rem;
-    }
-
-    .url-list {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .url-item {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 6px;
-        padding: 1rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .url-fields {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-
-    @@media (min-width: 768px) {
-        .url-fields {
-            grid-template-columns: 2fr 1fr 1fr;
-        }
-    }
-
-    .url-actions {
-        display: flex;
-        justify-content: flex-end;
-        padding-top: 0.5rem;
-        border-top: 1px solid #dee2e6;
-    }
-
-    @@media (min-width: 768px) {
-        .url-item {
-            flex-direction: row;
-            align-items: flex-start;
-        }
-
-        .url-actions {
-            border-top: none;
-            padding-top: 0;
-            padding-left: 1rem;
-            border-left: 1px solid #dee2e6;
-            align-items: center;
-        }
-    }
-</style>
+<link rel="stylesheet" href="InputComponents.css" />

@@ -96,30 +96,35 @@
                                 <label class="form-label">URLs</label>
                                 <InputTransmissionAttachmentUrl @bind-Value="@attachment.Urls"/>
                             </div>
-                            <button type="button" class="btn btn-remove btn-small"
+                            <button type="button" 
                                     @onclick="() => RemoveTransmissionAttachment(transmission, attachment)">
                                 Remove Attachment
                             </button>
                         </div>
                     }
-                    <button type="button" class="btn btn-add btn-small" @onclick="() => AddTransmissionAttachment(transmission)">
+                    <button type="button"  @onclick="() => AddTransmissionAttachment(transmission)">
                         Add Transmission Attachment
                     </button>
                 </div>
 
                 <div class="transmission-actions">
-                    <button type="button" class="btn btn-remove" @onclick="() => RemoveTransmission(transmission)">Remove</button>
-                    <button type="button" class="btn btn-secondary" @onclick="() => AddSubTransmission(transmission)">Add Sub</button>
+                    <button type="button"  @onclick="() => RemoveTransmission(transmission)">Remove</button>
+                    <button type="button"  @onclick="() => AddSubTransmission(transmission)">Add Sub</button>
                 </div>
             </div>
         }
     </div>
 
-    <button type="button" class="btn btn-add" @onclick="AddTransmission">Add Transmission</button>
+    <button type="button"  @onclick="AddTransmission">Add Transmission</button>
 </div>
 
 @code {
-    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out ICollection<V1ServiceOwnerDialogsCommandsCreate_Transmission> result, [NotNullWhen(false)] out string? validationErrorMessage) => throw new NotImplementedException();
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out ICollection<V1ServiceOwnerDialogsCommandsCreate_Transmission> result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        result = CurrentValue ?? new List<V1ServiceOwnerDialogsCommandsCreate_Transmission>();
+        validationErrorMessage = "";
+        return true;
+    }
 
     private void AddTransmission()
     {
@@ -189,87 +194,4 @@
     }
 }
 
-<style>
-    .transmission-component {
-        margin-bottom: 1rem;
-    }
-
-    .transmission-legend {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #1a1a1a;
-        margin-bottom: 1rem;
-        display: block;
-    }
-
-    .transmission-list {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-        margin-bottom: 1rem;
-    }
-
-    .transmission-card {
-        background: #ffffff;
-        border: 2px solid #007bff;
-        border-radius: 8px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .transmission-fields {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    @@media (min-width: 768px) {
-        .transmission-fields {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        .form-group--full {
-            grid-column: 1 / -1;
-        }
-    }
-
-    @@media (min-width: 1024px) {
-        .transmission-fields {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-
-    .attachments-section {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 6px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .attachments-title {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #1a1a1a;
-        margin: 0 0 1rem 0;
-    }
-
-    .attachment-item {
-        background: #ffffff;
-        border: 1px solid #dee2e6;
-        border-radius: 4px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-        display: grid;
-        gap: 1rem;
-    }
-
-    .transmission-actions {
-        display: flex;
-        gap: 0.5rem;
-        justify-content: flex-end;
-        padding-top: 1rem;
-        border-top: 1px solid #dee2e6;
-    }
-</style>
+<link rel="stylesheet" href="InputComponents.css" />

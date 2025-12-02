@@ -10,6 +10,7 @@
 @using Newtonsoft.Json.Linq
 @using JsonSerializer = System.Text.Json.JsonSerializer
 @inject IJSRuntime Js
+@inject IServiceownerApi ServiceOwnerApi
 @rendermode InteractiveServer
 
 <div class="dialog-patch-container">
@@ -19,8 +20,8 @@
         <label class="seed-label" for="dialog-seed">Seed:</label>
         <InputTextArea class="seed-input" id="dialog-seed" @bind-Value="Seed"/>
         <div class="button-group">
-            <button type="button" class="btn btn-primary" @onclick="Import">Import</button>
-            <button type="button" class="btn btn-secondary" @onclick="ExportSeedToClipboard">Export Seed</button>
+            <button type="button"  @onclick="Import">Import</button>
+            <button type="button"  @onclick="ExportSeedToClipboard">Export Seed</button>
         </div>
     </div>
 
@@ -37,7 +38,7 @@
             <CreateDialogComp Prefill="() => Prefill(Book[_oldPointer])" Submit="Validate"
                               Value="Book[_oldPointer]" @key="_oldPointer"></CreateDialogComp>
             <div class="button-group">
-                <button type="button" class="btn btn-success" @onclick="@(() => Save(_newPointer, _oldPointer))">
+                <button type="button"  @onclick="@(() => Save(_newPointer, _oldPointer))">
                     Save to New
                 </button>
             </div>
@@ -53,7 +54,7 @@
             </InputSelect>
             <CreateDialogComp Prefill="() => Prefill(Book[_newPointer])" Submit="Validate"
                               Value="Book[_newPointer]" @key="_newPointer"></CreateDialogComp>
-            <button type="button" class="btn btn-success" @onclick="@(() => Save(_oldPointer, _newPointer))">
+            <button type="button"  @onclick="@(() => Save(_oldPointer, _newPointer))">
                 Save to old
             </button>
         </div>
@@ -61,9 +62,10 @@
 
     <div class="patch-section">
         <InputNumber class="form-input" @bind-Value="@_cursor"></InputNumber>
-        <button type="button" @onclick="AddPatchState">Add patch</button>
-        <button type="button" class="btn" @onclick="AddNewState">Add</button>
-        <button type="button" class="btn btn-patch" @onclick="UpdatePatchString">Generate Patch</button>
+        <button type="button"  @onclick="AddPatchState">Add patch</button>
+        <button type="button"  @onclick="@(async () => await CreateDialog())">Create Dialog</button>
+        <button type="button"  @onclick="AddNewState">Add</button>
+        <button type="button"  @onclick="UpdatePatchString">Generate Patch</button>
         <InputTextArea class="patch-output" @bind-Value="PatchString"/>
         <InputTextArea class="patch-output" @bind-Value="BookString"/>
     </div>
@@ -190,35 +192,53 @@
     private List<Operation> CreatePatch()
     {
         return new JsonDeltaFormatter()
-            .Format(new JsonDiffPatch()
-                .Diff(
+            .Format(
+                new JsonDiffPatch().Diff(
                     JToken.FromObject(Book[_oldPointer]),
-                    JToken.FromObject(Book[_newPointer])))
-            .ToList();
+                    JToken.FromObject(Book[_newPointer])
+                )).ToList();
     }
 
     private async Task Encode()
     {
         var baseDialog = Book[_basePointer];
         var compiler = new PlaybookCompiler();
-        var patches = JsonSerializer.SerializeToNode(BookPatches);
+        var patchestring = CreateBookString();
+        var patches = JsonSerializer.Deserialize<JsonNode>(patchestring);
 
         if (patches!.GetValueKind() is not JsonValueKind.Array)
         {
             return;
         }
-        var state = new PlaybookState(Guid.Empty, _cursor, (patches as JsonArray)!);
-        var base64 = await state.EncodeToBase64();
+        var state = new PlaybookState(Guid.Empty, 0, (patches as JsonArray)!);
 
         baseDialog.GuiActions = await Task.WhenAll(
             baseDialog.GuiActions
                 .Select(x => compiler.CompileGuiAction(x, state))
         );
+    }
 
-        _message = base64;
+    private async Task CreateDialog()
+    {
+
+        await Encode();
+        var response = await ServiceOwnerApi.V1ServiceOwnerDialogsCommandsCreateDialog(Book[_basePointer]);
+        if (!response.IsSuccessful)
+        {
+            _message = response.Error.Content;
+            _header = response.StatusCode.ToString();
+            _showPopUp = true;
+            return;
+        }
+
+        _message = response.Content;
+        _header = response.StatusCode.ToString();
         _showPopUp = true;
+
     }
 }
+
+<link rel="stylesheet" href="../Input/InputComponents.css"/>
 
 <style>
     .dialog-patch-container {

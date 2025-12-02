@@ -16,12 +16,12 @@
                         <InputText class="form-input" @bind-Value="localization.Value" placeholder="Localized Text"/>
                     </div>
                 </div>
-                <button type="button" class="btn btn-remove btn-small" @onclick="() => Remove(localization)">Remove</button>
+                <button type="button"  @onclick="() => Remove(localization)">Remove</button>
             </div>
         }
     </div>
 
-    <button type="button" class="btn btn-add btn-small" @onclick="Add">Add Localization</button>
+    <button type="button"  @onclick="Add">Add Localization</button>
 </div>
 
 @code{

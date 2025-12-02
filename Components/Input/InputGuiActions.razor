@@ -14,16 +14,16 @@
         {
             <div class="action-item">
                 <div class="prefill-buttons">
-                    <button type="button" class="btn btn-small btn-secondary"
+                    <button type="button" 
                             onclick="@(() => Prefill(guiAction, GuiActionPrefill.Empty))">Clear
                     </button>
-                    <button type="button" class="btn btn-small btn-info"
+                    <button type="button" 
                             onclick="@(() => Prefill(guiAction, GuiActionPrefill.ReadConfirmation))">Read Confirmation
                     </button>
-                    <button type="button" class="btn btn-small btn-danger"
+                    <button type="button" 
                             onclick="@(() => Prefill(guiAction, GuiActionPrefill.DeleteButton))">Delete
                     </button>
-                    <button type="button" class="btn btn-small btn-info"
+                    <button type="button" 
                             onclick="@(() => Prefill(guiAction, GuiActionPrefill.Information))">Information
                     </button>
                 </div>
@@ -95,13 +95,13 @@
                 </div>
 
                 <div class="item-actions">
-                    <button type="button" class="btn btn-remove" @onclick="() => Remove(guiAction)">Remove</button>
+                    <button type="button"  @onclick="() => Remove(guiAction)">Remove</button>
                 </div>
             </div>
         }
     }
 
-    <button type="button" class="btn btn-add" @onclick="Add">Add GUI Action</button>
+    <button type="button"  @onclick="Add">Add GUI Action</button>
 </div>
 
 @code {
@@ -140,106 +140,5 @@
 
 }
 
-<style>
-    .input-component {
-        margin-bottom: 1rem;
-    }
-
-    .form-group-gui {
-        border: black solid 1px;
-    }
-
-    .input-legend {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #1a1a1a;
-        margin-bottom: 1rem;
-        display: block;
-    }
-
-    .action-item {
-        background: #ffffff;
-        border: 1px solid #dee2e6;
-        border-radius: 6px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .prefill-buttons {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-        margin-bottom: 1rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    .btn-small {
-        padding: 0.375rem 0.75rem;
-        font-size: 0.875rem;
-    }
-
-    .btn-info {
-        background-color: #17a2b8;
-        color: white;
-    }
-
-    .btn-info:hover {
-        background-color: #138496;
-    }
-
-    .btn-danger {
-        background-color: #dc3545;
-        color: white;
-    }
-
-    .btn-danger:hover {
-        background-color: #c82333;
-    }
-
-    .table-cell--center {
-        text-align: center;
-    }
-
-    .input-component .data-table {
-        background-color: #ffffff !important;
-    }
-
-    .input-component .data-table tbody,
-    .input-component .data-table tr,
-    .input-component .table-cell {
-        background-color: #ffffff !important;
-    }
-
-    .input-component .table-header {
-        background-color: #f8f9fa !important;
-    }
-
-    .fields-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-
-    @@media (min-width: 768px) {
-        .fields-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @@media (min-width: 1024px) {
-        .fields-grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-
-    .item-actions {
-        display: flex;
-        gap: 0.5rem;
-        justify-content: flex-end;
-        padding-top: 1rem;
-        margin-top: 1rem;
-        border-top: 1px solid #dee2e6;
-    }
-</style>
+<link rel="stylesheet" href="InputComponents.css" />
 

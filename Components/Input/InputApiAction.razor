@@ -2,80 +2,84 @@
 @using System.Diagnostics.CodeAnalysis
 @using Altinn.ApiClients.Dialogporten.Features.V1
 @inherits InputBase<ICollection<V1ServiceOwnerDialogsCommandsCreate_ApiAction>>
-<fieldset>
-    @if (Value is null)
+
+<div class="input-component">
+    <legend class="input-legend">API Actions</legend>
+
+    @if (Value != null)
     {
-        throw new UnreachableException("ApiAction is null, this should never happen");
-    }
-    <table>
-        <thead>
-        @if (Value.Any())
-        {
-            <tr>
-                <th>Id</th>
-                <th>Action</th>
-                <th>Authorization Attribute</th>
-                <th>Name</th>
-                <th>Endpoints</th>
-                <th>Action</th>
-            </tr>
-        }
-        </thead>
-        <tbody>
         @foreach (var apiAction in Value)
         {
-            <td>
-                <InputGuid @bind-Value="@apiAction.Id"/>
-            </td>
+            <div class="action-item">
+                <div class="fields-grid">
+                    <div class="form-group form-group-api">
+                        <label class="form-label">Id</label>
+                        <InputGuid @bind-Value="@apiAction.Id"/>
+                        <ValidationMessage For="() => apiAction.Id"/>
+                    </div>
 
-            <td>
-                <InputText @bind-Value="@apiAction.Action"/>
-            </td>
+                    <div class="form-group form-group-api">
+                        <label class="form-label">Action</label>
+                        <InputText class="form-input" @bind-Value="@apiAction.Action"/>
+                        <ValidationMessage For="() => apiAction.Action"/>
+                    </div>
 
-            <td>
-                <InputText @bind-Value="@apiAction.AuthorizationAttribute"/>
-            </td>
+                    <div class="form-group form-group-api">
+                        <label class="form-label">Authorization Attribute</label>
+                        <InputText class="form-input" @bind-Value="@apiAction.AuthorizationAttribute"/>
+                        <ValidationMessage For="() => apiAction.AuthorizationAttribute"/>
+                    </div>
 
-            <td>
-                <InputText @bind-Value="@apiAction.Name"/>
-            </td>
+                    <div class="form-group form-group-api">
+                        <label class="form-label">Name</label>
+                        <InputText class="form-input" @bind-Value="@apiAction.Name"/>
+                        <ValidationMessage For="() => apiAction.Name"/>
+                    </div>
 
-            <td>
-                <InputApiActionEndPoint @bind-Value="@apiAction.Endpoints"/>
-            </td>
+                    <div class="form-group form-group-api">
+                        <label class="form-label">Endpoints</label>
+                        <InputApiActionEndPoint @bind-Value="@apiAction.Endpoints"/>
+                        <ValidationMessage For="() => apiAction.Endpoints"/>
+                    </div>
+                </div>
 
-            <td>
-                <button type="button" @onclick="() => Remove(apiAction)">Remove Api Action</button>
-            </td>
+                <div class="item-actions">
+                    <button type="button"  @onclick="() => Remove(apiAction)">Remove</button>
+                </div>
+            </div>
         }
-        </tbody>
-        <button type="button" @onclick="Add">Add Api Action</button>
-    </table>
-</fieldset>
+    }
+
+    <button type="button"  @onclick="Add">Add API Action</button>
+</div>
 
 @code {
-
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
         Value ??= new List<V1ServiceOwnerDialogsCommandsCreate_ApiAction>();
     }
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out ICollection<V1ServiceOwnerDialogsCommandsCreate_ApiAction> result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        result = CurrentValue ?? new List<V1ServiceOwnerDialogsCommandsCreate_ApiAction>();
+        validationErrorMessage = "";
+        return true;
+    }
 
-    protected override bool TryParseValueFromString(string? value,
-        [MaybeNullWhen(false)] out ICollection<V1ServiceOwnerDialogsCommandsCreate_ApiAction> result,
-        [NotNullWhen(false)] out string? validationErrorMessage) => throw new NotImplementedException();
+    private void Remove(V1ServiceOwnerDialogsCommandsCreate_ApiAction action)
+    {
+        if (Value is null) throw new UnreachableException("API Actions is Null when removing Action, This should not be possible");
+        Value.Remove(action);
+        ValueChanged.InvokeAsync(Value);
+    }
 
     private void Add()
     {
-        if (Value is null) throw new UnreachableException();
+        if (Value is null) throw new UnreachableException("API Actions is Null when Adding Action, This should not be possible");
         Value.Add(new V1ServiceOwnerDialogsCommandsCreate_ApiAction());
         ValueChanged.InvokeAsync(Value);
     }
 
-    private void Remove(V1ServiceOwnerDialogsCommandsCreate_ApiAction apiAction)
-    {
-        if (Value is null) throw new UnreachableException();
-        Value.Remove(apiAction);
-        ValueChanged.InvokeAsync(Value);
-    }
 }
+
+<link rel="stylesheet" href="InputComponents.css" />

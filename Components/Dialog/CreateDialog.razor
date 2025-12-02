@@ -14,8 +14,8 @@
         <label class="seed-label" for="dialog-seed">Seed:</label>
         <InputTextArea class="seed-input" id="dialog-seed" @bind-Value="Seed"/>
         <div class="button-group">
-            <button type="button" class="btn btn-primary" @onclick="Import">Import</button>
-            <button type="button" class="btn btn-secondary" @onclick="ExportSeedToClipboard">Export Seed</button>
+            <button type="button"  @onclick="Import">Import</button>
+            <button type="button"  @onclick="ExportSeedToClipboard">Export Seed</button>
         </div>
     </div>
 
@@ -176,7 +176,7 @@
     }
 
     .dialog-section {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        background: linear-gradient(135deg, #fe4fac 0%, #00f2fe 100%);
         border-radius: 8px;
         padding: 1.5rem;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
