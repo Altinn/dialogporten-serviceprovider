@@ -60,7 +60,7 @@ public class FrontChannelEmbedController : ControllerBase
             // Base64 decode
             var decodedBytes = Convert.FromBase64String(customResponse);
             var decodedString = Encoding.UTF8.GetString(decodedBytes);
-            return Task.FromResult(html ? HtmlContent(decodedString) : MarkdownContent(decodedString));
+            return Task.FromResult<IActionResult>(html ? Content(decodedString, "text/html") : Content(decodedString, "text/markdown"));
         }
 
         var sb = new StringBuilder();
