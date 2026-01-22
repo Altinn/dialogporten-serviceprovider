@@ -22,7 +22,7 @@ public class FrontChannelEmbedController : ControllerBase
         _dialogTokenValidator = dialogTokenValidator;
     }
     [HttpGet]
-    public Task<IActionResult> Get([FromQuery] bool html = false, [FromRoute] Guid? transmissionId = null)
+    public Task<IActionResult> Get([FromQuery] bool html = false, [FromRoute] Guid? transmissionId = null, [FromQuery] string? customResponse = null)
     {
         var authHeader = Request.Headers.Authorization.FirstOrDefault();
         if (transmissionId is not null && authHeader != null && authHeader.StartsWith("Bearer "))
@@ -54,6 +54,15 @@ public class FrontChannelEmbedController : ControllerBase
                 _ = _dialogporten.V1ServiceOwnerDialogsCommandsCreateActivityDialogActivity(dialogId, createActivity, null, CancellationToken.None);
             }
         }
+
+        if (customResponse is not null)
+        {
+            // Base64 decode
+            var decodedBytes = Convert.FromBase64String(customResponse);
+            var decodedString = Encoding.UTF8.GetString(decodedBytes);
+            return Task.FromResult(html ? HtmlContent(decodedString) : MarkdownContent(decodedString));
+        }
+
         var sb = new StringBuilder();
         sb.AppendLine("User claims:");
         foreach (var claim in User.Claims)
@@ -75,7 +84,6 @@ public class FrontChannelEmbedController : ControllerBase
         }
 
         return Task.FromResult(html ? HtmlContent(sb.ToString()) : MarkdownContent(sb.ToString()));
-
 
     }
 
