@@ -18,6 +18,7 @@ public class PlaybookState(Guid dialogId, int cursor, JsonArray patches)
 
     public List<JsonPatchOperations_Operation>? CurrentPatch()
     {
+        if (Cursor >= Patches.Count || Cursor < 0) return null;
         var jsonPatch = Patches[Cursor];
         return jsonPatch.Deserialize<List<JsonPatchOperations_Operation>>();
     }

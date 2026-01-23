@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 
-// TODO auth
 [Authorize]
 [ApiController]
 [Route("mutate")]
