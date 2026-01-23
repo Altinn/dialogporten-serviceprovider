@@ -5,104 +5,106 @@
 @using Digdir.BDB.Dialogporten.ServiceProvider.Extensions
 @inherits InputBase<ICollection<V1ServiceOwnerDialogsCommandsCreate_GuiAction>>
 
-<div class="input-component">
-    <legend class="input-legend">GUI Actions</legend>
+<fieldset>
+    <table>
 
-    @if (Value != null)
-    {
-        @foreach (var guiAction in Value)
+        @if (Value != null && Value.Any())
         {
-            <div class="action-item">
-                <div class="prefill-buttons">
-                    <button type="button" 
-                            onclick="@(() => Prefill(guiAction, GuiActionPrefill.Empty))">Clear
-                    </button>
-                    <button type="button" 
-                            onclick="@(() => Prefill(guiAction, GuiActionPrefill.ReadConfirmation))">Read Confirmation
-                    </button>
-                    <button type="button" 
-                            onclick="@(() => Prefill(guiAction, GuiActionPrefill.DeleteButton))">Delete
-                    </button>
-                    <button type="button" 
-                            onclick="@(() => Prefill(guiAction, GuiActionPrefill.Information))">Information
-                    </button>
-                </div>
+            <thead>
+            <th>Id</th>
+            <th>Action</th>
+            <th>URL</th>
+            <th>Authorization Attribute</th>
+            <th>Is Delete Dialog Action</th>
+            <th>HTTP Method</th>
+            <th>Priority</th>
+            <th>Title</th>
+            <th>Prompt</th>
+            </thead>
+        }
+        <tbody>
+        @if (Value != null)
+        {
+            @foreach (var guiAction in Value)
+            {
 
-                <div class="fields-grid">
-                    <div class="form-group form-group-gui">
-                        <label class="form-label">Id</label>
+                <button type="button" onclick="@(() => Prefill(guiAction, GuiActionPrefill.Empty))">Clear
+                </button>
+
+                <button type="button" onclick="@(() => Prefill(guiAction, GuiActionPrefill.ReadConfirmation))">Read
+                    confirmation
+                </button>
+
+                <button type="button" onclick="@(() => Prefill(guiAction, GuiActionPrefill.DeleteButton))">Delete
+                </button>
+
+                <button type="button" onclick="@(() => Prefill(guiAction, GuiActionPrefill.Information))">Information
+                </button>
+                <tr>
+                    <td>
                         <InputGuid @bind-Value="@guiAction.Id"/>
                         <ValidationMessage For="() => guiAction.Id"/>
-                    </div>
+                    </td>
 
-                    <div class="form-group form-group-gui">
-                        <label class="form-label">Action</label>
-                        <InputText class="form-input" @bind-Value="@guiAction.Action"/>
+                    <td>
+                        <InputText @bind-Value="@guiAction.Action"/>
                         <ValidationMessage For="() => guiAction.Action"/>
-                    </div>
+                    </td>
 
-                    <div class="form-group form-group-gui">
-                        <label class="form-label">URL</label>
+                    <td>
                         <InputUri @bind-Value="@guiAction.Url"/>
                         <ValidationMessage For="() => guiAction.Url"/>
-                    </div>
+                    </td>
 
-                    <div class="form-group form-group-gui">
-                        <label class="form-label">Authorization</label>
-                        <InputText class="form-input" @bind-Value="@guiAction.AuthorizationAttribute"/>
+                    <td>
+                        <InputText @bind-Value="@guiAction.AuthorizationAttribute"/>
                         <ValidationMessage For="() => guiAction.AuthorizationAttribute"/>
-                    </div>
+                    </td>
 
-                    <div class="form-group form-group-gui">
-                        <label class="form-label">Delete Action</label>
-                        <InputCheckbox class="form-checkbox" @bind-Value="@guiAction.IsDeleteDialogAction"/>
+                    <td>
+                        <InputCheckbox @bind-Value="@guiAction.IsDeleteDialogAction"/>
                         <ValidationMessage For="() => guiAction.IsDeleteDialogAction"/>
-                    </div>
+                    </td>
 
-                    <div class="form-group form-group-gui">
-                        <label class="form-label">HTTP Method</label>
-                        <InputSelect class="form-select" @bind-Value="@guiAction.HttpMethod">
+                    <td>
+                        <InputSelect @bind-Value="@guiAction.HttpMethod">
                             @foreach (var type in Enum.GetValues<Http_HttpVerb>())
                             {
                                 <option value="@type">@type</option>
                             }
                         </InputSelect>
                         <ValidationMessage For="@(() => guiAction.HttpMethod)"/>
-                    </div>
+                    </td>
 
-                    <div class="form-group form-group-gui">
-                        <label class="form-label">Priority</label>
-                        <InputSelect class="form-select" @bind-Value="@guiAction.Priority">
+                    <td>
+                        <InputSelect @bind-Value="@guiAction.Priority">
                             @foreach (var type in Enum.GetValues<DialogsEntitiesActions_DialogGuiActionPriority>())
                             {
                                 <option value="@type">@type</option>
                             }
                         </InputSelect>
                         <ValidationMessage For="@(() => guiAction.Priority)"/>
-                    </div>
+                    </td>
 
-                    <div class="form-group form-group-gui">
-                        <label class="form-label">Title</label>
+                    <td>
                         <InputLocalization @bind-Value="@guiAction.Title"/>
                         <ValidationMessage For="() => guiAction.Title"/>
-                    </div>
+                    </td>
 
-                    <div class="form-group form-group-gui">
-                        <label class="form-label">Prompt</label>
+                    <td>
                         <InputLocalization @bind-Value="@guiAction.Prompt"/>
                         <ValidationMessage For="() => guiAction.Prompt"/>
-                    </div>
-                </div>
-
-                <div class="item-actions">
-                    <button type="button"  @onclick="() => Remove(guiAction)">Remove</button>
-                </div>
-            </div>
+                    </td>
+                    <td>
+                        <button type="button" @onclick="() => Remove(guiAction)">Remove</button>
+                    </td>
+                </tr>
+            }
         }
-    }
-
-    <button type="button"  @onclick="Add">Add GUI Action</button>
-</div>
+        </tbody>
+        <button type="button" @onclick="Add">Add GUI Action</button>
+    </table>
+</fieldset>
 
 @code {
     protected override void OnParametersSet()
@@ -139,6 +141,4 @@
 
 
 }
-
-<link rel="stylesheet" href="InputComponents.css" />
 
