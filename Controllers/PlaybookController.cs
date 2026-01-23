@@ -3,12 +3,13 @@ using System.Text.Json;
 using Altinn.ApiClients.Dialogporten.Features.V1;
 using Digdir.BDB.Dialogporten.ServiceProvider.Extensions;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("playbook")]
 [EnableCors("AllowedOriginsPolicy")]
@@ -35,7 +36,7 @@ public class PlaybookController(IServiceownerApi dialogporten) : ControllerBase
         {
             return BadRequest("Need at least 1 Patch");
         }
-        if (playbookState.Cursor < 0 && playbookState.Cursor >= playbookState.Patches.Count)
+        if (playbookState.Cursor < 0 || playbookState.Cursor >= playbookState.Patches.Count)
         {
             return BadRequest("Cursor is out of range");
         }

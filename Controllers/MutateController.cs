@@ -2,12 +2,15 @@ using System.Diagnostics.CodeAnalysis;
 using Altinn.ApiClients.Dialogporten;
 using Altinn.ApiClients.Dialogporten.Features.V1;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 
+// TODO auth
+[Authorize]
 [ApiController]
 [Route("mutate")]
 [EnableCors("AllowedOriginsPolicy")]
@@ -61,6 +64,7 @@ public class MutateController(IServiceownerApi dialogporten, IDialogTokenValidat
         if (!patchResult.IsSuccessful)
         {
             Console.WriteLine(patchResult.Error);
+            return new BadRequestResult();
         }
 
         return new OkResult();
