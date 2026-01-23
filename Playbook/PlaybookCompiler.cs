@@ -85,6 +85,23 @@ public class PlaybookCompiler
                     }
                     break;
                 }
+            case JsonElement { ValueKind: JsonValueKind.Array } arrayValue:
+                {
+                    var updatedArray = await ProcessJsonArray(arrayValue, playbookState);
+                    if (updatedArray != null)
+                    {
+                        return new JsonPatchOperations_Operation
+                        {
+                            OperationType = patch.OperationType,
+                            Path = patch.Path,
+                            Op = patch.Op,
+                            From = patch.From,
+                            Value = updatedArray
+                        };
+                    }
+
+                    break;
+                }
 
         }
         return null;
@@ -179,6 +196,73 @@ public class PlaybookCompiler
         var jsonBytes = stream.ToArray();
         return JsonDocument.Parse(jsonBytes).RootElement;
 
+    }
+
+    private async Task<JsonElement?> ProcessJsonArray(JsonElement arrayValue, PlaybookState playbookState)
+    {
+        var updates = new List<JsonElement>();
+        var hasChanges = false;
+
+        foreach (var element in arrayValue.EnumerateArray())
+        {
+            var value = element;
+            switch (element.ValueKind)
+            {
+                case JsonValueKind.String:
+                    if (Lexer.TryParseCommand(element.GetString(), out var command))
+                    {
+                        var compiledPlaybook = await UpdateAndEncode(playbookState, command);
+                        value = JsonSerializer.SerializeToElement(Path + compiledPlaybook);
+                        hasChanges = true;
+                    }
+                    break;
+                case JsonValueKind.Object:
+                    var nestedObject = await ProcessJsonObject(element, playbookState);
+                    if (nestedObject.HasValue)
+                    {
+                        value = nestedObject.Value;
+                        hasChanges = true;
+                    }
+                    break;
+                case JsonValueKind.Array:
+                    var nestedArray = await ProcessJsonArray(element, playbookState);
+                    if (nestedArray.HasValue)
+                    {
+                        value = nestedArray.Value;
+                        hasChanges = true;
+                    }
+                    break;
+                case JsonValueKind.Undefined:
+                case JsonValueKind.Number:
+                case JsonValueKind.True:
+                case JsonValueKind.False:
+                case JsonValueKind.Null:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            updates.Add(value);
+        }
+
+        if (!hasChanges)
+        {
+            return null;
+        }
+
+        using var stream = new MemoryStream();
+        await using var writer = new Utf8JsonWriter(stream);
+
+        writer.WriteStartArray();
+        foreach (var element in updates)
+        {
+            element.WriteTo(writer);
+        }
+        writer.WriteEndArray();
+        await writer.FlushAsync();
+
+        var jsonBytes = stream.ToArray();
+        return JsonDocument.Parse(jsonBytes).RootElement;
     }
     private async Task<JsonPatchOperations_Operation?> CreateUpdatedPatch(JsonPatchOperations_Operation patch, Command command, PlaybookState playbookState)
     {
