@@ -11,7 +11,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Altinn.ApiClients.Dialogporten" Version="1.76.2" />
+        <PackageReference Include="Altinn.ApiClients.Dialogporten" Version="1.100.0-alpha.1769160966" />
         <PackageReference Include="Blazor.Bootstrap" Version="3.3.1"/>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.2.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8"/>
@@ -20,7 +20,7 @@
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.8"/>
         <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.0.2"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
-        <PackageReference Include="Refit.HttpClientFactory" Version="8.0.0"/>
+        <PackageReference Include="Refit.HttpClientFactory" Version="9.0.2" />
         <PackageReference Include="ScottBrady.IdentityModel" Version="4.0.0"/>
         <PackageReference Include="ScottBrady.IdentityModel.AspNetCore" Version="2.1.0"/>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>

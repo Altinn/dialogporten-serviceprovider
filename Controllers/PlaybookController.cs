@@ -73,33 +73,13 @@ public class PlaybookController(IServiceownerApi dialogporten) : ControllerBase
             },
             SearchTags =
             [
-                new()
+                new V1ServiceOwnerDialogsCommandsCreate_Tag
                 {
                     Value = "Playbook"
                 }
             ],
-            GuiActions =
-            [
-                new V1ServiceOwnerDialogsCommandsCreate_GuiAction
-                {
-                    Id = null,
-                    Action = "submit",
-                    Url = new Uri("https://digdir.apps.tt02.altinn.no/digdir/super-simple-service/#/instance/50756302/58d88b01-8840-8771-a6dd-e51e9809df2c"),
-                    IsDeleteDialogAction = false,
-                    Priority = DialogsEntitiesActions_DialogGuiActionPriority.Primary,
-                    Title =
-                    [
-                        new V1CommonLocalizations_Localization
-                        {
-                            Value = "første knapp",
-                            LanguageCode = "nb"
-                        }
-                    ],
-                }
-            ],
         };
         var dialogResult = await dialogporten.V1ServiceOwnerDialogsCommandsCreateDialog(dto, CancellationToken.None);
-
         if (!dialogResult.IsSuccessful)
         {
             return BadRequest(dialogResult.Error.Content);
@@ -114,9 +94,8 @@ public class PlaybookController(IServiceownerApi dialogporten) : ControllerBase
 
 
         return new OkResult();
+
     }
-
-
 }
 
 public class CreatePlaybookRequest
