@@ -69,10 +69,10 @@ public class PlaybookCompiler
                     }
                     break;
                 }
-            case JsonElement { ValueKind: JsonValueKind.Object } objectValue:
+            case JsonElement { ValueKind: JsonValueKind.Object or JsonValueKind.Array } objectValue:
                 {
-                    var updatedObject = await ProcessJsonObject(objectValue, playbookState);
-                    if (updatedObject != null)
+                    var updated = await ProcessJsonElement(objectValue, playbookState);
+                    if (updated.HasValue)
                     {
                         return new JsonPatchOperations_Operation
                         {
@@ -80,26 +80,9 @@ public class PlaybookCompiler
                             Path = patch.Path,
                             Op = patch.Op,
                             From = patch.From,
-                            Value = updatedObject
+                            Value = updated.Value
                         };
                     }
-                    break;
-                }
-            case JsonElement { ValueKind: JsonValueKind.Array } arrayValue:
-                {
-                    var updatedArray = await ProcessJsonArray(arrayValue, playbookState);
-                    if (updatedArray != null)
-                    {
-                        return new JsonPatchOperations_Operation
-                        {
-                            OperationType = patch.OperationType,
-                            Path = patch.Path,
-                            Op = patch.Op,
-                            From = patch.From,
-                            Value = updatedArray
-                        };
-                    }
-
                     break;
                 }
 
@@ -131,7 +114,36 @@ public class PlaybookCompiler
         }
         return playbookState.EncodeToBase64();
     }
-    private async Task<JsonElement?> ProcessJsonObject(JsonElement objectValue, PlaybookState playbookState)
+    private async Task<JsonElement?> ProcessJsonElement(JsonElement element, PlaybookState playbookState)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.String:
+                if (Lexer.TryParseCommand(element.GetString(), out var command))
+                {
+                    var compiledPlaybook = await UpdateAndEncode(playbookState, command);
+                    return JsonSerializer.SerializeToElement(Path + compiledPlaybook);
+                }
+                return null;
+
+            case JsonValueKind.Object:
+                return await ProcessObject(element, playbookState);
+
+            case JsonValueKind.Array:
+                return await ProcessArray(element, playbookState);
+
+            case JsonValueKind.Undefined:
+            case JsonValueKind.Number:
+            case JsonValueKind.True:
+            case JsonValueKind.False:
+            case JsonValueKind.Null:
+            default:
+                return null;
+        }
+
+    }
+
+    private async Task<JsonElement?> ProcessObject(JsonElement objectValue, PlaybookState playbookState)
     {
         var updates = new Dictionary<string, JsonElement>();
         var hasChanges = false;
@@ -139,48 +151,21 @@ public class PlaybookCompiler
         foreach (var property in objectValue.EnumerateObject())
         {
             var value = property.Value;
-            switch (property.Value.ValueKind)
+            var updated = await ProcessJsonElement(property.Value, playbookState);
+            if (updated.HasValue)
             {
-                case JsonValueKind.String:
-                    {
-                        if (Lexer.TryParseCommand(property.Value.GetString(), out var command))
-                        {
-                            var compiledPlaybook = await UpdateAndEncode(playbookState, command);
-                            value = JsonSerializer.SerializeToElement(Path + compiledPlaybook);
-                            hasChanges = true;
-                        }
-                        updates[property.Name] = value;
-                        break;
-                    }
-                case JsonValueKind.Object:
-                    {
-                        var nestedResult = await ProcessJsonObject(property.Value, playbookState);
-                        if (nestedResult.HasValue)
-                        {
-                            value = nestedResult.Value;
-                            hasChanges = true;
-                        }
-
-                        updates[property.Name] = value;
-                        break;
-                    }
-                case JsonValueKind.Undefined:
-                case JsonValueKind.Array:
-                case JsonValueKind.Number:
-                case JsonValueKind.True:
-                case JsonValueKind.False:
-                case JsonValueKind.Null:
-                default:
-                    updates[property.Name] = property.Value;
-                    break;
+                value = updated.Value;
+                hasChanges = true;
             }
+
+            updates[property.Name] = value;
         }
+
         if (!hasChanges)
         {
             return null;
         }
 
-        // Reconstruct the JSON object with updates
         using var stream = new MemoryStream();
         await using var writer = new Utf8JsonWriter(stream);
 
@@ -198,48 +183,19 @@ public class PlaybookCompiler
 
     }
 
-    private async Task<JsonElement?> ProcessJsonArray(JsonElement arrayValue, PlaybookState playbookState)
+    private async Task<JsonElement?> ProcessArray(JsonElement arrayValue, PlaybookState playbookState)
     {
         var updates = new List<JsonElement>();
         var hasChanges = false;
 
-        foreach (var element in arrayValue.EnumerateArray())
+        foreach (var item in arrayValue.EnumerateArray())
         {
-            var value = element;
-            switch (element.ValueKind)
+            var value = item;
+            var updated = await ProcessJsonElement(item, playbookState);
+            if (updated.HasValue)
             {
-                case JsonValueKind.String:
-                    if (Lexer.TryParseCommand(element.GetString(), out var command))
-                    {
-                        var compiledPlaybook = await UpdateAndEncode(playbookState, command);
-                        value = JsonSerializer.SerializeToElement(Path + compiledPlaybook);
-                        hasChanges = true;
-                    }
-                    break;
-                case JsonValueKind.Object:
-                    var nestedObject = await ProcessJsonObject(element, playbookState);
-                    if (nestedObject.HasValue)
-                    {
-                        value = nestedObject.Value;
-                        hasChanges = true;
-                    }
-                    break;
-                case JsonValueKind.Array:
-                    var nestedArray = await ProcessJsonArray(element, playbookState);
-                    if (nestedArray.HasValue)
-                    {
-                        value = nestedArray.Value;
-                        hasChanges = true;
-                    }
-                    break;
-                case JsonValueKind.Undefined:
-                case JsonValueKind.Number:
-                case JsonValueKind.True:
-                case JsonValueKind.False:
-                case JsonValueKind.Null:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
+                value = updated.Value;
+                hasChanges = true;
             }
 
             updates.Add(value);
