@@ -8,11 +8,15 @@ public class PlaybookCompiler
 {
 
     private const string Path = "https://localhost:7247/mutate/";
+    private const int MaxDepth = 32;
+    private const int MaxNodes = 1000;
+    private int _visitedNodes;
 
     public int Progress { get; set; }
 
     public async Task<List<JsonPatchOperations_Operation>> CompilePatches(PlaybookState playbookState)
     {
+        _visitedNodes = 0;
         var internalPlayBookState = new PlaybookState
         (
             playbookState.DialogId,
@@ -71,7 +75,7 @@ public class PlaybookCompiler
                 }
             case JsonElement { ValueKind: JsonValueKind.Object or JsonValueKind.Array } objectValue:
                 {
-                    var updated = await ProcessJsonElement(objectValue, playbookState);
+                    var updated = await ProcessJsonElement(objectValue, playbookState, 0);
                     if (updated.HasValue)
                     {
                         return new JsonPatchOperations_Operation
@@ -114,8 +118,24 @@ public class PlaybookCompiler
         }
         return playbookState.EncodeToBase64();
     }
-    private async Task<JsonElement?> ProcessJsonElement(JsonElement element, PlaybookState playbookState)
+    private bool ExceedsLimits(int depth)
     {
+        if (depth > MaxDepth)
+        {
+            return true;
+        }
+
+        _visitedNodes++;
+        return _visitedNodes > MaxNodes;
+    }
+
+    private async Task<JsonElement?> ProcessJsonElement(JsonElement element, PlaybookState playbookState, int depth)
+    {
+        if (ExceedsLimits(depth))
+        {
+            return null;
+        }
+
         switch (element.ValueKind)
         {
             case JsonValueKind.String:
@@ -127,10 +147,10 @@ public class PlaybookCompiler
                 return null;
 
             case JsonValueKind.Object:
-                return await ProcessObject(element, playbookState);
+                return await ProcessObject(element, playbookState, depth + 1);
 
             case JsonValueKind.Array:
-                return await ProcessArray(element, playbookState);
+                return await ProcessArray(element, playbookState, depth + 1);
 
             case JsonValueKind.Undefined:
             case JsonValueKind.Number:
@@ -143,7 +163,7 @@ public class PlaybookCompiler
 
     }
 
-    private async Task<JsonElement?> ProcessObject(JsonElement objectValue, PlaybookState playbookState)
+    private async Task<JsonElement?> ProcessObject(JsonElement objectValue, PlaybookState playbookState, int depth)
     {
         var updates = new Dictionary<string, JsonElement>();
         var hasChanges = false;
@@ -151,7 +171,7 @@ public class PlaybookCompiler
         foreach (var property in objectValue.EnumerateObject())
         {
             var value = property.Value;
-            var updated = await ProcessJsonElement(property.Value, playbookState);
+            var updated = await ProcessJsonElement(property.Value, playbookState, depth);
             if (updated.HasValue)
             {
                 value = updated.Value;
@@ -183,7 +203,7 @@ public class PlaybookCompiler
 
     }
 
-    private async Task<JsonElement?> ProcessArray(JsonElement arrayValue, PlaybookState playbookState)
+    private async Task<JsonElement?> ProcessArray(JsonElement arrayValue, PlaybookState playbookState, int depth)
     {
         var updates = new List<JsonElement>();
         var hasChanges = false;
@@ -191,7 +211,7 @@ public class PlaybookCompiler
         foreach (var item in arrayValue.EnumerateArray())
         {
             var value = item;
-            var updated = await ProcessJsonElement(item, playbookState);
+            var updated = await ProcessJsonElement(item, playbookState, depth);
             if (updated.HasValue)
             {
                 value = updated.Value;
