@@ -4,14 +4,15 @@ using Altinn.ApiClients.Dialogporten.Features.V1;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
 
-public class PlaybookCompiler
+public class PlaybookCompiler(ServiceProviderSettings settings)
 {
-    private const string Path = "https://localhost:7247/mutate/";
+    private const string Endpoint = "mutate/";
+    private readonly string _path = settings.MutateBaseUri + Endpoint;
     private const int MaxDepth = 32;
     private const int MaxNodes = 1000;
     private int _visitedNodes;
 
-    public int Progress { get; set; }
+    public int Progress { get; set; } = 0;
 
     public async Task<List<JsonPatchOperations_Operation>> CompilePatches(PlaybookState playbookState)
     {
@@ -117,7 +118,7 @@ public class PlaybookCompiler
                 if (Lexer.TryParseCommand(element.GetString(), out var command))
                 {
                     var compiledPlaybook = await UpdateAndEncode(playbookState, command);
-                    return JsonSerializer.SerializeToElement(Path + compiledPlaybook);
+                    return JsonSerializer.SerializeToElement(_path + compiledPlaybook);
                 }
                 return null;
 
@@ -225,7 +226,7 @@ public class PlaybookCompiler
             Path = patch.Path,
             Op = patch.Op,
             From = patch.From,
-            Value = JsonValue.Create(Path + base64)
+            Value = JsonValue.Create(_path + base64)
         };
     }
 }

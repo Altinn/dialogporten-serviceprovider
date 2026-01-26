@@ -5,15 +5,16 @@ using Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 
-[Authorize]
+[Authorize(AuthenticationSchemes = "DialogToken")]
 [ApiController]
 [Route("mutate")]
 [EnableCors("AllowedOriginsPolicy")]
-public class MutateController(IServiceownerApi dialogporten, IDialogTokenValidator dialogTokenValidator) : ControllerBase
+public class MutateController(IServiceownerApi dialogporten, IDialogTokenValidator dialogTokenValidator, IOptions<ServiceProviderSettings> options) : ControllerBase
 {
 
     [HttpGet]
@@ -21,7 +22,7 @@ public class MutateController(IServiceownerApi dialogporten, IDialogTokenValidat
     public async Task<IActionResult> MutatePlaybook(
         [FromRoute] string base64PlaybookState)
     {
-        var compiler = new PlaybookCompiler
+        var compiler = new PlaybookCompiler(options.Value)
         {
             Progress = 0
         };
@@ -62,7 +63,6 @@ public class MutateController(IServiceownerApi dialogporten, IDialogTokenValidat
 
         if (!patchResult.IsSuccessful)
         {
-            Console.WriteLine(patchResult.Error);
             return new BadRequestResult();
         }
 

@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 
-[Authorize]
 [ApiController]
 [Route("playbook")]
 [EnableCors("AllowedOriginsPolicy")]
@@ -25,6 +24,7 @@ public class PlaybookController(IServiceownerApi dialogporten) : ControllerBase
     }
 
 
+    [Authorize]
     [Route("create")]
     [Consumes("application/json")]
     [HttpPost]
