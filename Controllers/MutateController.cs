@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("mutate")]
 [EnableCors("AllowedOriginsPolicy")]
