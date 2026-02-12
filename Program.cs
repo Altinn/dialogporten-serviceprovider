@@ -6,6 +6,8 @@ using Digdir.BDB.Dialogporten.ServiceProvider.Components.Account;
 using Digdir.BDB.Dialogporten.ServiceProvider.Data;
 using Digdir.BDB.Dialogporten.ServiceProvider.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddUserSecrets<Program>();
@@ -15,9 +17,16 @@ builder.Services.AddControllers();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+var serviceProviderSettings = builder.Configuration
+    .GetSection("ServiceProvider")
+    .Get<ServiceProviderSettings>()!;
+
+builder.Services.TryAddSingleton<IOptions<ServiceProviderSettings>>(new OptionsWrapper<ServiceProviderSettings>(serviceProviderSettings));
+
 var dialogportenSettings = builder.Configuration
     .GetSection("DialogportenSettings")
     .Get<DialogportenSettings>()!;
+
 builder.Services
     .AddEndpointsApiExplorer()
     .AddSwaggerGen()
@@ -60,7 +69,7 @@ builder.Services
 
 builder.Services.AddSingleton<InMemoryUserStoreContext>();
 
-    builder.Services.AddIdentityCore<IdentityUser>(o =>
+builder.Services.AddIdentityCore<IdentityUser>(o =>
     {
         o.Password.RequireDigit = false;
         o.Password.RequireLowercase = false;
@@ -95,3 +104,17 @@ using (var scope = app.Services.CreateScope())
     await scope.ServiceProvider.AddDefaultAccount();
 }
 await app.RunAsync();
+
+public sealed class ServiceProviderSettings
+{
+    public string RegistryUri { get; set; } = null!;
+    public string MutateBaseUri { get; set; } = null!;
+    public DefaultAccount DefaultAccount { get; set; } = null!;
+
+}
+
+public sealed class DefaultAccount
+{
+    public string Username { get; set; } = null!;
+    public string Password { get; set; } = null!;
+}

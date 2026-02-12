@@ -1,8 +1,6 @@
-using System.Runtime.CompilerServices;
-using System.Security.Policy;
 using Altinn.ApiClients.Dialogporten.Features.V1;
 
-namespace Digdir.BDB.Dialogporten.ServiceProvider;
+namespace Digdir.BDB.Dialogporten.ServiceProvider.Extensions;
 
 public static class PrefillExtensions
 {

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Components.Account;
 
@@ -8,11 +9,11 @@ internal static class DefaultAccount
     {
         var userStore = services.GetRequiredService<IUserStore<IdentityUser>>();
         var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
-        var configuration = services.GetRequiredService<IConfiguration>();
+        var options = services.GetRequiredService<IOptions<ServiceProviderSettings>>();
         var logger = services.GetRequiredService<ILogger<IdentityUser>>();
 
-        var defaultUsername = configuration.GetValue<string>("ServiceProvider:DefaultAccount:Username");
-        var defaultPassword = configuration.GetValue<string>("ServiceProvider:DefaultAccount:Password");
+        var defaultUsername = options.Value.DefaultAccount.Username;
+        var defaultPassword = options.Value.DefaultAccount.Password;
 
         if (string.IsNullOrEmpty(defaultPassword) || string.IsNullOrEmpty(defaultUsername))
         {
