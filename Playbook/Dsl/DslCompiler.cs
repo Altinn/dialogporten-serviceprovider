@@ -37,18 +37,25 @@ public static class DslCompiler
         var fceContents = NormaliseFce(source.Fce);
         ValidateFceReferences(stagesInOrder, fceContents);
 
+        var initialVars = NormaliseVars(source.Vars);
+        var declaredVarNames = new HashSet<string>(initialVars.Keys);
+
         var patches = new JsonArray();
+        var stageBehaviors = new List<StageBehavior>();
         foreach (var (_, stage) in stagesInOrder)
         {
-            var ops = CompileStage(stage, language, cursorByName);
+            var (ops, behavior) = CompileStage(stage, language, cursorByName, declaredVarNames);
             var stageNode = JsonNode.Parse(JsonSerializer.Serialize(ops));
             patches.Add(stageNode);
+            stageBehaviors.Add(behavior);
         }
 
         var blueprint = new PlaybookBlueprint(
             Guid.Empty,
             patches,
-            fceContents);
+            fceContents,
+            initialVars,
+            stageBehaviors);
 
         return new DslCompileResult(
             source.Party,
@@ -58,6 +65,54 @@ public static class DslCompiler
             source.Initial?.Title,
             source.Initial?.Summary,
             language);
+    }
+
+    private static IReadOnlyDictionary<string, object?> NormaliseVars(Dictionary<string, object?> raw)
+    {
+        var result = new Dictionary<string, object?>();
+        foreach (var (name, val) in raw)
+        {
+            result[name] = NormaliseVarValue(val);
+        }
+        return result;
+    }
+
+    private static object? NormaliseVarValue(object? raw) => raw switch
+    {
+        null => null,
+        bool b => b,
+        int i => (long)i,
+        long l => l,
+        string s => CoerceScalar(s),
+        System.Collections.IList list => NormaliseList(list),
+        _ => raw
+    };
+
+    /// <summary>
+    /// YamlDotNet, when deserialising into a property typed as <c>object?</c>, returns scalar
+    /// nodes as raw strings — no type inference. Coerce so <c>0</c>, <c>true</c>, etc. become
+    /// their natural types before they hit the evaluator.
+    /// </summary>
+    private static object? CoerceScalar(string s)
+    {
+        if (s == "true") return true;
+        if (s == "false") return false;
+        if (s == "null" || s == "~") return null;
+        if (long.TryParse(s, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var n))
+        {
+            return n;
+        }
+        return s;
+    }
+
+    private static List<object?> NormaliseList(System.Collections.IList list)
+    {
+        var result = new List<object?>(list.Count);
+        foreach (var item in list)
+        {
+            result.Add(NormaliseVarValue(item));
+        }
+        return result;
     }
 
     private static PlaybookSource ParseYaml(string yaml)
@@ -106,20 +161,18 @@ public static class DslCompiler
         var result = new Dictionary<string, FceContent>();
         foreach (var (name, raw) in rawFce)
         {
-            switch (raw)
+            if (raw is string s)
             {
-                case string s:
-                    result[name] = new FceContent(FceMediaTypeDefault, s);
-                    break;
-                case IDictionary<object, object> d:
-                    {
-                        var mediaType = TryGetString(d, "media-type") ?? FceMediaTypeDefault;
-                        var content = TryGetString(d, "content") ?? "";
-                        result[name] = new FceContent(mediaType, content);
-                        break;
-                    }
-                default:
-                    throw new DslCompilationException($"fce['{name}'] must be a string or object");
+                result[name] = new FceContent(FceMediaTypeDefault, s);
+            }
+            else
+            {
+                var d = AsStringDict(raw)
+                    ?? throw new DslCompilationException($"fce['{name}'] must be a string or object (got {DescribeType(raw)})");
+                RequireKnownKeys(d, FceKeys, $"fce['{name}']");
+                var mediaType = TryGetString(d, "media-type") ?? FceMediaTypeDefault;
+                var content = TryGetString(d, "content") ?? "";
+                result[name] = new FceContent(mediaType, content);
             }
             if (!FceMediaTypes.IsAllowed(result[name].MediaType))
             {
@@ -147,9 +200,33 @@ public static class DslCompiler
         }
     }
 
-    private static List<JsonPatchOperations_Operation> CompileStage(StageSource stage, string lang, Dictionary<string, int> cursorByName)
+    private static (List<JsonPatchOperations_Operation> ops, StageBehavior behavior) CompileStage(
+        StageSource stage, string lang, Dictionary<string, int> cursorByName, HashSet<string> declaredVars)
     {
         var ops = new List<JsonPatchOperations_Operation>();
+
+        // Parse effects (Phase B). Strings → Stmt ASTs.
+        var effects = new List<Stmt>();
+        if (stage.Effects != null)
+        {
+            foreach (var effectText in stage.Effects)
+            {
+                Stmt stmt;
+                try
+                {
+                    stmt = ScriptParser.ParseStatement(effectText);
+                }
+                catch (ScriptException ex)
+                {
+                    throw new DslCompilationException($"effect '{effectText}' parse error: {ex.Message}");
+                }
+                ValidateStmtVarRefs(stmt, declaredVars, effectText);
+                effects.Add(stmt);
+            }
+        }
+
+        // Per-action when expressions (Phase B).
+        var actionWhens = new List<Expr?>();
 
         if (stage.Title != null)
         {
@@ -212,11 +289,62 @@ public static class DslCompiler
                     ["priority"] = priority,
                     ["title"] = new JsonArray { new JsonObject { ["languageCode"] = lang, ["value"] = parsed.Label } }
                 });
+
+                // Capture per-action when expression (Phase B).
+                if (!string.IsNullOrWhiteSpace(parsed.When))
+                {
+                    Expr whenExpr;
+                    try
+                    {
+                        whenExpr = ScriptParser.ParseExpression(parsed.When);
+                    }
+                    catch (ScriptException ex)
+                    {
+                        throw new DslCompilationException($"action when '{parsed.When}' parse error: {ex.Message}");
+                    }
+                    ValidateExprVarRefs(whenExpr, declaredVars, parsed.When);
+                    actionWhens.Add(whenExpr);
+                }
+                else
+                {
+                    actionWhens.Add(null);
+                }
             }
             ops.Add(MakeOp("add", "/guiActions", actionArray));
         }
 
-        return ops;
+        return (ops, new StageBehavior(effects, actionWhens));
+    }
+
+    private static void ValidateStmtVarRefs(Stmt stmt, HashSet<string> declared, string source)
+    {
+        switch (stmt)
+        {
+            case SetStmt s: Require(s.Var, declared, source); ValidateExprVarRefs(s.Value, declared, source); break;
+            case IncStmt i: Require(i.Var, declared, source); if (i.By != null) ValidateExprVarRefs(i.By, declared, source); break;
+            case DecStmt d: Require(d.Var, declared, source); if (d.By != null) ValidateExprVarRefs(d.By, declared, source); break;
+            case ListAddStmt a: Require(a.Var, declared, source); ValidateExprVarRefs(a.Value, declared, source); break;
+            case ListRemoveStmt r: Require(r.Var, declared, source); ValidateExprVarRefs(r.Value, declared, source); break;
+        }
+    }
+
+    private static void ValidateExprVarRefs(Expr expr, HashSet<string> declared, string source)
+    {
+        switch (expr)
+        {
+            case VarRef v: Require(v.Name, declared, source); break;
+            case UnaryNot n: ValidateExprVarRefs(n.Operand, declared, source); break;
+            case BinOp b: ValidateExprVarRefs(b.Left, declared, source); ValidateExprVarRefs(b.Right, declared, source); break;
+            case Contains c: Require(c.ListVar, declared, source); ValidateExprVarRefs(c.Value, declared, source); break;
+        }
+    }
+
+    private static void Require(string varName, HashSet<string> declared, string source)
+    {
+        if (!declared.Contains(varName))
+        {
+            throw new DslCompilationException($"undeclared variable '{varName}' in '{source}' (declare it under playbook.vars)");
+        }
     }
 
     private static JsonNode WrappedLocalisedContent(string mediaType, string value, string lang) =>
@@ -286,29 +414,71 @@ public static class DslCompiler
         }
     }
 
-    private static ActivitySource ParseActivity(object raw) => raw switch
+    private static readonly HashSet<string> ActivityKeys = new(StringComparer.OrdinalIgnoreCase)
+        { "type", "description", "by" };
+    private static readonly HashSet<string> ActionKeys = new(StringComparer.OrdinalIgnoreCase)
+        { "label", "target", "priority", "when" };
+    private static readonly HashSet<string> FceKeys = new(StringComparer.OrdinalIgnoreCase)
+        { "media-type", "content" };
+
+    private static ActivitySource ParseActivity(object raw)
     {
-        string s => new ActivitySource { Type = s },
-        IDictionary<object, object> d => new ActivitySource
+        if (raw is string s) return new ActivitySource { Type = s };
+        var d = AsStringDict(raw)
+            ?? throw new DslCompilationException($"activity must be a string or object (got {DescribeType(raw)})");
+        RequireKnownKeys(d, ActivityKeys, "activity");
+        return new ActivitySource
         {
             Type = TryGetString(d, "type"),
             Description = TryGetString(d, "description"),
             By = TryGetString(d, "by")
-        },
-        _ => throw new DslCompilationException("activity must be a string or object")
-    };
+        };
+    }
 
-    private static ActionSource ParseAction(object raw) => raw switch
+    private static ActionSource ParseAction(object raw)
     {
-        string s => ParseActionShorthand(s),
-        IDictionary<object, object> d => new ActionSource
+        if (raw is string s) return ParseActionShorthand(s);
+        var d = AsStringDict(raw)
+            ?? throw new DslCompilationException($"action must be a string or object (got {DescribeType(raw)})");
+        RequireKnownKeys(d, ActionKeys, "action");
+        return new ActionSource
         {
             Label = TryGetString(d, "label"),
             Target = TryGetString(d, "target"),
-            Priority = TryGetString(d, "priority")
-        },
-        _ => throw new DslCompilationException("action must be a string or object")
-    };
+            Priority = TryGetString(d, "priority"),
+            When = TryGetString(d, "when")
+        };
+    }
+
+    /// <summary>
+    /// YamlDotNet may return either <c>IDictionary&lt;object,object&gt;</c> or
+    /// <c>IDictionary&lt;string,object&gt;</c> for an untyped mapping, depending on context
+    /// and library version. Normalise both (plus the non-generic <c>IDictionary</c>) to a
+    /// single string-keyed view so downstream code doesn't have to care.
+    /// </summary>
+    private static Dictionary<string, object?>? AsStringDict(object? raw)
+    {
+        if (raw is not System.Collections.IDictionary id) return null;
+        var result = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var key in id.Keys)
+        {
+            if (key is string k) result[k] = id[key];
+        }
+        return result;
+    }
+
+    private static void RequireKnownKeys(Dictionary<string, object?> dict, HashSet<string> known, string context)
+    {
+        var unknown = dict.Keys.Where(k => !known.Contains(k)).ToList();
+        if (unknown.Count > 0)
+        {
+            throw new DslCompilationException(
+                $"{context}: unknown key(s) {string.Join(", ", unknown.Select(k => $"'{k}'"))}. " +
+                $"Known: {string.Join(", ", known.OrderBy(x => x))}");
+        }
+    }
+
+    private static string DescribeType(object? raw) => raw is null ? "null" : raw.GetType().FullName ?? raw.GetType().Name;
 
     private static ActionSource ParseActionShorthand(string s)
     {
@@ -366,6 +536,12 @@ public static class DslCompiler
     }
 
     private static string? TryGetString(IDictionary<object, object> d, string key)
+    {
+        if (d.TryGetValue(key, out var v) && v is string s) return s;
+        return null;
+    }
+
+    private static string? TryGetString(Dictionary<string, object?> d, string key)
     {
         if (d.TryGetValue(key, out var v) && v is string s) return s;
         return null;

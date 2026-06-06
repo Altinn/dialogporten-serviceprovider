@@ -162,6 +162,16 @@ static void ValidateSampleFiles(WebApplication app)
             using var doc = System.Text.Json.JsonDocument.Parse(envelope.ToJsonString());
             var issues = Digdir.BDB.Dialogporten.ServiceProvider.Playbook.PlaybookSampleValidator.Validate(doc);
             ReportIssues(logger, fileName, issues, ref totalIssues);
+
+            // Phase B diagnostic: summarise vars + effect/when counts so misconfigurations are visible at startup.
+            var totalWhens = compiled.Blueprint.StageBehaviors.Sum(sb => sb.ActionWhens.Count(w => w != null));
+            var totalEffects = compiled.Blueprint.StageBehaviors.Sum(sb => sb.Effects.Count);
+            if (compiled.Blueprint.InitialVars.Count > 0 || totalWhens > 0 || totalEffects > 0)
+            {
+                logger.LogInformation(
+                    "[{File}] Phase B: {Vars} vars, {Effects} effect stmts, {Whens} action-when guards",
+                    fileName, compiled.Blueprint.InitialVars.Count, totalEffects, totalWhens);
+            }
         }
         catch (Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl.DslCompilationException ex)
         {

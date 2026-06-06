@@ -115,6 +115,10 @@
     private string PatchesJson { get; set; } = "[]";
     private string FceContentsJson { get; set; } = "{}";
 
+    // When the user uses "Import DSL", we cache the FULL compile result so Submit can preserve
+    // Phase B metadata (vars, effects, whens) that doesn't fit in the JSON envelope form fields.
+    private DslCompileResult? _lastDslImport;
+
     private Guid DialogId { get; set; }
     private string StateId { get; set; } = "";
 
@@ -228,8 +232,34 @@
             return;
         }
 
-        var blueprint = new PlaybookBlueprint(dialogId, patches, fceContents);
+        // If the user populated the form via "Import DSL", preserve the full Phase B metadata
+        // (initial vars + per-stage effects + per-action whens) from the cached compile result.
+        // Otherwise use the JSON-envelope (Phase A) shape.
+        PlaybookBlueprint blueprint;
+        if (_lastDslImport != null)
+        {
+            Logger.LogInformation(
+                "Submit: using cached DSL compile result. {VarCount} vars, {EffectCount} effect stmts, {WhenCount} action-whens.",
+                _lastDslImport.Blueprint.InitialVars.Count,
+                _lastDslImport.Blueprint.StageBehaviors.Sum(sb => sb.Effects.Count),
+                _lastDslImport.Blueprint.StageBehaviors.Sum(sb => sb.ActionWhens.Count(w => w != null)));
+            blueprint = _lastDslImport.Blueprint with
+            {
+                DialogId = dialogId,
+                Patches = patches,
+                FceContents = fceContents
+            };
+        }
+        else
+        {
+            Logger.LogInformation("Submit: building Phase A blueprint from form fields (no DSL import).");
+            blueprint = new PlaybookBlueprint(dialogId, patches, fceContents);
+        }
+
         var stateId = await StateStore.CreateAsync(blueprint, CancellationToken.None);
+        Logger.LogInformation(
+            "Submit: created stateId={StateId} dialogId={DialogId}. Blueprint StageBehaviors.Count={Count}.",
+            stateId, dialogId, blueprint.StageBehaviors.Count);
 
         var compiler = new PlaybookCompiler(ServiceProviderOptions.Value) { Progress = 0 };
         var compiledPatches = await compiler.CompilePatches(stateId, blueprint, Cursor);
@@ -269,6 +299,7 @@
         Cursor = 0;
         PatchesJson = CreatePlaybookSamples.Patches;
         FceContentsJson = CreatePlaybookSamples.FceContents;
+        _lastDslImport = null;
     }
 
     private async Task ImportFromJson()
@@ -322,6 +353,7 @@
         var fceNode = FindProperty(obj, "fceContents");
         FceContentsJson = fceNode?.ToJsonString(indented) ?? "{}";
 
+        _lastDslImport = null;
         ShowPopup("Imported", "Form populated from playbook JSON. Review the fields and click Create Playbook.");
     }
 
@@ -369,7 +401,12 @@
         }
         FceContentsJson = fceObj.ToJsonString(indented);
 
-        ShowPopup("DSL Imported", "Compiled from YAML. Review the fields and click Create Playbook.");
+        // Cache the full compile result so Submit can preserve Phase B metadata.
+        _lastDslImport = compiled;
+
+        var totalWhens = compiled.Blueprint.StageBehaviors.Sum(sb => sb.ActionWhens.Count(w => w != null));
+        var totalEffects = compiled.Blueprint.StageBehaviors.Sum(sb => sb.Effects.Count);
+        ShowPopup("DSL Imported", $"Compiled: {compiled.Blueprint.InitialVars.Count} vars, {totalEffects} effects, {totalWhens} action-whens. Click Create Playbook.");
     }
 
     private static JsonNode? FindProperty(JsonObject obj, string name)

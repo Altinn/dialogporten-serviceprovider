@@ -12,6 +12,9 @@ public sealed class PlaybookSource
     public InitialSeed? Initial { get; set; }
     public string Start { get; set; } = "";
 
+    // Phase B: declared session variables and their initial values.
+    public Dictionary<string, object?> Vars { get; set; } = new();
+
     // Dictionary<,> preserves insertion order in .NET 9, which determines the cursor index per stage.
     public Dictionary<string, StageSource> Stages { get; set; } = new();
 
@@ -43,6 +46,12 @@ public sealed class StageSource
 
     // Polymorphic: string ("Label → target") or object (full ActionSource).
     public List<object>? Actions { get; set; }
+
+    // Phase B: effect statements applied on stage entry. Each entry is a string like
+    //   "set hp = 10"
+    //   "inc gold by 5"
+    //   "add visited += \"forest\""
+    public List<string>? Effects { get; set; }
 }
 
 public sealed class TransmissionSource
@@ -66,6 +75,10 @@ public sealed class ActionSource
     public string? Label { get; set; }
     public string? Target { get; set; }
     public string? Priority { get; set; }
+
+    // Phase B: optional expression string; this action is rendered iff the expression evaluates true.
+    // An action without `when:` is the fallback — rendered iff no other action's when matched.
+    public string? When { get; set; }
 }
 
 public sealed class FceSource
