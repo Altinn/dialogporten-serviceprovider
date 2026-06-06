@@ -225,6 +225,7 @@ public sealed class ServiceProviderSettings
 {
     public string RegistryUri { get; set; } = null!;
     public string MutateBaseUri { get; set; } = null!;
+    public string AfUri { get; set; } = null!;
     public DefaultAccount DefaultAccount { get; set; } = null!;
 
 }

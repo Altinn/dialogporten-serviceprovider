@@ -1,99 +1,45 @@
 @page "/playbook/create"
-@using System.Text.Json
-@using System.Text.Json.Nodes
+@using System.IO
 @using Altinn.ApiClients.Dialogporten.Features.V1
-@using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input
 @using Digdir.BDB.Dialogporten.ServiceProvider.Playbook
 @using Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl
-@using Digdir.BDB.Dialogporten.ServiceProvider.Services
+@using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using Microsoft.Extensions.Options
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inject IServiceownerApi ServiceOwnerApi
 @inject IPlaybookStateStore StateStore
 @inject IOptions<ServiceProviderSettings> ServiceProviderOptions
-@inject IJSRuntime Js
 @inject ILogger<CreatePlaybook> Logger
 @rendermode InteractiveServer
-<h3>CreatePlaybook</h3>
+
+<h3>Create Playbook</h3>
 
 <p>
-    Creates a Dialogporten dialog, stores the playbook server-side, and applies stage @Cursor.
-    The resulting dialog ships with mutate URLs that drive subsequent stages on each user click.
+    Upload a <code>.playbook.yaml</code> file. The serviceprovider will compile it, create the
+    Dialogporten dialog, store the playbook server-side, and apply the initial stage in one go.
 </p>
 
-<fieldset>
-    <legend>Import playbook (JSON envelope)</legend>
-    <p style="margin: 0 0 0.5rem 0;">
-        Paste a full playbook envelope JSON (Party, serviceResource, playbookState, fceContents) and click Import.
-        The form fields below will be populated and you can review/edit before submitting.
-    </p>
-    <div>
-        <textarea id="import" rows="6" cols="100" placeholder="Paste playbook JSON here..."></textarea>
-    </div>
-    <div>
-        <button type="button" @onclick="ImportFromJson">Import JSON</button>
-    </div>
-</fieldset>
+<div style="margin: 1rem 0;">
+    <InputFile OnChange="OnFileSelected" accept=".yaml,.yml" disabled="@_busy" />
+</div>
 
-<fieldset>
-    <legend>Import playbook (YAML DSL)</legend>
-    <p style="margin: 0 0 0.5rem 0;">
-        Paste a <code>.playbook.yaml</code> source and click Import DSL. The form below will be populated with the compiled patches and FCE contents; review and click Create Playbook.
-    </p>
-    <div>
-        <textarea id="import-dsl" rows="6" cols="100" placeholder="Paste YAML here..."></textarea>
-    </div>
-    <div>
-        <button type="button" @onclick="ImportFromDsl">Import DSL</button>
-    </div>
-</fieldset>
-
-<EditForm Model="Request" OnValidSubmit="Submit" FormName="CreatePlaybook">
-    <div>
-        <button type="button" @onclick="Prefill">Prefill from sample</button>
-    </div>
-
-    <div>
-        <label for="serviceResource">Service Resource</label>
-        <InputSelect id="serviceResource" @bind-Value="Request.ServiceResource">
-            <option value="" disabled selected>Select your option</option>
-            @foreach (var resource in ResourceRegistryClient.Resources)
-            {
-                <option value=@("urn:altinn:resource:" + resource.Identifier)>@resource.Identifier</option>
-            }
-        </InputSelect>
-    </div>
-
-    <div>
-        <label for="party">Party</label>
-        <InputParty id="party" @bind-Value="Request.Party"/>
-    </div>
-
-    <div>
-        <label for="cursor">Cursor</label>
-        <InputNumber id="cursor" @bind-Value="Cursor"/>
-    </div>
-
-    <div>
-        <label for="patches">Patches (JSON: array of arrays of patch operations)</label><br/>
-        <InputTextArea id="patches" rows="20" cols="100" @bind-Value="PatchesJson"/>
-    </div>
-
-    <div>
-        <label for="fceContents">FCE contents (JSON: name → {mediaType, content}). Optional.</label><br/>
-        <InputTextArea id="fceContents" rows="6" cols="100" @bind-Value="FceContentsJson"/>
-    </div>
-
-    <button type="submit">Create Playbook</button>
-</EditForm>
+@if (_busy)
+{
+    <p><em>Working…</em></p>
+}
 
 @if (DialogId != Guid.Empty)
 {
     <fieldset>
         <legend>Playbook ready</legend>
-        <p>Dialog id: <code>@DialogId</code></p>
-        <p>State id: <code>@StateId</code> (stage @Cursor applied)</p>
+        <p>
+            <a href="@InboxUrl" target="_blank" rel="noopener">Open in Arbeidsflate ↗</a>
+        </p>
+        <p style="font-size: 0.85em; color: #666;">
+            Dialog id: <code>@DialogId</code><br/>
+            State id: <code>@StateId</code>
+        </p>
     </fieldset>
 }
 
@@ -103,116 +49,83 @@
 }
 
 @code {
-
-    private sealed class CreatePlaybookForm
-    {
-        public string? Party { get; set; }
-        public string? ServiceResource { get; set; }
-    }
-
-    private CreatePlaybookForm Request { get; set; } = new();
-    private int Cursor { get; set; }
-    private string PatchesJson { get; set; } = "[]";
-    private string FceContentsJson { get; set; } = "{}";
-
-    // When the user uses "Import DSL", we cache the FULL compile result so Submit can preserve
-    // Phase B metadata (vars, effects, whens) that doesn't fit in the JSON envelope form fields.
-    private DslCompileResult? _lastDslImport;
-
-    private Guid DialogId { get; set; }
-    private string StateId { get; set; } = "";
-
+    private bool _busy;
     private bool _showPopUp;
     private string? _header;
     private string? _message;
 
-    private async Task Submit()
+    private Guid DialogId { get; set; }
+    private string StateId { get; set; } = "";
+
+    private string InboxUrl => $"{ServiceProviderOptions.Value.AfUri.TrimEnd('/')}/inbox/{DialogId}";
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(Request.Party) || string.IsNullOrWhiteSpace(Request.ServiceResource))
-        {
-            ShowPopup("Error", "Party and Service Resource are required.");
-            return;
-        }
-
-        JsonArray patches;
+        if (_busy) return;
+        _busy = true;
         try
         {
-            if (JsonNode.Parse(PatchesJson) is not JsonArray array)
+            string yaml;
+            await using (var stream = e.File.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024))
+            using (var reader = new StreamReader(stream))
             {
-                ShowPopup("Error", "Patches must be a JSON array.");
-                return;
+                yaml = await reader.ReadToEndAsync();
             }
-            patches = array;
+            await CreateFromYaml(yaml, e.File.Name);
         }
-        catch (JsonException ex)
+        catch (Exception ex)
         {
-            ShowPopup("Error", $"Invalid Patches JSON: {ex.Message}");
-            return;
+            Logger.LogError(ex, "Playbook upload failed");
+            ShowPopup("Upload error", ex.Message);
         }
+        finally
+        {
+            _busy = false;
+        }
+    }
 
-        Dictionary<string, FceContent> fceContents;
+    private async Task CreateFromYaml(string yaml, string fileName)
+    {
+        DslCompileResult compiled;
         try
         {
-            fceContents = string.IsNullOrWhiteSpace(FceContentsJson)
-                ? new Dictionary<string, FceContent>()
-                : JsonSerializer.Deserialize<Dictionary<string, FceContent>>(FceContentsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-                  ?? new Dictionary<string, FceContent>();
+            compiled = DslCompiler.Compile(yaml);
         }
-        catch (JsonException ex)
+        catch (DslCompilationException ex)
         {
-            ShowPopup("Error", $"Invalid FCE contents JSON: {ex.Message}");
+            Logger.LogWarning("DSL compile error in {File}: {Message}", fileName, ex.Message);
+            ShowPopup("DSL compile error", ex.Message);
             return;
         }
 
-        if (patches.Count == 0)
-        {
-            ShowPopup("Error", "Need at least 1 Patch.");
-            return;
-        }
-        if (Cursor < 0 || Cursor >= patches.Count)
-        {
-            ShowPopup("Error", "Cursor is out of range.");
-            return;
-        }
+        var totalWhens = compiled.Blueprint.StageBehaviors.Sum(sb => sb.ActionWhens.Count(w => w != null));
+        var totalEffects = compiled.Blueprint.StageBehaviors.Sum(sb => sb.Effects.Count);
+        Logger.LogInformation(
+            "Compiled {File}: {Stages} stages, {Vars} vars, {Effects} effect stmts, {Whens} action-whens",
+            fileName, compiled.Blueprint.Patches.Count, compiled.Blueprint.InitialVars.Count, totalEffects, totalWhens);
+
+        var initialTitle = string.IsNullOrWhiteSpace(compiled.InitialTitle) ? "Playbook" : compiled.InitialTitle;
+        var initialSummary = string.IsNullOrWhiteSpace(compiled.InitialSummary) ? "Playbook dialog" : compiled.InitialSummary;
+        var lang = string.IsNullOrWhiteSpace(compiled.Language) ? "en" : compiled.Language;
 
         var dto = new V1ServiceOwnerDialogsCommandsCreate_Dialog
         {
-            ServiceResource = Request.ServiceResource,
-            Party = Request.Party,
+            ServiceResource = compiled.ServiceResource,
+            Party = compiled.Party,
             Content = new V1ServiceOwnerDialogsCommandsCreate_Content
             {
                 Title = new V1CommonContent_ContentValue
                 {
-                    Value =
-                    [
-                        new V1CommonLocalizations_Localization
-                        {
-                            Value = "Playbook",
-                            LanguageCode = "en"
-                        }
-                    ],
+                    Value = [new V1CommonLocalizations_Localization { Value = initialTitle, LanguageCode = lang }],
                     MediaType = "text/plain"
                 },
                 Summary = new V1CommonContent_ContentValue
                 {
-                    Value =
-                    [
-                        new V1CommonLocalizations_Localization
-                        {
-                            Value = "Playbook dialog",
-                            LanguageCode = "en"
-                        }
-                    ],
+                    Value = [new V1CommonLocalizations_Localization { Value = initialSummary, LanguageCode = lang }],
                     MediaType = "text/plain"
                 }
             },
-            SearchTags =
-            [
-                new V1ServiceOwnerDialogsCommandsCreate_Tag
-                {
-                    Value = "Playbook"
-                }
-            ]
+            SearchTags = [new V1ServiceOwnerDialogsCommandsCreate_Tag { Value = "Playbook" }]
         };
 
         var dialogResult = await ServiceOwnerApi.V1ServiceOwnerDialogsCommandsCreateDialog(dto, CancellationToken.None);
@@ -232,40 +145,14 @@
             return;
         }
 
-        // If the user populated the form via "Import DSL", preserve the full Phase B metadata
-        // (initial vars + per-stage effects + per-action whens) from the cached compile result.
-        // Otherwise use the JSON-envelope (Phase A) shape.
-        PlaybookBlueprint blueprint;
-        if (_lastDslImport != null)
-        {
-            Logger.LogInformation(
-                "Submit: using cached DSL compile result. {VarCount} vars, {EffectCount} effect stmts, {WhenCount} action-whens.",
-                _lastDslImport.Blueprint.InitialVars.Count,
-                _lastDslImport.Blueprint.StageBehaviors.Sum(sb => sb.Effects.Count),
-                _lastDslImport.Blueprint.StageBehaviors.Sum(sb => sb.ActionWhens.Count(w => w != null)));
-            blueprint = _lastDslImport.Blueprint with
-            {
-                DialogId = dialogId,
-                Patches = patches,
-                FceContents = fceContents
-            };
-        }
-        else
-        {
-            Logger.LogInformation("Submit: building Phase A blueprint from form fields (no DSL import).");
-            blueprint = new PlaybookBlueprint(dialogId, patches, fceContents);
-        }
-
+        var blueprint = compiled.Blueprint with { DialogId = dialogId };
         var stateId = await StateStore.CreateAsync(blueprint, CancellationToken.None);
-        Logger.LogInformation(
-            "Submit: created stateId={StateId} dialogId={DialogId}. Blueprint StageBehaviors.Count={Count}.",
-            stateId, dialogId, blueprint.StageBehaviors.Count);
 
         var compiler = new PlaybookCompiler(ServiceProviderOptions.Value) { Progress = 0 };
-        var compiledPatches = await compiler.CompilePatches(stateId, blueprint, Cursor);
+        var compiledPatches = await compiler.CompilePatches(stateId, blueprint, compiled.InitialCursor);
         if (compiledPatches.Count == 0)
         {
-            ShowPopup("Error", "Cursor produced no patches.");
+            ShowPopup("Error", "Initial cursor produced no patches.");
             return;
         }
 
@@ -274,7 +161,7 @@
         {
             Logger.LogWarning(
                 "Dialogporten PATCH /dialogs/{DialogId} (bootstrap stage {Cursor}) returned {StatusCode}. Body: {Body}",
-                dialogId, Cursor, (int)patchResult.StatusCode, patchResult.Error?.Content);
+                dialogId, compiled.InitialCursor, (int)patchResult.StatusCode, patchResult.Error?.Content);
             ShowPopup(patchResult.StatusCode.ToString(), patchResult.Error?.Content ?? "Failed to apply bootstrap patches.");
             return;
         }
@@ -288,142 +175,6 @@
             : [];
         dialogs.Add(dialogId);
         _ = ProtectedLocalStore.SetAsync("dialogs", dialogs);
-
-        ShowPopup("Playbook ready", $"Dialog {dialogId} created. Open it in Arbeidsflate and click through.");
-    }
-
-    private void Prefill()
-    {
-        Request.Party = "urn:altinn:person:identifier-no:08895699684";
-        Request.ServiceResource = "urn:altinn:resource:super-simple-service";
-        Cursor = 0;
-        PatchesJson = CreatePlaybookSamples.Patches;
-        FceContentsJson = CreatePlaybookSamples.FceContents;
-        _lastDslImport = null;
-    }
-
-    private async Task ImportFromJson()
-    {
-        var importJson = await Js.InvokeAsync<string>("eval", "(document.getElementById('import') || {value: ''}).value");
-
-        if (string.IsNullOrWhiteSpace(importJson))
-        {
-            ShowPopup("Error", "Paste the playbook JSON first.");
-            return;
-        }
-
-        JsonNode? root;
-        try
-        {
-            root = JsonNode.Parse(importJson);
-        }
-        catch (JsonException ex)
-        {
-            ShowPopup("Error", $"Invalid JSON: {ex.Message}");
-            return;
-        }
-
-        if (root is not JsonObject obj)
-        {
-            ShowPopup("Error", "Top-level JSON must be an object.");
-            return;
-        }
-
-        var playbookState = FindProperty(obj, "playbookState") as JsonObject;
-        if (playbookState is null)
-        {
-            ShowPopup("Error", "Missing playbookState object.");
-            return;
-        }
-
-        var patchesNode = FindProperty(playbookState, "Patches") as JsonArray;
-        if (patchesNode is null)
-        {
-            ShowPopup("Error", "Missing playbookState.Patches array.");
-            return;
-        }
-
-        var indented = new JsonSerializerOptions { WriteIndented = true };
-
-        Request.Party = FindStringProperty(obj, "Party") ?? "";
-        Request.ServiceResource = FindStringProperty(obj, "serviceResource") ?? "";
-        Cursor = FindProperty(playbookState, "Cursor")?.GetValue<int>() ?? 0;
-        PatchesJson = patchesNode.ToJsonString(indented);
-
-        var fceNode = FindProperty(obj, "fceContents");
-        FceContentsJson = fceNode?.ToJsonString(indented) ?? "{}";
-
-        _lastDslImport = null;
-        ShowPopup("Imported", "Form populated from playbook JSON. Review the fields and click Create Playbook.");
-    }
-
-    private async Task ImportFromDsl()
-    {
-        var yaml = await Js.InvokeAsync<string>("eval", "(document.getElementById('import-dsl') || {value: ''}).value");
-
-        if (string.IsNullOrWhiteSpace(yaml))
-        {
-            ShowPopup("Error", "Paste the YAML first.");
-            return;
-        }
-
-        DslCompileResult compiled;
-        try
-        {
-            compiled = DslCompiler.Compile(yaml);
-        }
-        catch (DslCompilationException ex)
-        {
-            ShowPopup("DSL compile error", ex.Message);
-            return;
-        }
-        catch (Exception ex)
-        {
-            ShowPopup("DSL compile error", ex.Message);
-            return;
-        }
-
-        var indented = new JsonSerializerOptions { WriteIndented = true };
-
-        Request.Party = compiled.Party;
-        Request.ServiceResource = compiled.ServiceResource;
-        Cursor = compiled.InitialCursor;
-        PatchesJson = compiled.Blueprint.Patches.ToJsonString(indented);
-
-        var fceObj = new JsonObject();
-        foreach (var (name, fce) in compiled.Blueprint.FceContents)
-        {
-            fceObj[name] = new JsonObject
-            {
-                ["mediaType"] = fce.MediaType,
-                ["content"] = fce.Content
-            };
-        }
-        FceContentsJson = fceObj.ToJsonString(indented);
-
-        // Cache the full compile result so Submit can preserve Phase B metadata.
-        _lastDslImport = compiled;
-
-        var totalWhens = compiled.Blueprint.StageBehaviors.Sum(sb => sb.ActionWhens.Count(w => w != null));
-        var totalEffects = compiled.Blueprint.StageBehaviors.Sum(sb => sb.Effects.Count);
-        ShowPopup("DSL Imported", $"Compiled: {compiled.Blueprint.InitialVars.Count} vars, {totalEffects} effects, {totalWhens} action-whens. Click Create Playbook.");
-    }
-
-    private static JsonNode? FindProperty(JsonObject obj, string name)
-    {
-        foreach (var kvp in obj)
-        {
-            if (string.Equals(kvp.Key, name, StringComparison.OrdinalIgnoreCase))
-            {
-                return kvp.Value;
-            }
-        }
-        return null;
-    }
-
-    private static string? FindStringProperty(JsonObject obj, string name)
-    {
-        return FindProperty(obj, name)?.GetValue<string>();
     }
 
     private void ShowPopup(string header, string message)
