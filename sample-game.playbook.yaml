@@ -9,18 +9,21 @@ playbook:
     gold: 0
     has_sword: false
     visited: []
+    damage: 0
+    _seed: "demo-2026"
+    _debug: true
 
   stages:
     start:
-      title: Town square
-      summary: "A short Phase-B demo: vars, effects, conditional actions, lists."
+      title: "Town square — HP {vars.hp}, gold {vars.gold}"
+      summary: "Phase B/C/D demo: vars, effects, conditional actions, random targets, dice, interpolation, debug."
       status: Draft
       extended-status: A quiet morning
       content: start
       additional-info: |
         # A tiny demo
-        Walk around town to pick up items. Items affect the choices you have later.
-        Variables persist between stages — and across restarts of this playbook (per Phase B design).
+        Walk around town to pick up items. Items affect later choices.
+        Variables and visited locations persist between stages — and across restarts of this playbook.
       actions:
         - label: Pick up the sword from the smithy
           target: sword
@@ -28,6 +31,8 @@ playbook:
         - label: Open the locked chest
           target: chest
           when: '!(visited contains "chest")'
+        - label: Roll the dice on the forest path
+          target: '?(forest, lucky-find)'
         - Walk to the forest → forest
 
     sword:
@@ -57,8 +62,20 @@ playbook:
       actions:
         - Back to the square → start
 
+    lucky-find:
+      title: A stranger's gift
+      status: InProgress
+      extended-status: A windfall
+      content: lucky-find
+      effects:
+        - inc gold by 5
+        - add visited += "stranger"
+      actions:
+        - Back to the square → start
+        - Onwards to the forest → forest
+
     forest:
-      title: The forest path
+      title: "The forest path — HP {vars.hp}"
       status: InProgress
       extended-status: A wolf, growling
       content: forest
@@ -74,12 +91,13 @@ playbook:
         - Curl up and accept your fate → dead
 
     combat:
-      title: Combat
+      title: "Combat — HP {vars.hp}"
       status: InProgress
       extended-status: A hard fight
       content: combat
       effects:
-        - dec hp by 3
+        - roll damage = 1d4
+        - dec hp by damage
       actions:
         - label: Stand victorious
           target: victory
@@ -89,13 +107,14 @@ playbook:
           when: hp <= 0
 
     victory:
-      title: Victory
+      title: "Victory — {vars.hp} HP left"
       status: Completed
       extended-status: You won
       content: victory
       additional-info: |
         ## Victory
         You stand over the wolf. The forest is yours.
+        You took {vars.damage} damage in the fight, leaving {vars.hp} HP.
       activity: DialogClosed
       actions:
         - Try again → start
@@ -107,7 +126,8 @@ playbook:
       content: safe
       additional-info: |
         ## Safe at home
-        You bought your way past the wolf. Cowardly but effective.
+        You bought your way past the wolf with the last of your gold.
+        Cowardly but effective. Visited: {vars.visited}.
       activity: DialogClosed
       actions:
         - Try again → start
@@ -120,6 +140,7 @@ playbook:
       additional-info: |
         ## Defeated
         A regrettable choice. Or fate. Or both.
+        Final HP: {vars.hp}. Visited along the way: {vars.visited}.
       activity: DialogClosed
       actions:
         - Try again → start
@@ -131,6 +152,8 @@ playbook:
       Two things look promising: the smithy at the corner, and a chest on a cart at the
       square's edge. Past the square, a path winds into the forest.
 
+      You currently have **{vars.gold} gold** and **{vars.hp} HP**.
+
     sword: |
       # The smithy
       The blacksmith looks up, nods, and goes back to his anvil.
@@ -139,26 +162,36 @@ playbook:
     chest: |
       # The chest
       The lock is brittle and gives on the second try. Inside: a small leather purse,
-      ten gold coins. You pocket them.
+      ten gold coins. You pocket them. You now carry **{vars.gold} gold**.
+
+    lucky-find: |
+      # A stranger's gift
+      A traveller on the forest path tosses you five coins for the trouble of
+      pointing them toward town. Easy money. You now carry **{vars.gold} gold**.
 
     forest: |
       # The forest path
       Twenty paces in, the wolf finds you. Lean and grey-furred, head low, hackles up.
-      It hasn't decided yet whether to commit. Your options:
+      It hasn't decided yet whether to commit. Your options depend on what you brought:
 
       - **Fight** — only viable if you have something to fight *with*.
       - **Bribe** — wolves are smart enough to take payment, if you've got the gold.
       - **Surrender** — you can always lie down and hope.
 
+      You currently have **{vars.hp} HP** and **{vars.gold} gold**.
+
     combat: |
       # Combat
       You meet the wolf head-on. It's faster than you. You're stronger.
-      You both come away bleeding.
+      The damage roll: **{vars.damage}** (out of a possible 4).
+      You both come away bleeding. Remaining HP: **{vars.hp}**.
 
     victory: |
       # Victory
       The wolf lies still. You wipe the blade on the grass. The forest is quiet again,
       and you walk through it unhindered.
+
+      Final HP: **{vars.hp}**.
 
     safe: |
       # Safe at home

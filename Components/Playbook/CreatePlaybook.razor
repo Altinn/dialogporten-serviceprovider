@@ -148,7 +148,11 @@
         var blueprint = compiled.Blueprint with { DialogId = dialogId };
         var stateId = await StateStore.CreateAsync(blueprint, CancellationToken.None);
 
-        var compiler = new PlaybookCompiler(ServiceProviderOptions.Value) { Progress = 0 };
+        var compiler = new PlaybookCompiler(ServiceProviderOptions.Value)
+        {
+            Progress = 0,
+            SessionVars = blueprint.InitialVars
+        };
         var compiledPatches = await compiler.CompilePatches(stateId, blueprint, compiled.InitialCursor);
         if (compiledPatches.Count == 0)
         {

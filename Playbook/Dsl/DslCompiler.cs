@@ -501,6 +501,12 @@ public static class DslCompiler
 
         if (target.StartsWith('$')) return target;
 
+        // Random: ?(a, b, c) or ?(a:1, b:3) — uniform or weighted random pick.
+        if (target.StartsWith("?(") && target.EndsWith(')'))
+        {
+            return CompileRandomTarget(target, stageCursors);
+        }
+
         switch (target)
         {
             case "next": return "$next";
@@ -514,6 +520,37 @@ public static class DslCompiler
         }
 
         throw new DslCompilationException($"unknown action target '{target}' (not a defined stage, magic word, or $-command)");
+    }
+
+    private static string CompileRandomTarget(string target, Dictionary<string, int> stageCursors)
+    {
+        var inner = target[2..^1];
+        var resolved = new List<string>();
+        foreach (var raw in inner.Split(','))
+        {
+            var entry = raw.Trim();
+            if (entry.Length == 0) continue;
+            var parts = entry.Split(':');
+            var name = parts[0].Trim();
+            var weight = 1;
+            if (parts.Length > 1)
+            {
+                if (!int.TryParse(parts[1].Trim(), out weight) || weight < 1)
+                {
+                    throw new DslCompilationException($"random target weight must be a positive integer (got '{parts[1]}' for '{name}')");
+                }
+            }
+            if (!stageCursors.TryGetValue(name, out var cursor))
+            {
+                throw new DslCompilationException($"random target references undefined stage '{name}'");
+            }
+            resolved.Add($"{cursor}:{weight}");
+        }
+        if (resolved.Count == 0)
+        {
+            throw new DslCompilationException($"random target '{target}' has no entries");
+        }
+        return "$random=" + string.Join("|", resolved);
     }
 
     private static JsonPatchOperations_Operation MakeOp(string op, string path, JsonNode? value)

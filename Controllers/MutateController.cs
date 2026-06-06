@@ -50,6 +50,11 @@ public class MutateController(
             "[mutate] stateId={StateId} cursor={Cursor} entry-vars={Vars} blueprint-has-{NumBehaviors}-stage-behaviors",
             stateId, cursor, FormatVars(sessionVars), blueprint.StageBehaviors.Count);
 
+        // Phase C: per-render RNG. If session var _seed is set, derive a deterministic seed
+        // from "<_seed>|<stateId>" via MD5 so two playbooks with the same _seed but different
+        // stateIds diverge, while the same playbook replays identically.
+        var rng = CreateRng(sessionVars, stateId);
+
         if (cursor < blueprint.StageBehaviors.Count)
         {
             var stageBehavior = blueprint.StageBehaviors[cursor];
@@ -62,7 +67,7 @@ public class MutateController(
                 try
                 {
                     var before = sessionVars;
-                    sessionVars = Evaluator.Apply(stmt, sessionVars);
+                    sessionVars = Evaluator.Apply(stmt, sessionVars, rng);
                     logger.LogInformation(
                         "[mutate]   effect {Stmt} applied: {Before} → {After}",
                         FormatStmt(stmt), FormatVars(before), FormatVars(sessionVars));
@@ -87,7 +92,9 @@ public class MutateController(
 
         var compiler = new PlaybookCompiler(options.Value)
         {
-            Progress = 0
+            Progress = 0,
+            Rng = rng,
+            SessionVars = sessionVars
         };
 
         var dialogResponse = await dialogporten.V1ServiceOwnerDialogsQueriesGetDialog(blueprint.DialogId, null!, cancellationToken);
@@ -111,6 +118,13 @@ public class MutateController(
         if (cursor < blueprint.StageBehaviors.Count)
         {
             FilterActionsByWhen(patches, blueprint.StageBehaviors[cursor].ActionWhens, sessionVars);
+        }
+
+        // Phase D: when session var _debug=true, append a markdown debug block to
+        // /content/additionalInfo so authors can watch state evolve live in the dialog.
+        if (sessionVars.TryGetValue("_debug", out var dbg) && dbg is bool dflag && dflag)
+        {
+            AppendDebugBlock(patches, stateId, cursor, sessionVars);
         }
 
         var patchResult = await dialogporten.V1ServiceOwnerDialogsPatchDialog(blueprint.DialogId, patches, null, cancellationToken);
@@ -195,6 +209,70 @@ public class MutateController(
             }
             op.Value = filtered;
         }
+    }
+
+    private static void AppendDebugBlock(
+        List<JsonPatchOperations_Operation> patches,
+        string stateId,
+        int cursor,
+        IReadOnlyDictionary<string, object?> sessionVars)
+    {
+        var op = patches.FirstOrDefault(p => p.Path == "/content/additionalInfo");
+        if (op is null) return;
+
+        var aiObject = NormaliseToJsonObject(op.Value);
+        if (aiObject is null) return;
+
+        var locArray = aiObject["value"] as JsonArray;
+        if (locArray is null || locArray.Count == 0) return;
+
+        var firstLoc = locArray[0] as JsonObject;
+        if (firstLoc is null || firstLoc["value"] is not JsonValue) return;
+
+        var existing = firstLoc["value"]!.GetValue<string>();
+
+        var debugLines = new List<string>
+        {
+            existing,
+            "",
+            "---",
+            "",
+            "**[debug]**",
+            "",
+            $"- cursor: {cursor}",
+            $"- stateId: `{stateId}`",
+            "- vars:"
+        };
+        foreach (var (k, v) in sessionVars)
+        {
+            debugLines.Add($"  - {k}: {Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl.Evaluator.FormatVarForDisplay(v)}");
+        }
+        firstLoc["value"] = string.Join('\n', debugLines);
+
+        // The Value field of the patch may be a JsonElement (from blueprint deserialisation)
+        // or a JsonNode (when newly built). Either way we now write back the JsonObject so the
+        // PATCH request carries the augmented additionalInfo.
+        op.Value = aiObject;
+    }
+
+    private static JsonObject? NormaliseToJsonObject(object? value) => value switch
+    {
+        JsonObject jo => jo,
+        JsonNode node when node.GetValueKind() == JsonValueKind.Object => node.AsObject(),
+        JsonElement el when el.ValueKind == JsonValueKind.Object => JsonNode.Parse(el.GetRawText())?.AsObject(),
+        _ => null
+    };
+
+    private static Random CreateRng(IReadOnlyDictionary<string, object?> sessionVars, string stateId)
+    {
+        if (sessionVars.TryGetValue("_seed", out var raw) && raw is string seedStr && !string.IsNullOrWhiteSpace(seedStr))
+        {
+            var combined = $"{seedStr}|{stateId}";
+            var hash = System.Security.Cryptography.MD5.HashData(System.Text.Encoding.UTF8.GetBytes(combined));
+            var seedInt = BitConverter.ToInt32(hash, 0);
+            return new Random(seedInt);
+        }
+        return Random.Shared;
     }
 
     private static JsonArray? NormaliseToJsonArray(object? value)

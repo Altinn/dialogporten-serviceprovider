@@ -7,11 +7,13 @@ public enum CommandType
     Next,
     Previous,
     Goto,
-    GotoIfProgress
+    GotoIfProgress,
+    Random
 }
 
 public record Command(object Value, CommandType Type);
 public record GotoIfProgressValue(int Goto, int Progress, int Else);
+public record RandomValue(IReadOnlyList<(int Cursor, int Weight)> Choices);
 
 public static class Lexer
 {
@@ -42,6 +44,7 @@ public static class Lexer
             "$previous" => new Command(0, CommandType.Previous),
             "$goto" => new Command(int.Parse(temp[1]), CommandType.Goto),
             "$gotoIfProgress" => new Command(ParseGotoIfProgressCommand(temp[1]), CommandType.GotoIfProgress),
+            "$random" => new Command(ParseRandomCommand(temp[1]), CommandType.Random),
             _ => null
         };
 
@@ -55,6 +58,17 @@ public static class Lexer
         var progress = int.Parse(temp[1]);
         var @else = int.Parse(temp[2]);
         return new GotoIfProgressValue(@goto, progress, @else);
+    }
+
+    private static RandomValue ParseRandomCommand(string value)
+    {
+        var choices = new List<(int, int)>();
+        foreach (var part in value.Split('|'))
+        {
+            var sub = part.Split(':');
+            choices.Add((int.Parse(sub[0]), sub.Length > 1 ? int.Parse(sub[1]) : 1));
+        }
+        return new RandomValue(choices);
     }
 
 }

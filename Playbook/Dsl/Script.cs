@@ -36,8 +36,13 @@ public sealed record IncStmt(string Var, Expr? By) : Stmt;
 public sealed record DecStmt(string Var, Expr? By) : Stmt;
 public sealed record ListAddStmt(string Var, Expr Value) : Stmt;
 public sealed record ListRemoveStmt(string Var, Expr Value) : Stmt;
+public sealed record RollStmt(string Var, RollSpec Spec) : Stmt;
 
-internal enum TokKind { Int, Bool, String, Ident, Op, Lparen, Rparen, Eof }
+public abstract record RollSpec;
+public sealed record DiceSpec(int Count, int Sides) : RollSpec;
+public sealed record RangeSpec(long Lo, long Hi) : RollSpec;
+
+internal enum TokKind { Int, Bool, String, Ident, Op, Lparen, Rparen, Dice, Range, Eof }
 internal sealed record Tok(TokKind Kind, string Text, int Pos);
 
 internal static class Lexer
@@ -89,6 +94,23 @@ internal static class Lexer
             {
                 var start = i;
                 while (i < source.Length && char.IsDigit(source[i])) i++;
+                // Dice: 1d6, 2d20 — digit-run 'd' digit-run, no whitespace
+                if (i < source.Length && (source[i] == 'd' || source[i] == 'D')
+                    && i + 1 < source.Length && char.IsDigit(source[i + 1]))
+                {
+                    i++; // 'd'
+                    while (i < source.Length && char.IsDigit(source[i])) i++;
+                    toks.Add(new Tok(TokKind.Dice, source[start..i], start));
+                    continue;
+                }
+                // Range: 1..6 — digit-run '..' digit-run
+                if (i + 2 < source.Length && source[i] == '.' && source[i + 1] == '.' && char.IsDigit(source[i + 2]))
+                {
+                    i += 2; // '..'
+                    while (i < source.Length && char.IsDigit(source[i])) i++;
+                    toks.Add(new Tok(TokKind.Range, source[start..i], start));
+                    continue;
+                }
                 toks.Add(new Tok(TokKind.Int, source[start..i], start));
                 continue;
             }
@@ -175,6 +197,7 @@ internal sealed class Parser(List<Tok> tokens)
             "dec" => ParseIncDec(positive: false),
             "add" => ParseListAdd(),
             "remove" => ParseListRemove(),
+            "roll" => ParseRoll(),
             _ => throw new ScriptException($"unknown statement verb '{t.Text}'")
         };
         if (Peek().Kind != TokKind.Eof) throw new ScriptException($"unexpected '{Peek().Text}' at position {Peek().Pos}");
@@ -219,6 +242,34 @@ internal sealed class Parser(List<Tok> tokens)
         Expect(TokKind.Op, "-=");
         var expr = ParseOr();
         return new ListRemoveStmt(ident, expr);
+    }
+
+    private Stmt ParseRoll()
+    {
+        Take(); // 'roll'
+        var ident = Expect(TokKind.Ident).Text;
+        Expect(TokKind.Op, "=");
+        var t = Peek();
+        if (t.Kind == TokKind.Dice)
+        {
+            Take();
+            var parts = t.Text.Split(new[] { 'd', 'D' }, 2);
+            var count = int.Parse(parts[0]);
+            var sides = int.Parse(parts[1]);
+            if (count < 1) throw new ScriptException($"dice count must be >= 1 (got {count})");
+            if (sides < 2) throw new ScriptException($"dice sides must be >= 2 (got {sides})");
+            return new RollStmt(ident, new DiceSpec(count, sides));
+        }
+        if (t.Kind == TokKind.Range)
+        {
+            Take();
+            var parts = t.Text.Split("..", 2, StringSplitOptions.None);
+            var lo = long.Parse(parts[0]);
+            var hi = long.Parse(parts[1]);
+            if (lo > hi) throw new ScriptException($"range lo ({lo}) must be <= hi ({hi})");
+            return new RollStmt(ident, new RangeSpec(lo, hi));
+        }
+        throw new ScriptException($"expected dice (e.g. 1d6) or range (e.g. 1..6) after '=' in roll, got '{t.Text}'");
     }
 
     private Expr ParseOr()
@@ -410,7 +461,7 @@ public static class Evaluator
         return false;
     }
 
-    public static IReadOnlyDictionary<string, object?> Apply(Stmt stmt, IReadOnlyDictionary<string, object?> vars)
+    public static IReadOnlyDictionary<string, object?> Apply(Stmt stmt, IReadOnlyDictionary<string, object?> vars, Random? rng = null)
     {
         var next = new Dictionary<string, object?>(vars);
         switch (stmt)
@@ -444,10 +495,29 @@ public static class Evaluator
                     next[rem.Var] = newList;
                     break;
                 }
+            case RollStmt roll:
+                {
+                    EnsureDeclared(next, roll.Var);
+                    if (rng is null) throw new ScriptException("roll requires an RNG (Phase C). None was supplied.");
+                    next[roll.Var] = roll.Spec switch
+                    {
+                        DiceSpec d => RollDice(d.Count, d.Sides, rng),
+                        RangeSpec r => rng.NextInt64(r.Lo, r.Hi + 1),
+                        _ => throw new ScriptException($"unknown roll spec {roll.Spec}")
+                    };
+                    break;
+                }
             default:
                 throw new ScriptException($"cannot apply {stmt}");
         }
         return next;
+    }
+
+    private static long RollDice(int count, int sides, Random rng)
+    {
+        long total = 0;
+        for (var i = 0; i < count; i++) total += rng.Next(1, sides + 1);
+        return total;
     }
 
     private static void EnsureDeclared(Dictionary<string, object?> vars, string name)
@@ -496,5 +566,34 @@ public static class Evaluator
         string => "string",
         System.Collections.IList => "list",
         _ => v.GetType().Name
+    };
+
+    private static readonly System.Text.RegularExpressions.Regex VarPlaceholder =
+        new(@"\{vars\.([A-Za-z_][A-Za-z0-9_]*)\}", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    /// <summary>
+    /// Replace <c>{vars.X}</c> placeholders in <paramref name="source"/> with the stringified value
+    /// of session variable <c>X</c>. Unknown var names are left as-is (acts as a "passthrough" so
+    /// callers can spot mistakes by seeing the literal token in their dialog).
+    /// </summary>
+    public static string Interpolate(string source, IReadOnlyDictionary<string, object?> vars)
+    {
+        if (!source.Contains("{vars.")) return source;
+        return VarPlaceholder.Replace(source, m =>
+        {
+            var name = m.Groups[1].Value;
+            return vars.TryGetValue(name, out var v) ? FormatVarForDisplay(v) : m.Value;
+        });
+    }
+
+    public static string FormatVarForDisplay(object? v) => v switch
+    {
+        null => "",
+        bool b => b ? "true" : "false",
+        long l => l.ToString(System.Globalization.CultureInfo.InvariantCulture),
+        int i => i.ToString(System.Globalization.CultureInfo.InvariantCulture),
+        string s => s,
+        System.Collections.IList list => string.Join(", ", list.Cast<object?>().Select(FormatVarForDisplay)),
+        _ => v.ToString() ?? ""
     };
 }

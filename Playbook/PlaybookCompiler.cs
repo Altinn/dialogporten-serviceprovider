@@ -13,6 +13,19 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
 
     public int Progress { get; set; } = 0;
 
+    /// <summary>
+    /// RNG used for resolving <c>$random=...</c> targets. Default is process-shared (true randomness).
+    /// Callers may inject a seeded <see cref="Random"/> for deterministic playback (Phase C <c>_seed</c>).
+    /// </summary>
+    public Random Rng { get; set; } = Random.Shared;
+
+    /// <summary>
+    /// Phase D: session variables consulted for <c>{vars.X}</c> interpolation in any string-typed
+    /// patch value. Empty dictionary = no interpolation performed.
+    /// </summary>
+    public IReadOnlyDictionary<string, object?> SessionVars { get; set; } =
+        new Dictionary<string, object?>();
+
     public Task<List<JsonPatchOperations_Operation>> CompilePatches(string stateId, PlaybookBlueprint blueprint, int cursor)
     {
         _visitedNodes = 0;
@@ -90,8 +103,22 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
             CommandType.Previous => currentCursor - 1,
             CommandType.Goto => (int)command.Value,
             CommandType.GotoIfProgress => ResolveGotoIfProgress((GotoIfProgressValue)command.Value),
+            CommandType.Random => PickWeighted((RandomValue)command.Value),
             _ => throw new ArgumentOutOfRangeException()
         };
+    }
+
+    private int PickWeighted(RandomValue rv)
+    {
+        var total = rv.Choices.Sum(c => c.Weight);
+        var roll = Rng.Next(0, total);
+        var acc = 0;
+        foreach (var (cursor, weight) in rv.Choices)
+        {
+            acc += weight;
+            if (roll < acc) return cursor;
+        }
+        return rv.Choices[^1].Cursor;
     }
 
     private int ResolveGotoIfProgress(GotoIfProgressValue value) =>
@@ -101,10 +128,12 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
         $"{_baseUri}/mutate/{stateId}/{cursor}";
 
     private static bool ContainsPlaceholder(string raw) =>
-        raw.Contains("{baseUri}") || raw.Contains("{stateId}");
+        raw.Contains("{baseUri}") || raw.Contains("{stateId}") || raw.Contains("{vars.");
 
     private string SubstitutePlaceholders(string raw, string stateId) =>
-        raw.Replace("{baseUri}", _baseUri).Replace("{stateId}", stateId);
+        Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl.Evaluator.Interpolate(
+            raw.Replace("{baseUri}", _baseUri).Replace("{stateId}", stateId),
+            SessionVars);
 
     private bool ExceedsLimits(int depth)
     {

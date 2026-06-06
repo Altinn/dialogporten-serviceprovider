@@ -161,7 +161,11 @@ public class PlaybookController(
         var blueprint = new PlaybookBlueprint(dialogId, patches, fceContents);
         var stateId = await stateStore.CreateAsync(blueprint, cancellationToken);
 
-        var compiler = new PlaybookCompiler(options.Value) { Progress = 0 };
+        var compiler = new PlaybookCompiler(options.Value)
+        {
+            Progress = 0,
+            SessionVars = blueprint.InitialVars
+        };
         var compiledPatches = await compiler.CompilePatches(stateId, blueprint, initialCursor);
         if (compiledPatches.Count == 0)
         {
