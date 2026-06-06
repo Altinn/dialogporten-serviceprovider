@@ -1,0 +1,218 @@
+@page "/playbook/create"
+@using System.Text.Json
+@using System.Text.Json.Nodes
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input
+@using Digdir.BDB.Dialogporten.ServiceProvider.Playbook
+@using Digdir.BDB.Dialogporten.ServiceProvider.Services
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Microsoft.Extensions.Options
+@inject ProtectedLocalStorage ProtectedLocalStore
+@inject IServiceownerApi ServiceOwnerApi
+@inject IOptions<ServiceProviderSettings> ServiceProviderOptions
+@rendermode InteractiveServer
+<h3>CreatePlaybook</h3>
+
+<p>
+    Creates a Dialogporten dialog and produces the bootstrap mutate URL for stage 0.
+    Call that URL with a valid dialog token (e.g. from Arbeidsflate) to apply the first
+    patch and install the navigation actions for the rest of the script.
+</p>
+
+<EditForm Model="Request" OnValidSubmit="Submit" FormName="CreatePlaybook">
+    <div>
+        <button type="button" @onclick="Prefill">Prefill from sample</button>
+    </div>
+
+    <div>
+        <label for="serviceResource">Service Resource</label>
+        <InputSelect id="serviceResource" @bind-Value="Request.ServiceResource">
+            <option value="" disabled selected>Select your option</option>
+            @foreach (var resource in ResourceRegistryClient.Resources)
+            {
+                <option value=@("urn:altinn:resource:" + resource.Identifier)>@resource.Identifier</option>
+            }
+        </InputSelect>
+    </div>
+
+    <div>
+        <label for="party">Party</label>
+        <InputParty id="party" @bind-Value="Request.Party"/>
+    </div>
+
+    <div>
+        <label for="cursor">Cursor</label>
+        <InputNumber id="cursor" @bind-Value="Cursor"/>
+    </div>
+
+    <div>
+        <label for="patches">Patches (JSON: array of arrays of patch operations)</label><br/>
+        <InputTextArea id="patches" rows="25" cols="100" @bind-Value="PatchesJson"/>
+    </div>
+
+    <button type="submit">Create Playbook</button>
+</EditForm>
+
+@if (DialogId != Guid.Empty)
+{
+    <fieldset>
+        <legend>Playbook ready</legend>
+        <p>Dialog id: <code>@DialogId</code> (stage @Cursor applied)</p>
+    </fieldset>
+}
+
+@if (_showPopUp)
+{
+    <PopUpMessage Header="@_header" Message="@_message" OnClick="() => _showPopUp = false"/>
+}
+
+@code {
+
+    private sealed class CreatePlaybookForm
+    {
+        public string? Party { get; set; }
+        public string? ServiceResource { get; set; }
+    }
+
+    private CreatePlaybookForm Request { get; set; } = new();
+    private int Cursor { get; set; }
+    private string PatchesJson { get; set; } = "[]";
+
+    private Guid DialogId { get; set; }
+
+    private bool _showPopUp;
+    private string? _header;
+    private string? _message;
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(Request.Party) || string.IsNullOrWhiteSpace(Request.ServiceResource))
+        {
+            ShowPopup("Error", "Party and Service Resource are required.");
+            return;
+        }
+
+        JsonArray patches;
+        try
+        {
+            if (JsonNode.Parse(PatchesJson) is not JsonArray array)
+            {
+                ShowPopup("Error", "Patches must be a JSON array.");
+                return;
+            }
+            patches = array;
+        }
+        catch (JsonException ex)
+        {
+            ShowPopup("Error", $"Invalid Patches JSON: {ex.Message}");
+            return;
+        }
+
+        if (patches.Count == 0)
+        {
+            ShowPopup("Error", "Need at least 1 Patch.");
+            return;
+        }
+        if (Cursor < 0 || Cursor >= patches.Count)
+        {
+            ShowPopup("Error", "Cursor is out of range.");
+            return;
+        }
+
+        var dto = new V1ServiceOwnerDialogsCommandsCreate_Dialog
+        {
+            ServiceResource = Request.ServiceResource,
+            Party = Request.Party,
+            Content = new V1ServiceOwnerDialogsCommandsCreate_Content
+            {
+                Title = new V1CommonContent_ContentValue
+                {
+                    Value =
+                    [
+                        new V1CommonLocalizations_Localization
+                        {
+                            Value = "Første tittel",
+                            LanguageCode = "nb"
+                        }
+                    ],
+                    MediaType = "text/plain"
+                },
+                Summary = new V1CommonContent_ContentValue
+                {
+                    Value =
+                    [
+                        new V1CommonLocalizations_Localization
+                        {
+                            Value = "Første Summary",
+                            LanguageCode = "nb"
+                        }
+                    ],
+                    MediaType = "text/plain"
+                }
+            },
+            SearchTags =
+            [
+                new V1ServiceOwnerDialogsCommandsCreate_Tag
+                {
+                    Value = "Playbook"
+                }
+            ]
+        };
+
+        var dialogResult = await ServiceOwnerApi.V1ServiceOwnerDialogsCommandsCreateDialog(dto, CancellationToken.None);
+        if (!dialogResult.IsSuccessful)
+        {
+            ShowPopup(dialogResult.StatusCode.ToString(), dialogResult.Error.Content ?? "Failed to create dialog.");
+            return;
+        }
+
+        var guidString = (dialogResult.Content ?? string.Empty).Trim('"');
+        if (!Guid.TryParse(guidString, out var dialogId))
+        {
+            ShowPopup("Error", "Parse Guid failed.");
+            return;
+        }
+
+        var state = new PlaybookState(dialogId, Cursor, patches);
+        var compiler = new PlaybookCompiler(ServiceProviderOptions.Value) { Progress = 0 };
+        var compiledPatches = await compiler.CompilePatches(state);
+        if (compiledPatches.Count == 0)
+        {
+            ShowPopup("Error", "Cursor produced no patches.");
+            return;
+        }
+
+        var patchResult = await ServiceOwnerApi.V1ServiceOwnerDialogsPatchDialog(dialogId, compiledPatches, null, CancellationToken.None);
+        if (!patchResult.IsSuccessStatusCode)
+        {
+            ShowPopup(patchResult.StatusCode.ToString(), patchResult.Error.Content ?? "Failed to apply bootstrap patches.");
+            return;
+        }
+
+        DialogId = dialogId;
+
+        var dialogStorageResult = await ProtectedLocalStore.GetAsync<List<Guid>>("dialogs");
+        var dialogs = dialogStorageResult is { Success: true, Value: not null }
+            ? dialogStorageResult.Value
+            : [];
+        dialogs.Add(dialogId);
+        _ = ProtectedLocalStore.SetAsync("dialogs", dialogs);
+
+        ShowPopup("Playbook ready", $"Dialog {dialogId} created and stage {Cursor} applied. Open it in Arbeidsflate and click through.");
+    }
+
+    private void Prefill()
+    {
+        Request.Party = "urn:altinn:person:identifier-no:08895699684";
+        Request.ServiceResource = "urn:altinn:resource:super-simple-service";
+        Cursor = 0;
+        PatchesJson = CreatePlaybookSamples.Patches;
+    }
+
+    private void ShowPopup(string header, string message)
+    {
+        _header = header;
+        _message = message;
+        _showPopUp = true;
+    }
+}

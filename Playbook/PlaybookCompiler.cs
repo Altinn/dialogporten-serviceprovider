@@ -8,6 +8,7 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
 {
     private const string Endpoint = "mutate/";
     private readonly string _path = settings.MutateBaseUri + Endpoint;
+    private readonly string _baseUri = settings.MutateBaseUri.TrimEnd('/');
     private const int MaxDepth = 32;
     private const int MaxNodes = 1000;
     private int _visitedNodes;
@@ -43,9 +44,21 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
         {
             case JsonElement { ValueKind: JsonValueKind.String } stringValue:
                 {
-                    if (Lexer.TryParseCommand(stringValue.GetString(), out var command))
+                    var raw = stringValue.GetString();
+                    if (Lexer.TryParseCommand(raw, out var command))
                     {
                         return await CreateUpdatedPatch(patch, command, playbookState);
+                    }
+                    if (raw != null && raw.Contains("{baseUri}"))
+                    {
+                        return new JsonPatchOperations_Operation
+                        {
+                            OperationType = patch.OperationType,
+                            Path = patch.Path,
+                            Op = patch.Op,
+                            From = patch.From,
+                            Value = JsonValue.Create(raw.Replace("{baseUri}", _baseUri))
+                        };
                     }
                     break;
                 }
@@ -72,27 +85,26 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
 
     private Task<string> UpdateAndEncode(PlaybookState playbookState, Command command)
     {
+        var nextState = new PlaybookState(playbookState.DialogId, playbookState.Cursor, playbookState.Patches);
         switch (command.Type)
         {
             case CommandType.Next:
-                playbookState.Cursor += 1;
+                nextState.Cursor += 1;
                 break;
             case CommandType.Previous:
-                playbookState.Cursor -= 1;
+                nextState.Cursor -= 1;
                 break;
             case CommandType.Goto:
-                playbookState.Cursor = (int)command.Value;
+                nextState.Cursor = (int)command.Value;
                 break;
             case CommandType.GotoIfProgress:
-                // POC complex Logic
                 var aa = (GotoIfProgressValue)command.Value;
-                playbookState.Cursor = Progress == aa.Progress ? aa.Goto : aa.Else;
-
+                nextState.Cursor = Progress == aa.Progress ? aa.Goto : aa.Else;
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
-        return playbookState.EncodeToBase64();
+        return nextState.EncodeToBase64();
     }
     private bool ExceedsLimits(int depth)
     {
@@ -115,10 +127,15 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
         switch (element.ValueKind)
         {
             case JsonValueKind.String:
-                if (Lexer.TryParseCommand(element.GetString(), out var command))
+                var stringValue = element.GetString();
+                if (Lexer.TryParseCommand(stringValue, out var command))
                 {
                     var compiledPlaybook = await UpdateAndEncode(playbookState, command);
                     return JsonSerializer.SerializeToElement(_path + compiledPlaybook);
+                }
+                if (stringValue != null && stringValue.Contains("{baseUri}"))
+                {
+                    return JsonSerializer.SerializeToElement(stringValue.Replace("{baseUri}", _baseUri));
                 }
                 return null;
 

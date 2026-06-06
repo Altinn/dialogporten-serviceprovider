@@ -1,0 +1,99 @@
+@page "/playbook/encode"
+@using System.Text.Json
+@using Digdir.BDB.Dialogporten.ServiceProvider.Extensions
+@using Microsoft.Extensions.Options
+@inject IOptions<ServiceProviderSettings> ServiceProviderOptions
+@inject IJSRuntime Js
+@rendermode InteractiveServer
+<h3>EncodePlaybook</h3>
+
+<p>
+    Encodes arbitrary JSON to the compressed, base64url-encoded playbook payload used in
+    <code>/mutate/{base64PlaybookState}</code> URLs.
+</p>
+
+<div>
+    <label for="encode-input">JSON</label><br/>
+    <InputTextArea id="encode-input" rows="20" cols="100" @bind-Value="JsonInput"/>
+</div>
+
+<div>
+    <button type="button" @onclick="Encode">Encode</button>
+    <button type="button" @onclick="PrefillState">Prefill: PlaybookState shape</button>
+</div>
+
+@if (!string.IsNullOrEmpty(Result))
+{
+    <div>
+        <label for="encode-output">Base64 result</label><br/>
+        <InputTextArea id="encode-output" rows="6" cols="100" @bind-Value="Result" readonly="readonly"/>
+        <div>
+            <button type="button" @onclick="CopyResult">Copy</button>
+        </div>
+    </div>
+
+    <div>
+        <label for="encode-url">Bootstrap URL</label><br/>
+        <InputText id="encode-url" @bind-Value="MutateUrl" readonly="readonly"/>
+        <button type="button" @onclick="CopyUrl">Copy URL</button>
+    </div>
+}
+
+@if (_showPopUp)
+{
+    <PopUpMessage Header="@_header" Message="@_message" OnClick="() => _showPopUp = false"/>
+}
+
+@code {
+    private string JsonInput { get; set; } = "";
+    private string Result { get; set; } = "";
+    private string MutateUrl { get; set; } = "";
+
+    private bool _showPopUp;
+    private string? _header;
+    private string? _message;
+
+    private async Task Encode()
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(JsonInput);
+            Result = await doc.RootElement.Encode();
+            MutateUrl = ServiceProviderOptions.Value.MutateBaseUri + "mutate/" + Result;
+        }
+        catch (JsonException ex)
+        {
+            Result = "";
+            MutateUrl = "";
+            ShowPopup("Error", $"Invalid JSON: {ex.Message}");
+        }
+    }
+
+    private async Task CopyResult()
+    {
+        if (!string.IsNullOrEmpty(Result))
+        {
+            await Js.InvokeVoidAsync("navigator.clipboard.writeText", Result);
+        }
+    }
+
+    private async Task CopyUrl()
+    {
+        if (!string.IsNullOrEmpty(MutateUrl))
+        {
+            await Js.InvokeVoidAsync("navigator.clipboard.writeText", MutateUrl);
+        }
+    }
+
+    private void PrefillState()
+    {
+        JsonInput = EncodePlaybookSamples.PlaybookState;
+    }
+
+    private void ShowPopup(string header, string message)
+    {
+        _header = header;
+        _message = message;
+        _showPopUp = true;
+    }
+}

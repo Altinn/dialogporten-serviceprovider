@@ -1,7 +1,7 @@
 {
   "DialogId": "019bea9d-c7bd-7212-975f-6a4d33c42585",
   "Cursor": 0,
-  "Patches": [
+  "Patches":  [
     [
       {
         "op": "replace",
@@ -13,9 +13,9 @@
         "path": "/guiActions",
         "value": [
           {
-            "action": "submit",
+            "action": "write",
+            "httpMethod": "POST",
             "url": "$next",
-            "isDeleteDialogAction": false,
             "priority": "primary",
             "title": [
               {
@@ -38,9 +38,9 @@
         "path": "/guiActions",
         "value": [
           {
-            "action": "submit",
+            "action": "write",
+            "httpMethod": "POST",
             "url": "$next",
-            "isDeleteDialogAction": false,
             "priority": "primary",
             "title": [
               {
@@ -50,9 +50,9 @@
             ]
           },
           {
-            "action": "submit",
+            "action": "write",
+            "httpMethod": "POST",
             "url": "$goto=0",
-            "isDeleteDialogAction": false,
             "priority": "secondary",
             "title": [
               {
@@ -75,9 +75,9 @@
         "path": "/guiActions",
         "value": [
           {
-            "action": "submit",
+            "action": "write",
+            "httpMethod": "POST",
             "url": "$next",
-            "isDeleteDialogAction": false,
             "priority": "primary",
             "title": [
               {
@@ -87,9 +87,9 @@
             ]
           },
           {
-            "action": "submit",
+            "action": "write",
+            "httpMethod": "POST",
             "url": "$previous",
-            "isDeleteDialogAction": false,
             "priority": "secondary",
             "title": [
               {
@@ -113,9 +113,9 @@
         "value": [
           {
             "id": null,
-            "action": "submit",
+            "action": "write",
+            "httpMethod": "POST",
             "url": "$goto=0",
-            "isDeleteDialogAction": false,
             "priority": "primary",
             "title": [
               {
@@ -126,9 +126,9 @@
           },
           {
             "id": null,
-            "action": "submit",
+            "action": "write",
+            "httpMethod": "POST",
             "url": "$previous",
-            "isDeleteDialogAction": false,
             "priority": "secondary",
             "title": [
               {

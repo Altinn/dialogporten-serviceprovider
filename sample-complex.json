@@ -1,0 +1,55 @@
+{
+  "Party": "urn:altinn:person:identifier-no:08895699684",
+  "serviceResource": "urn:altinn:resource:super-simple-service",
+  "playbookState": {
+    "Cursor": 0,
+    "Patches": [
+      [
+        {"op": "replace", "path": "/content/title/value/0/value", "value": "Draft"},
+        {"op": "replace", "path": "/status", "value": "Draft"},
+        {"op": "add", "path": "/content/extendedStatus", "value": {"mediaType": "text/plain", "value": [{"languageCode": "en", "value": "New"}]}},
+        {"op": "add", "path": "/content/additionalInfo", "value": {"mediaType": "text/markdown", "value": [{"languageCode": "en", "value": "Start the application."}]}},
+        {"op": "add", "path": "/content/mainContentReference", "value": {"mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown", "value": [{"languageCode": "en", "value": "{baseUri}/fce?customResponse=RHJhZnQgdmlldw=="}]}},
+        {"op": "add", "path": "/guiActions", "value": [
+          {"action": "write", "httpMethod": "POST", "url": "$next", "priority": "primary", "title": [{"languageCode": "en", "value": "Submit"}]}
+        ]}
+      ],
+      [
+        {"op": "replace", "path": "/content/title/value/0/value", "value": "Submitted"},
+        {"op": "replace", "path": "/status", "value": "InProgress"},
+        {"op": "add", "path": "/transmissions/-", "value": {
+          "type": "Submission",
+          "sender": {"actorType": "ServiceOwner"},
+          "content": {
+            "title": {"mediaType": "text/plain", "value": [{"languageCode": "en", "value": "Receipt"}]},
+            "summary": {"mediaType": "text/plain", "value": [{"languageCode": "en", "value": "Got it."}]},
+            "contentReference": {"mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown", "value": [{"languageCode": "en", "value": "{baseUri}/fce?customResponse=U3VibWl0dGVk"}]}
+          }
+        }},
+        {"op": "add", "path": "/activities/-", "value": {"type": "FormSubmitted", "performedBy": {"actorType": "ServiceOwner"}}},
+        {"op": "replace", "path": "/guiActions", "value": [
+          {"action": "write", "httpMethod": "POST", "url": "$next", "priority": "primary", "title": [{"languageCode": "en", "value": "Next"}]},
+          {"action": "write", "httpMethod": "POST", "url": "$previous", "priority": "secondary", "title": [{"languageCode": "en", "value": "Back"}]}
+        ]}
+      ],
+      [
+        {"op": "replace", "path": "/content/title/value/0/value", "value": "Action"},
+        {"op": "replace", "path": "/status", "value": "RequiresAttention"},
+        {"op": "add", "path": "/content/extendedStatus", "value": {"mediaType": "text/plain", "value": [{"languageCode": "en", "value": "Need docs"}]}},
+        {"op": "add", "path": "/activities/-", "value": {"type": "Information", "performedBy": {"actorType": "ServiceOwner"}, "description": [{"languageCode": "en", "value": "Case worker requested documentation."}]}},
+        {"op": "replace", "path": "/guiActions", "value": [
+          {"action": "write", "httpMethod": "POST", "url": "$next", "priority": "primary", "title": [{"languageCode": "en", "value": "Send"}]},
+          {"action": "write", "httpMethod": "POST", "url": "$previous", "priority": "secondary", "title": [{"languageCode": "en", "value": "Back"}]}
+        ]}
+      ],
+      [
+        {"op": "replace", "path": "/content/title/value/0/value", "value": "Done"},
+        {"op": "replace", "path": "/status", "value": "Completed"},
+        {"op": "add", "path": "/activities/-", "value": {"type": "DialogClosed", "performedBy": {"actorType": "ServiceOwner"}}},
+        {"op": "replace", "path": "/guiActions", "value": [
+          {"action": "write", "httpMethod": "POST", "url": "$goto=0", "priority": "primary", "title": [{"languageCode": "en", "value": "Restart"}]}
+        ]}
+      ]
+    ]
+  }
+}

@@ -17,7 +17,7 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 public class MutateController(IServiceownerApi dialogporten, IDialogTokenValidator dialogTokenValidator, IOptions<ServiceProviderSettings> options) : ControllerBase
 {
 
-    [HttpGet]
+    [HttpPost]
     [Route("{base64PlaybookState}")]
     public async Task<IActionResult> MutatePlaybook(
         [FromRoute] string base64PlaybookState)

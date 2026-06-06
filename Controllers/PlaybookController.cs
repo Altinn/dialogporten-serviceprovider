@@ -6,13 +6,14 @@ using Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 
 [ApiController]
 [Route("playbook")]
 [EnableCors("AllowedOriginsPolicy")]
-public class PlaybookController(IServiceownerApi dialogporten) : ControllerBase
+public class PlaybookController(IServiceownerApi dialogporten, IOptions<ServiceProviderSettings> options) : ControllerBase
 {
 
     [Route("encode")]
@@ -93,9 +94,20 @@ public class PlaybookController(IServiceownerApi dialogporten) : ControllerBase
 
         playbookState.DialogId = guid;
 
+        var compiler = new PlaybookCompiler(options.Value) { Progress = 0 };
+        var compiledPatches = await compiler.CompilePatches(playbookState);
+        if (compiledPatches.Count == 0)
+        {
+            return BadRequest("Cursor produced no patches.");
+        }
 
-        return new OkResult();
+        var patchResult = await dialogporten.V1ServiceOwnerDialogsPatchDialog(guid, compiledPatches, null, CancellationToken.None);
+        if (!patchResult.IsSuccessful)
+        {
+            return BadRequest(patchResult.Error.Content);
+        }
 
+        return Ok(guid);
     }
 }
 
