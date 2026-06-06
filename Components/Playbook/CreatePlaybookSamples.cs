@@ -2,6 +2,8 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider.Components.Playbook;
 
 internal static class CreatePlaybookSamples
 {
+    public const string FceContents = "{}";
+
     public const string Patches = """
         [
           [

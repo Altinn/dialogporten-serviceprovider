@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-using Altinn.ApiClients.Dialogporten;
 using Altinn.ApiClients.Dialogporten.Features.V1;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
 using Microsoft.AspNetCore.Authorization;
@@ -7,94 +5,73 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
-
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 
 [Authorize(AuthenticationSchemes = "DialogToken")]
 [ApiController]
 [Route("mutate")]
 [EnableCors("AllowedOriginsPolicy")]
-public class MutateController(IServiceownerApi dialogporten, IDialogTokenValidator dialogTokenValidator, IOptions<ServiceProviderSettings> options) : ControllerBase
+public class MutateController(
+    IServiceownerApi dialogporten,
+    IPlaybookStateStore stateStore,
+    IOptions<ServiceProviderSettings> options,
+    ILogger<MutateController> logger) : ControllerBase
 {
-
     [HttpPost]
-    [Route("{base64PlaybookState}")]
+    [Route("{stateId}/{cursor:int}")]
     public async Task<IActionResult> MutatePlaybook(
-        [FromRoute] string base64PlaybookState)
+        [FromRoute] string stateId,
+        [FromRoute] int cursor,
+        CancellationToken cancellationToken)
     {
+        var blueprint = await stateStore.GetAsync(stateId, cancellationToken);
+        if (blueprint is null)
+        {
+            return NotFound();
+        }
+
+        var tokenDialogIdRaw = User.FindFirst("i")?.Value;
+        if (!Guid.TryParse(tokenDialogIdRaw, out var tokenDialogId) || tokenDialogId != blueprint.DialogId)
+        {
+            return Forbid();
+        }
+
+        if (cursor < 0 || cursor >= blueprint.Patches.Count)
+        {
+            return NotFound();
+        }
+
         var compiler = new PlaybookCompiler(options.Value)
         {
             Progress = 0
         };
-        var playbookState = await PlaybookState.DecodeFromBase64(base64PlaybookState);
 
-        if (playbookState == null)
-        {
-            return new BadRequestResult();
-        }
-
-        if (playbookState.DialogId == Guid.Empty)
-        {
-            var authHeader = Request.Headers.Authorization.FirstOrDefault();
-            if (!TryGetGuidFromToken(authHeader, out var guid))
-            {
-                return new BadRequestResult();
-            }
-
-            playbookState.DialogId = guid.Value;
-        }
-
-
-        var dialogResponse = await dialogporten.V1ServiceOwnerDialogsQueriesGetDialog(playbookState.DialogId, null!, CancellationToken.None);
+        var dialogResponse = await dialogporten.V1ServiceOwnerDialogsQueriesGetDialog(blueprint.DialogId, null!, cancellationToken);
         if (!dialogResponse.IsSuccessful)
         {
-            return new BadRequestResult();
+            logger.LogWarning(
+                "Dialogporten GET /dialogs/{DialogId} returned {StatusCode}. Body: {Body}",
+                blueprint.DialogId, (int)dialogResponse.StatusCode, dialogResponse.Error?.Content);
+            return BadRequest();
         }
 
-        compiler.Progress = dialogResponse.Content!.Progress is null ? 0 : dialogResponse.Content.Progress.Value;
+        compiler.Progress = dialogResponse.Content!.Progress ?? 0;
 
-        var patches = await compiler.CompilePatches(playbookState);
+        var patches = await compiler.CompilePatches(stateId, blueprint, cursor);
         if (patches.Count == 0)
         {
-            return new BadRequestResult();
+            return BadRequest();
         }
 
-        var patchResult = await dialogporten.V1ServiceOwnerDialogsPatchDialog(playbookState.DialogId, patches, null, CancellationToken.None);
-
+        var patchResult = await dialogporten.V1ServiceOwnerDialogsPatchDialog(blueprint.DialogId, patches, null, cancellationToken);
         if (!patchResult.IsSuccessful)
         {
-            return new BadRequestResult();
+            logger.LogWarning(
+                "Dialogporten PATCH /dialogs/{DialogId} for stateId={StateId} cursor={Cursor} returned {StatusCode}. Body: {Body}",
+                blueprint.DialogId, stateId, cursor, (int)patchResult.StatusCode, patchResult.Error?.Content);
+            return BadRequest(patchResult.Error?.Content);
         }
 
-        return new OkResult();
-    }
-
-
-    private bool TryGetGuidFromToken(string? token, [NotNullWhen(true)] out Guid? guid)
-    {
-        guid = null;
-
-        if (token == null || !token.StartsWith("Bearer "))
-        {
-            return false;
-        }
-
-        var jwtToken = token["Bearer ".Length..].Trim();
-        var result = dialogTokenValidator.Validate(jwtToken);
-
-        if (!result.IsValid)
-        {
-            return false;
-        }
-
-        var dialogIdClaim = result.ClaimsPrincipal.Claims.FirstOrDefault(c => c.Type == "i");
-        if (!Guid.TryParse(dialogIdClaim?.Value, out var dialogId))
-        {
-            return false;
-        }
-
-        guid = dialogId;
-        return true;
-
+        return Ok();
     }
 }

@@ -4,6 +4,7 @@ using Digdir.BDB.Dialogporten.ServiceProvider.Clients;
 using Digdir.BDB.Dialogporten.ServiceProvider.Components;
 using Digdir.BDB.Dialogporten.ServiceProvider.Components.Account;
 using Digdir.BDB.Dialogporten.ServiceProvider.Data;
+using Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
 using Digdir.BDB.Dialogporten.ServiceProvider.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -15,7 +16,11 @@ builder.Configuration.AddUserSecrets<Program>();
 builder.Services.AddControllers();
 
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents()
+    .AddHubOptions(options =>
+    {
+        options.MaximumReceiveMessageSize = 10 * 1024 * 1024;
+    });
 
 var serviceProviderSettings = builder.Configuration
     .GetSection("ServiceProvider")
@@ -38,6 +43,7 @@ builder.Services
     .AddTransient<ConsoleLoggingMessageHandler>()
     .AddSingleton<ITokenGenerator, TokenGenerator>()
     .AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>()
+    .AddSingleton<IPlaybookStateStore, InMemoryPlaybookStateStore>()
     .AddHostedService<EdDsaSecurityKeysCacheService>()
     .AddHostedService<QueuedHostedService>()
     .AddHostedService<ResourceRegistryClient>()
@@ -83,6 +89,8 @@ builder.Services.AddIdentityCore<IdentityUser>(o =>
 
 var app = builder.Build();
 
+ValidateSampleFiles(app);
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -104,6 +112,46 @@ using (var scope = app.Services.CreateScope())
     await scope.ServiceProvider.AddDefaultAccount();
 }
 await app.RunAsync();
+
+static void ValidateSampleFiles(WebApplication app)
+{
+    var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("PlaybookSampleValidator");
+    var samples = Directory.EnumerateFiles(app.Environment.ContentRootPath, "sample-*.json").ToList();
+    if (samples.Count == 0)
+    {
+        return;
+    }
+
+    var totalIssues = 0;
+    foreach (var path in samples)
+    {
+        var fileName = Path.GetFileName(path);
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));
+            var issues = Digdir.BDB.Dialogporten.ServiceProvider.Playbook.PlaybookSampleValidator.Validate(doc);
+            if (issues.Count == 0)
+            {
+                logger.LogInformation("Sample {File} OK", fileName);
+                continue;
+            }
+            totalIssues += issues.Count;
+            foreach (var issue in issues)
+            {
+                logger.LogWarning("[{File}] {Issue}", fileName, issue);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to parse/validate sample {File}", fileName);
+            totalIssues++;
+        }
+    }
+    if (totalIssues > 0)
+    {
+        logger.LogWarning("Validated {Count} sample file(s); found {Issues} issue(s)", samples.Count, totalIssues);
+    }
+}
 
 public sealed class ServiceProviderSettings
 {

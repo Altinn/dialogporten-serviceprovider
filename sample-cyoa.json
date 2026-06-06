@@ -1,0 +1,1665 @@
+{
+  "Party": "urn:altinn:person:identifier-no:08895699684",
+  "serviceResource": "urn:altinn:resource:ttd-dialogporten-automated-tests",
+  "playbookState": {
+    "Cursor": 0,
+    "Patches": [
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "The Last Watch — cold wake"
+        },
+        {
+          "op": "replace",
+          "path": "/content/summary/value/0/value",
+          "value": "A short sci-fi choose-your-own-adventure aboard the science vessel Maren-7. Seven endings."
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "Draft"
+        },
+        {
+          "op": "add",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Cold sleep — wake cycle"
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "path": "/content/additionalInfo",
+          "value": {
+            "mediaType": "text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Choose-your-own-adventure. Tree-shaped, no inventory or stats. There are **seven possible endings**. The story is original and released under the same MIT licence as the rest of this repo — adapt freely."
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/wake"
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=1",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Check the bridge"
+                }
+              ]
+            },
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=2",
+              "priority": "secondary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Check engineering"
+                }
+              ]
+            },
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=3",
+              "priority": "tertiary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Stay in the pod and listen"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "The bridge"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "InProgress"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Bridge — empty"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/bridge"
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "path": "/activities/-",
+          "value": {
+            "type": "DialogOpened",
+            "performedBy": {
+              "actorType": "ServiceOwner"
+            }
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=4",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Read the full captain's log"
+                }
+              ]
+            },
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=5",
+              "priority": "secondary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Open the comms array"
+                }
+              ]
+            },
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=0",
+              "priority": "tertiary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Go back to the pod"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "Engineering deck"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "InProgress"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Engineering — wounded"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/engineering"
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "path": "/activities/-",
+          "value": {
+            "type": "DialogOpened",
+            "performedBy": {
+              "actorType": "ServiceOwner"
+            }
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=6",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Stabilize the reactor"
+                }
+              ]
+            },
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=7",
+              "priority": "secondary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Follow the blood trail"
+                }
+              ]
+            },
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=0",
+              "priority": "tertiary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Go back to the pod"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "Inside the pod"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "InProgress"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Hiding"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/hide"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=8",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Stay completely still"
+                }
+              ]
+            },
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=2",
+              "priority": "secondary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Open the pod and follow the steps"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "Captain's log"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "InProgress"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Reviewing logs"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/log"
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "path": "/transmissions/-",
+          "value": {
+            "type": "Information",
+            "sender": {
+              "actorType": "PartyRepresentative",
+              "actorName": "Captain Vela Korin"
+            },
+            "content": {
+              "title": {
+                "mediaType": "text/plain",
+                "value": [
+                  {
+                    "languageCode": "en",
+                    "value": "Captain's final entry"
+                  }
+                ]
+              },
+              "summary": {
+                "mediaType": "text/plain",
+                "value": [
+                  {
+                    "languageCode": "en",
+                    "value": "Recovered from the bridge terminal."
+                  }
+                ]
+              },
+              "contentReference": {
+                "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+                "value": [
+                  {
+                    "languageCode": "en",
+                    "value": "{baseUri}/fce/named/{stateId}/log-tx"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=9",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Pull up the passenger manifest"
+                }
+              ]
+            },
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=10",
+              "priority": "secondary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Head down to the cryopod array"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "Comms array"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "InProgress"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Listening"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/comms"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=11",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Respond on the same frequency"
+                }
+              ]
+            },
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=12",
+              "priority": "secondary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Stay quiet, just listen"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "Reactor stable"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "InProgress"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Reactor stable — 6 hours"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/reactor-fixed"
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "path": "/activities/-",
+          "value": {
+            "type": "Information",
+            "performedBy": {
+              "actorType": "ServiceOwner"
+            },
+            "description": [
+              {
+                "languageCode": "en",
+                "value": "Reactor stabilized. Power restored to nominal."
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=10",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Go check on the passengers"
+                }
+              ]
+            },
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=13",
+              "priority": "secondary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Prep a lifepod and leave"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "Medical bay"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "InProgress"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Med bay — captain dying"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/medbay"
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "path": "/transmissions/-",
+          "value": {
+            "type": "Information",
+            "sender": {
+              "actorType": "PartyRepresentative",
+              "actorName": "Captain Vela Korin"
+            },
+            "content": {
+              "title": {
+                "mediaType": "text/plain",
+                "value": [
+                  {
+                    "languageCode": "en",
+                    "value": "The captain's last words"
+                  }
+                ]
+              },
+              "summary": {
+                "mediaType": "text/plain",
+                "value": [
+                  {
+                    "languageCode": "en",
+                    "value": "Three words. They don't leave you."
+                  }
+                ]
+              },
+              "contentReference": {
+                "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+                "value": [
+                  {
+                    "languageCode": "en",
+                    "value": "{baseUri}/fce/named/{stateId}/medbay-tx"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=14",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Take her sidearm and go to the bridge"
+                }
+              ]
+            },
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=13",
+              "priority": "secondary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Run for the lifepods"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "ENDING — Silenced"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "Completed"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Outcome: silenced"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/additionalInfo",
+          "value": {
+            "mediaType": "text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "One ending of seven. You can restart and try a different choice."
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/ending-silenced"
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "path": "/activities/-",
+          "value": {
+            "type": "DialogClosed",
+            "performedBy": {
+              "actorType": "ServiceOwner"
+            }
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=0",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Restart the story"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "Passenger manifest"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "InProgress"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Manifest"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/manifest"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=10",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Down to the cryopod array"
+                }
+              ]
+            },
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=14",
+              "priority": "secondary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Go confront whoever is on the bridge"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "Cryopod array"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "InProgress"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "46 alive, 1 missing"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/pod-array"
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "path": "/activities/-",
+          "value": {
+            "type": "Information",
+            "performedBy": {
+              "actorType": "ServiceOwner"
+            },
+            "description": [
+              {
+                "languageCode": "en",
+                "value": "Pod 47 — yours — was opened 2 hours ago. According to the log."
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=15",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Revive everyone"
+                }
+              ]
+            },
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=16",
+              "priority": "secondary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Seal the pods and decide alone"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "ENDING — Rescued"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "Completed"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Outcome: rescued"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/additionalInfo",
+          "value": {
+            "mediaType": "text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "One ending of seven. You can restart and try a different path."
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/ending-rescued"
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "path": "/transmissions/-",
+          "value": {
+            "type": "Acceptance",
+            "sender": {
+              "actorType": "PartyRepresentative",
+              "actorName": "RCS Heron"
+            },
+            "content": {
+              "title": {
+                "mediaType": "text/plain",
+                "value": [
+                  {
+                    "languageCode": "en",
+                    "value": "Rescue corvette — telemetry"
+                  }
+                ]
+              },
+              "summary": {
+                "mediaType": "text/plain",
+                "value": [
+                  {
+                    "languageCode": "en",
+                    "value": "Coordinates locked. ETA 18 hours."
+                  }
+                ]
+              },
+              "contentReference": {
+                "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+                "value": [
+                  {
+                    "languageCode": "en",
+                    "value": "{baseUri}/fce/named/{stateId}/ending-rescued-tx"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "op": "add",
+          "path": "/activities/-",
+          "value": {
+            "type": "DialogClosed",
+            "performedBy": {
+              "actorType": "ServiceOwner"
+            }
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=0",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Restart the story"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "The hull"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "InProgress"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Hull breach — docked"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/silence"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=13",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Run for the lifepods"
+                }
+              ]
+            },
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=17",
+              "priority": "secondary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Hide in the cargo hold"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "ENDING — Drifted"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "Completed"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Outcome: drifted"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/additionalInfo",
+          "value": {
+            "mediaType": "text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "One ending of seven. You can restart and try a different path."
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/ending-drifted"
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "path": "/activities/-",
+          "value": {
+            "type": "DialogClosed",
+            "performedBy": {
+              "actorType": "ServiceOwner"
+            }
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=0",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Restart the story"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "ENDING — Mirrored"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "Completed"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Outcome: mirrored"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/additionalInfo",
+          "value": {
+            "mediaType": "text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "One ending of seven. The big twist. You can restart and try a different path."
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/ending-mirror"
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "path": "/activities/-",
+          "value": {
+            "type": "DialogClosed",
+            "performedBy": {
+              "actorType": "ServiceOwner"
+            }
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=0",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Restart the story"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "ENDING — All hands"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "Completed"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Outcome: all hands"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/additionalInfo",
+          "value": {
+            "mediaType": "text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "One ending of seven — the heroic one. You can restart and try a different path."
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/ending-heroic"
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "path": "/transmissions/-",
+          "value": {
+            "type": "Submission",
+            "sender": {
+              "actorType": "ServiceOwner"
+            },
+            "content": {
+              "title": {
+                "mediaType": "text/plain",
+                "value": [
+                  {
+                    "languageCode": "en",
+                    "value": "Crew status — all alive"
+                  }
+                ]
+              },
+              "summary": {
+                "mediaType": "text/plain",
+                "value": [
+                  {
+                    "languageCode": "en",
+                    "value": "Roster log forwarded to receiving station."
+                  }
+                ]
+              },
+              "contentReference": {
+                "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+                "value": [
+                  {
+                    "languageCode": "en",
+                    "value": "{baseUri}/fce/named/{stateId}/ending-heroic-tx"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "op": "add",
+          "path": "/activities/-",
+          "value": {
+            "type": "DialogClosed",
+            "performedBy": {
+              "actorType": "ServiceOwner"
+            }
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=0",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Restart the story"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "ENDING — The slow dark"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "Completed"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Outcome: the slow dark"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/additionalInfo",
+          "value": {
+            "mediaType": "text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "One ending of seven. Probably the worst one. You can restart and try a different path."
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/ending-tragedy"
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "path": "/activities/-",
+          "value": {
+            "type": "DialogClosed",
+            "performedBy": {
+              "actorType": "ServiceOwner"
+            }
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=0",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Restart the story"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "op": "replace",
+          "path": "/content/title/value/0/value",
+          "value": "ENDING — Vented"
+        },
+        {
+          "op": "replace",
+          "path": "/status",
+          "value": "Completed"
+        },
+        {
+          "op": "replace",
+          "path": "/content/extendedStatus",
+          "value": {
+            "mediaType": "text/plain",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "Outcome: vented"
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/additionalInfo",
+          "value": {
+            "mediaType": "text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "One ending of seven. Short and final. You can restart and try a different path."
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/content/mainContentReference",
+          "value": {
+            "mediaType": "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown",
+            "value": [
+              {
+                "languageCode": "en",
+                "value": "{baseUri}/fce/named/{stateId}/ending-vented"
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "path": "/activities/-",
+          "value": {
+            "type": "DialogClosed",
+            "performedBy": {
+              "actorType": "ServiceOwner"
+            }
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/guiActions",
+          "value": [
+            {
+              "action": "write",
+              "httpMethod": "POST",
+              "url": "$goto=0",
+              "priority": "primary",
+              "title": [
+                {
+                  "languageCode": "en",
+                  "value": "Restart the story"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  "fceContents": {
+    "wake": {
+      "mediaType": "text/markdown",
+      "content": "# Cold wake\n\nYou wake in a cryopod aboard the science vessel **Maren-7**.\n\nThe pod light is amber — a warning colour. The cabin around you is dim. Air comes in through the recycler in slow, cold pulses. You can hear it. You can hear it because there is nothing else to hear.\n\nYour last clear memory is launch day, three years ago. The mission was supposed to last eighteen months.\n\nWhat do you do?"
+    },
+    "bridge": {
+      "mediaType": "text/markdown",
+      "content": "# The bridge\n\nThe pressure door slides open more slowly than it should. Inside, the bridge is empty.\n\nThe captain's chair is cold to the touch. The viewport is dark — no stars, no signs of debris, no other ships. Just black.\n\nOn the main screen, frozen at the top of an otherwise blank console: a single line of text.\n\n> Last entry — 2h ago — passenger 47."
+    },
+    "engineering": {
+      "mediaType": "text/markdown",
+      "content": "# Engineering\n\nWarning klaxons are off. They've been off for a while — there's no sound now, just the dry blink of red lamps on the support frames.\n\nThe reactor reads thirty percent of nominal. It is not dead, but it is dying.\n\nThere is a smear of blood on the bulkhead by the access ladder. It's at shoulder height, like someone braced themselves there with a bleeding hand. The smear runs forward, in the direction of the medical bay.\n\nWhoever was here, they are not here now."
+    },
+    "hide": {
+      "mediaType": "text/markdown",
+      "content": "# Inside the pod\n\nYou stay in the pod and close your eyes.\n\nThe air comes and goes. The amber light pulses on the inside of your eyelids.\n\nAnd then — footsteps. Soft, deliberate. They pause outside the pod, just out of view. They wait. Then they move on.\n\nA minute passes. Then another.\n\nThe footsteps come back."
+    },
+    "log": {
+      "mediaType": "text/markdown",
+      "content": "# Captain's log\n\nYou unlock the terminal. The last full entry is short:\n\n> I'm putting this here in case I'm wrong, and in case I'm right.\n>\n> Passenger 47 isn't who they say. The manifest has been altered. I've sealed the bridge.\n>\n> If you're reading this — I'm probably dead.\n\nBeneath it, three half-written drafts. Then a row of static."
+    },
+    "log-tx": {
+      "mediaType": "text/markdown",
+      "content": "# Captain's final entry — full text\n\n*Captain Vela Korin to ship's log, 02:14 ship-time.*\n\nI'm putting this here in case I'm wrong, and in case I'm right.\n\nPassenger 47 isn't who they say. The manifest has been altered. I've cross-checked it three times now. The face on the manifest is mine. The face on the pod is mine. The voice in the corridor is mine.\n\nI've sealed the bridge from inside. I've routed the pod controls to my own biometrics, so she can't open them.\n\nIf you're reading this — I'm probably dead. I'm sorry. I tried.\n\n*Entry ends. No further log activity detected.*"
+    },
+    "comms": {
+      "mediaType": "text/markdown",
+      "content": "# Comms array\n\nThe array hums to life under your hand. The standard frequencies are silent. The emergency channels are silent. The deep-space beacons are silent.\n\nThen, on a non-standard frequency at the edge of the rolloff: a soft pattern of tones. Eight notes. A pause. Eight notes again.\n\nIt does not sound human. It does not sound automated, either. It sounds like a question."
+    },
+    "reactor-fixed": {
+      "mediaType": "text/markdown",
+      "content": "# Reactor stable\n\nIt takes you forty minutes. Two of those minutes are spent shaking under the manifold cover, gripping a hot coupling that you know — you *know* — will burn you if your hand slips.\n\nYour hand does not slip.\n\nWhen you climb out of the manifold housing the gauges have stopped twitching. Output is back to sixty percent. Six hours of stable power, maybe seven.\n\nIt's enough time to make a decision. It is not enough time to make many decisions."
+    },
+    "medbay": {
+      "mediaType": "text/markdown",
+      "content": "# Medical bay\n\nThe blood led here.\n\nThe captain is on the floor by the diagnostic bed. There's a thin metal rod through her ribs, going from front to back — not a weapon you recognise, almost a piece of structural framing.\n\nHer eyes track you when you kneel down. She tries to speak, and most of it is just breath. Then she gets out three words. Clearly. Then she's gone."
+    },
+    "medbay-tx": {
+      "mediaType": "text/markdown",
+      "content": "# The captain's last words\n\n> She's already awake.\n\nThree words.\n\nShe died saying them, and she meant for you to hear them, and you did.\n\nYou don't know what to do with them yet."
+    },
+    "ending-silenced": {
+      "mediaType": "text/markdown",
+      "content": "# ENDING — Silenced\n\nThe footsteps come back, and this time they stop directly outside the pod, and they do not move on.\n\nThere is a long, very quiet pause.\n\nThen a voice — your own voice, exactly, in its rhythm and its breath — says: *It's okay. You can come out now.*\n\nYou hold your breath because the voice asked you to come out, and you refuse.\n\nThe voice waits. It is patient. It can wait longer than you can.\n\nAfter a time it stops asking. The pod light goes from amber to red. The recycler stops pulling. The cabin around you grows quiet, and then quieter, and then quiet enough.\n\n*— End. One of seven.*"
+    },
+    "manifest": {
+      "mediaType": "text/markdown",
+      "content": "# Passenger manifest\n\nForty-seven entries. Forty-six have photographs, names, professions, blood types, allergies, next-of-kin.\n\nEntry forty-seven has only a name.\n\n**Vela Korin.**\n\nThat's the captain's name. The captain is the captain. Why is the captain also a passenger? And why does the entry for *you* — for what should have been *your* slot — not exist at all on this manifest?"
+    },
+    "pod-array": {
+      "mediaType": "text/markdown",
+      "content": "# Cryopod array\n\nThe array is dim but functional. Forty-six pods burn steady green — life signs nominal. Their occupants are alive, sleeping, unaware.\n\nThe forty-seventh pod is dark. It has been opened recently. The status board says it was unsealed two hours ago.\n\nBut *you've* been in your own pod this whole time, until you got up just now to investigate.\n\nUnless that's not true. Unless something else is."
+    },
+    "ending-rescued": {
+      "mediaType": "text/markdown",
+      "content": "# ENDING — Rescued\n\nYou respond on the same frequency.\n\nThe eight tones become twelve. The twelve become a voice — human, this time, tired, professional. It tells you the rescue corvette *Heron* is eighteen hours out. It tells you to stay still and breathe slowly and not try to be a hero.\n\nYou do as you are told.\n\nWhen they come, they come fast and they come careful, and they get you out without ever explaining what was in the corridor with you.\n\nYou ask, later, in debrief. They don't answer. They never answer.\n\nYou were rescued. Some questions you carry home with you anyway.\n\n*— End. One of seven.*"
+    },
+    "silence": {
+      "mediaType": "text/markdown",
+      "content": "# Silence\n\nYou don't respond. The eight tones repeat. Eight more times. Sixteen. Twenty-four.\n\nThen they stop, mid-pattern.\n\nA moment later the ship shudders — once, hard, then again, gentler. Something has docked on the hull. You can hear it through the bulkhead now: a soft, regular tapping, like fingertips testing the door of a room you should not be in.\n\nIt is moving."
+    },
+    "ending-drifted": {
+      "mediaType": "text/markdown",
+      "content": "# ENDING — Drifted\n\nYou launch the lifepod alone. It punches out of the *Maren-7* on a long, slow arc. Behind you, the ship dwindles. You watch it become a point of light, then less than that.\n\nThe pod's beacon is a faint thing. The pod's recycler is good for two centuries if you sleep through them.\n\nYou sleep.\n\nSomewhere in the years that follow — you'll never know exactly when — a salvage ship picks up your faint beacon and changes course, or it doesn't.\n\nWhen you wake, you'll find out which.\n\n*— End. One of seven.*"
+    },
+    "ending-mirror": {
+      "mediaType": "text/markdown",
+      "content": "# ENDING — Mirrored\n\nYou come around the corner onto the bridge with the captain's sidearm low against your thigh.\n\nThere you are.\n\nSame face. Same scars. Same long hesitation in the eyes. You look at yourself, and yourself looks at you, and one of you raises the sidearm a fraction.\n\nThe other you — the one in the captain's chair, the one who has been awake longer — speaks first.\n\n*I was hoping it would be you,* she says. *One of us has to stay awake. I'm tired. I've been tired for a long time.*\n\nShe gestures gently at the chair beside her, and at the long, soft black outside the viewport, and at the ship's silent corridors. *Sit. I'll show you how.*\n\nYou sit. You learn how. The watch is yours now.\n\n*— End. One of seven. The twist.*"
+    },
+    "ending-heroic": {
+      "mediaType": "text/markdown",
+      "content": "# ENDING — All hands\n\nYou run the revive sequence on all forty-six pods at once. The system protests — it is not designed to wake this many people in this little time — and you override it twice and a third time, and the override holds.\n\nFor a long minute nothing happens.\n\nThen forty-six pod lights, one after another, blink from green to white.\n\nIt takes hours for the crew to come up properly, and they come up cold and confused and angry, but they come up. They are forty-six in number and they are alive.\n\nTwelve hours later a rescue corvette finds you, drifting but lit. You give them the manifest. They take it. They take you all, every single one of you.\n\nYou go home.\n\n*— End. One of seven. The heroic one.*"
+    },
+    "ending-heroic-tx": {
+      "mediaType": "text/markdown",
+      "content": "# Crew status — all alive\n\n*Maren-7 cryopod array — final log.*\n\n| Pod | Occupant | Status |\n|---|---|---|\n| 1–46 | Crew & passengers | Revived. Vital signs nominal. |\n| 47 | (you) | Active. On watch. |\n\nForwarded to receiving station. Acknowledge."
+    },
+    "ending-rescued-tx": {
+      "mediaType": "text/markdown",
+      "content": "# Rescue corvette — telemetry\n\n**Vessel** RCS *Heron*\n**Origin** Tycho Station\n**ETA** 18h 02m\n**Crew aboard** 12\n\nMaintain station. Do not attempt course correction. Acknowledge low-power posture and respond on this frequency only when prompted.\n\n*Heron* out."
+    },
+    "ending-tragedy": {
+      "mediaType": "text/markdown",
+      "content": "# ENDING — The slow dark\n\nYou seal the pods. The decision feels right at the time. You can think more clearly without forty-six other minds expecting things of you.\n\nYou ration the power. You are careful. You are patient.\n\nSix hours becomes twelve. Twelve becomes twenty. The reactor coughs once — a small thing, almost polite, like a guest declining a second drink.\n\nThe lights go out. The recycler does not come back on.\n\nForty-six souls in cold sleep become forty-six bodies, in the same pods, in the same room, in the same dark. You die last and you die listening to the hum fade. You were the only one awake to hear it go.\n\n*— End. One of seven. Probably the worst.*"
+    },
+    "ending-vented": {
+      "mediaType": "text/markdown",
+      "content": "# ENDING — Vented\n\nYou hide behind the cargo crates.\n\nFootsteps go past. Many footsteps — light and dry and not entirely in sync, as if someone hasn't quite finished learning how to walk.\n\nThe steps pass. They do not come back.\n\nThen, behind you, a soft hiss. The cargo bay's emergency vent has opened. You don't know why. You don't have time to figure out why.\n\nYou hold your breath. You hold it for as long as you can.\n\n*— End. One of seven.*"
+    }
+  }
+}

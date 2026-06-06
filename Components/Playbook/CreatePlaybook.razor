@@ -9,15 +9,31 @@
 @using Microsoft.Extensions.Options
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inject IServiceownerApi ServiceOwnerApi
+@inject IPlaybookStateStore StateStore
 @inject IOptions<ServiceProviderSettings> ServiceProviderOptions
+@inject IJSRuntime Js
+@inject ILogger<CreatePlaybook> Logger
 @rendermode InteractiveServer
 <h3>CreatePlaybook</h3>
 
 <p>
-    Creates a Dialogporten dialog and produces the bootstrap mutate URL for stage 0.
-    Call that URL with a valid dialog token (e.g. from Arbeidsflate) to apply the first
-    patch and install the navigation actions for the rest of the script.
+    Creates a Dialogporten dialog, stores the playbook server-side, and applies stage @Cursor.
+    The resulting dialog ships with mutate URLs that drive subsequent stages on each user click.
 </p>
+
+<fieldset>
+    <legend>Import playbook</legend>
+    <p style="margin: 0 0 0.5rem 0;">
+        Paste a full playbook envelope JSON (Party, serviceResource, playbookState, fceContents) and click Import.
+        The form fields below will be populated and you can review/edit before submitting.
+    </p>
+    <div>
+        <textarea id="import" rows="6" cols="100" placeholder="Paste playbook JSON here..."></textarea>
+    </div>
+    <div>
+        <button type="button" @onclick="ImportFromJson">Import</button>
+    </div>
+</fieldset>
 
 <EditForm Model="Request" OnValidSubmit="Submit" FormName="CreatePlaybook">
     <div>
@@ -47,7 +63,12 @@
 
     <div>
         <label for="patches">Patches (JSON: array of arrays of patch operations)</label><br/>
-        <InputTextArea id="patches" rows="25" cols="100" @bind-Value="PatchesJson"/>
+        <InputTextArea id="patches" rows="20" cols="100" @bind-Value="PatchesJson"/>
+    </div>
+
+    <div>
+        <label for="fceContents">FCE contents (JSON: name → {mediaType, content}). Optional.</label><br/>
+        <InputTextArea id="fceContents" rows="6" cols="100" @bind-Value="FceContentsJson"/>
     </div>
 
     <button type="submit">Create Playbook</button>
@@ -57,7 +78,8 @@
 {
     <fieldset>
         <legend>Playbook ready</legend>
-        <p>Dialog id: <code>@DialogId</code> (stage @Cursor applied)</p>
+        <p>Dialog id: <code>@DialogId</code></p>
+        <p>State id: <code>@StateId</code> (stage @Cursor applied)</p>
     </fieldset>
 }
 
@@ -77,8 +99,10 @@
     private CreatePlaybookForm Request { get; set; } = new();
     private int Cursor { get; set; }
     private string PatchesJson { get; set; } = "[]";
+    private string FceContentsJson { get; set; } = "{}";
 
     private Guid DialogId { get; set; }
+    private string StateId { get; set; } = "";
 
     private bool _showPopUp;
     private string? _header;
@@ -108,6 +132,20 @@
             return;
         }
 
+        Dictionary<string, FceContent> fceContents;
+        try
+        {
+            fceContents = string.IsNullOrWhiteSpace(FceContentsJson)
+                ? new Dictionary<string, FceContent>()
+                : JsonSerializer.Deserialize<Dictionary<string, FceContent>>(FceContentsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                  ?? new Dictionary<string, FceContent>();
+        }
+        catch (JsonException ex)
+        {
+            ShowPopup("Error", $"Invalid FCE contents JSON: {ex.Message}");
+            return;
+        }
+
         if (patches.Count == 0)
         {
             ShowPopup("Error", "Need at least 1 Patch.");
@@ -131,8 +169,8 @@
                     [
                         new V1CommonLocalizations_Localization
                         {
-                            Value = "Første tittel",
-                            LanguageCode = "nb"
+                            Value = "Playbook",
+                            LanguageCode = "en"
                         }
                     ],
                     MediaType = "text/plain"
@@ -143,8 +181,8 @@
                     [
                         new V1CommonLocalizations_Localization
                         {
-                            Value = "Første Summary",
-                            LanguageCode = "nb"
+                            Value = "Playbook dialog",
+                            LanguageCode = "en"
                         }
                     ],
                     MediaType = "text/plain"
@@ -162,7 +200,10 @@
         var dialogResult = await ServiceOwnerApi.V1ServiceOwnerDialogsCommandsCreateDialog(dto, CancellationToken.None);
         if (!dialogResult.IsSuccessful)
         {
-            ShowPopup(dialogResult.StatusCode.ToString(), dialogResult.Error.Content ?? "Failed to create dialog.");
+            Logger.LogWarning(
+                "Dialogporten POST /dialogs returned {StatusCode}. Body: {Body}",
+                (int)dialogResult.StatusCode, dialogResult.Error?.Content);
+            ShowPopup(dialogResult.StatusCode.ToString(), dialogResult.Error?.Content ?? "Failed to create dialog.");
             return;
         }
 
@@ -173,9 +214,11 @@
             return;
         }
 
-        var state = new PlaybookState(dialogId, Cursor, patches);
+        var blueprint = new PlaybookBlueprint(dialogId, patches, fceContents);
+        var stateId = await StateStore.CreateAsync(blueprint, CancellationToken.None);
+
         var compiler = new PlaybookCompiler(ServiceProviderOptions.Value) { Progress = 0 };
-        var compiledPatches = await compiler.CompilePatches(state);
+        var compiledPatches = await compiler.CompilePatches(stateId, blueprint, Cursor);
         if (compiledPatches.Count == 0)
         {
             ShowPopup("Error", "Cursor produced no patches.");
@@ -185,11 +228,15 @@
         var patchResult = await ServiceOwnerApi.V1ServiceOwnerDialogsPatchDialog(dialogId, compiledPatches, null, CancellationToken.None);
         if (!patchResult.IsSuccessStatusCode)
         {
-            ShowPopup(patchResult.StatusCode.ToString(), patchResult.Error.Content ?? "Failed to apply bootstrap patches.");
+            Logger.LogWarning(
+                "Dialogporten PATCH /dialogs/{DialogId} (bootstrap stage {Cursor}) returned {StatusCode}. Body: {Body}",
+                dialogId, Cursor, (int)patchResult.StatusCode, patchResult.Error?.Content);
+            ShowPopup(patchResult.StatusCode.ToString(), patchResult.Error?.Content ?? "Failed to apply bootstrap patches.");
             return;
         }
 
         DialogId = dialogId;
+        StateId = stateId;
 
         var dialogStorageResult = await ProtectedLocalStore.GetAsync<List<Guid>>("dialogs");
         var dialogs = dialogStorageResult is { Success: true, Value: not null }
@@ -198,7 +245,7 @@
         dialogs.Add(dialogId);
         _ = ProtectedLocalStore.SetAsync("dialogs", dialogs);
 
-        ShowPopup("Playbook ready", $"Dialog {dialogId} created and stage {Cursor} applied. Open it in Arbeidsflate and click through.");
+        ShowPopup("Playbook ready", $"Dialog {dialogId} created. Open it in Arbeidsflate and click through.");
     }
 
     private void Prefill()
@@ -207,6 +254,78 @@
         Request.ServiceResource = "urn:altinn:resource:super-simple-service";
         Cursor = 0;
         PatchesJson = CreatePlaybookSamples.Patches;
+        FceContentsJson = CreatePlaybookSamples.FceContents;
+    }
+
+    private async Task ImportFromJson()
+    {
+        var importJson = await Js.InvokeAsync<string>("eval", "(document.getElementById('import') || {value: ''}).value");
+
+        if (string.IsNullOrWhiteSpace(importJson))
+        {
+            ShowPopup("Error", "Paste the playbook JSON first.");
+            return;
+        }
+
+        JsonNode? root;
+        try
+        {
+            root = JsonNode.Parse(importJson);
+        }
+        catch (JsonException ex)
+        {
+            ShowPopup("Error", $"Invalid JSON: {ex.Message}");
+            return;
+        }
+
+        if (root is not JsonObject obj)
+        {
+            ShowPopup("Error", "Top-level JSON must be an object.");
+            return;
+        }
+
+        var playbookState = FindProperty(obj, "playbookState") as JsonObject;
+        if (playbookState is null)
+        {
+            ShowPopup("Error", "Missing playbookState object.");
+            return;
+        }
+
+        var patchesNode = FindProperty(playbookState, "Patches") as JsonArray;
+        if (patchesNode is null)
+        {
+            ShowPopup("Error", "Missing playbookState.Patches array.");
+            return;
+        }
+
+        var indented = new JsonSerializerOptions { WriteIndented = true };
+
+        Request.Party = FindStringProperty(obj, "Party") ?? "";
+        Request.ServiceResource = FindStringProperty(obj, "serviceResource") ?? "";
+        Cursor = FindProperty(playbookState, "Cursor")?.GetValue<int>() ?? 0;
+        PatchesJson = patchesNode.ToJsonString(indented);
+
+        var fceNode = FindProperty(obj, "fceContents");
+        FceContentsJson = fceNode?.ToJsonString(indented) ?? "{}";
+
+        ShowPopup("Imported", "Form populated from playbook JSON. Review the fields and click Create Playbook.");
+    }
+
+    private static JsonNode? FindProperty(JsonObject obj, string name)
+    {
+        foreach (var kvp in obj)
+        {
+            if (string.Equals(kvp.Key, name, StringComparison.OrdinalIgnoreCase))
+            {
+                return kvp.Value;
+            }
+        }
+        return null;
+    }
+
+    private static string? FindStringProperty(JsonObject obj, string name)
+    {
+        return FindProperty(obj, name)?.GetValue<string>();
     }
 
     private void ShowPopup(string header, string message)

@@ -6,8 +6,6 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
 
 public class PlaybookCompiler(ServiceProviderSettings settings)
 {
-    private const string Endpoint = "mutate/";
-    private readonly string _path = settings.MutateBaseUri + Endpoint;
     private readonly string _baseUri = settings.MutateBaseUri.TrimEnd('/');
     private const int MaxDepth = 32;
     private const int MaxNodes = 1000;
@@ -15,30 +13,32 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
 
     public int Progress { get; set; } = 0;
 
-    public async Task<List<JsonPatchOperations_Operation>> CompilePatches(PlaybookState playbookState)
+    public Task<List<JsonPatchOperations_Operation>> CompilePatches(string stateId, PlaybookBlueprint blueprint, int cursor)
     {
         _visitedNodes = 0;
-        var internalPlayBookState = new PlaybookState
-        (
-            playbookState.DialogId,
-            playbookState.Cursor,
-            playbookState.Patches
-        );
-        var patches = internalPlayBookState.CurrentPatch();
-        List<JsonPatchOperations_Operation> compiledPatches = [];
-        if (patches == null)
+        if (cursor < 0 || cursor >= blueprint.Patches.Count)
         {
-            return compiledPatches;
+            return Task.FromResult<List<JsonPatchOperations_Operation>>([]);
         }
-        foreach (var patch in patches.ToList())
-        {
-            var compiledPatch = await CompilePatch(patch, internalPlayBookState);
-            compiledPatches.Add(compiledPatch ?? patch);
-        }
-        return compiledPatches;
+
+        var stagePatches = blueprint.Patches[cursor]?.Deserialize<List<JsonPatchOperations_Operation>>();
+        return CompileStageAsync(stagePatches, stateId, cursor);
     }
 
-    private async Task<JsonPatchOperations_Operation?> CompilePatch(JsonPatchOperations_Operation patch, PlaybookState playbookState)
+    private async Task<List<JsonPatchOperations_Operation>> CompileStageAsync(List<JsonPatchOperations_Operation>? stagePatches, string stateId, int cursor)
+    {
+        List<JsonPatchOperations_Operation> compiled = [];
+        if (stagePatches == null) return compiled;
+
+        foreach (var patch in stagePatches)
+        {
+            var rewritten = await CompilePatch(patch, stateId, cursor);
+            compiled.Add(rewritten ?? patch);
+        }
+        return compiled;
+    }
+
+    private async Task<JsonPatchOperations_Operation?> CompilePatch(JsonPatchOperations_Operation patch, string stateId, int cursor)
     {
         switch (patch.Value)
         {
@@ -47,9 +47,9 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
                     var raw = stringValue.GetString();
                     if (Lexer.TryParseCommand(raw, out var command))
                     {
-                        return await CreateUpdatedPatch(patch, command, playbookState);
+                        return CreateUpdatedPatch(patch, command, stateId, cursor);
                     }
-                    if (raw != null && raw.Contains("{baseUri}"))
+                    if (raw != null && ContainsPlaceholder(raw))
                     {
                         return new JsonPatchOperations_Operation
                         {
@@ -57,14 +57,14 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
                             Path = patch.Path,
                             Op = patch.Op,
                             From = patch.From,
-                            Value = JsonValue.Create(raw.Replace("{baseUri}", _baseUri))
+                            Value = JsonValue.Create(SubstitutePlaceholders(raw, stateId))
                         };
                     }
                     break;
                 }
             case JsonElement { ValueKind: JsonValueKind.Object or JsonValueKind.Array } objectValue:
                 {
-                    var updated = await ProcessJsonElement(objectValue, playbookState, 0);
+                    var updated = await ProcessJsonElement(objectValue, stateId, cursor, 0);
                     if (updated.HasValue)
                     {
                         return new JsonPatchOperations_Operation
@@ -78,34 +78,34 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
                     }
                     break;
                 }
-
         }
         return null;
     }
 
-    private Task<string> UpdateAndEncode(PlaybookState playbookState, Command command)
+    private int ComputeNextCursor(Command command, int currentCursor)
     {
-        var nextState = new PlaybookState(playbookState.DialogId, playbookState.Cursor, playbookState.Patches);
-        switch (command.Type)
+        return command.Type switch
         {
-            case CommandType.Next:
-                nextState.Cursor += 1;
-                break;
-            case CommandType.Previous:
-                nextState.Cursor -= 1;
-                break;
-            case CommandType.Goto:
-                nextState.Cursor = (int)command.Value;
-                break;
-            case CommandType.GotoIfProgress:
-                var aa = (GotoIfProgressValue)command.Value;
-                nextState.Cursor = Progress == aa.Progress ? aa.Goto : aa.Else;
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
-        return nextState.EncodeToBase64();
+            CommandType.Next => currentCursor + 1,
+            CommandType.Previous => currentCursor - 1,
+            CommandType.Goto => (int)command.Value,
+            CommandType.GotoIfProgress => ResolveGotoIfProgress((GotoIfProgressValue)command.Value),
+            _ => throw new ArgumentOutOfRangeException()
+        };
     }
+
+    private int ResolveGotoIfProgress(GotoIfProgressValue value) =>
+        Progress == value.Progress ? value.Goto : value.Else;
+
+    private string BuildMutateUrl(string stateId, int cursor) =>
+        $"{_baseUri}/mutate/{stateId}/{cursor}";
+
+    private static bool ContainsPlaceholder(string raw) =>
+        raw.Contains("{baseUri}") || raw.Contains("{stateId}");
+
+    private string SubstitutePlaceholders(string raw, string stateId) =>
+        raw.Replace("{baseUri}", _baseUri).Replace("{stateId}", stateId);
+
     private bool ExceedsLimits(int depth)
     {
         if (depth > MaxDepth)
@@ -117,7 +117,7 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
         return _visitedNodes > MaxNodes;
     }
 
-    private async Task<JsonElement?> ProcessJsonElement(JsonElement element, PlaybookState playbookState, int depth)
+    private async Task<JsonElement?> ProcessJsonElement(JsonElement element, string stateId, int cursor, int depth)
     {
         if (ExceedsLimits(depth))
         {
@@ -130,20 +130,20 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
                 var stringValue = element.GetString();
                 if (Lexer.TryParseCommand(stringValue, out var command))
                 {
-                    var compiledPlaybook = await UpdateAndEncode(playbookState, command);
-                    return JsonSerializer.SerializeToElement(_path + compiledPlaybook);
+                    var nextCursor = ComputeNextCursor(command, cursor);
+                    return JsonSerializer.SerializeToElement(BuildMutateUrl(stateId, nextCursor));
                 }
-                if (stringValue != null && stringValue.Contains("{baseUri}"))
+                if (stringValue != null && ContainsPlaceholder(stringValue))
                 {
-                    return JsonSerializer.SerializeToElement(stringValue.Replace("{baseUri}", _baseUri));
+                    return JsonSerializer.SerializeToElement(SubstitutePlaceholders(stringValue, stateId));
                 }
                 return null;
 
             case JsonValueKind.Object:
-                return await ProcessObject(element, playbookState, depth + 1);
+                return await ProcessObject(element, stateId, cursor, depth + 1);
 
             case JsonValueKind.Array:
-                return await ProcessArray(element, playbookState, depth + 1);
+                return await ProcessArray(element, stateId, cursor, depth + 1);
 
             case JsonValueKind.Undefined:
             case JsonValueKind.Number:
@@ -153,10 +153,9 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
             default:
                 return null;
         }
-
     }
 
-    private async Task<JsonElement?> ProcessObject(JsonElement objectValue, PlaybookState playbookState, int depth)
+    private async Task<JsonElement?> ProcessObject(JsonElement objectValue, string stateId, int cursor, int depth)
     {
         var updates = new Dictionary<string, JsonElement>();
         var hasChanges = false;
@@ -164,7 +163,7 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
         foreach (var property in objectValue.EnumerateObject())
         {
             var value = property.Value;
-            var updated = await ProcessJsonElement(property.Value, playbookState, depth);
+            var updated = await ProcessJsonElement(property.Value, stateId, cursor, depth);
             if (updated.HasValue)
             {
                 value = updated.Value;
@@ -193,10 +192,9 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
 
         var jsonBytes = stream.ToArray();
         return JsonDocument.Parse(jsonBytes).RootElement;
-
     }
 
-    private async Task<JsonElement?> ProcessArray(JsonElement arrayValue, PlaybookState playbookState, int depth)
+    private async Task<JsonElement?> ProcessArray(JsonElement arrayValue, string stateId, int cursor, int depth)
     {
         var updates = new List<JsonElement>();
         var hasChanges = false;
@@ -204,7 +202,7 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
         foreach (var item in arrayValue.EnumerateArray())
         {
             var value = item;
-            var updated = await ProcessJsonElement(item, playbookState, depth);
+            var updated = await ProcessJsonElement(item, stateId, cursor, depth);
             if (updated.HasValue)
             {
                 value = updated.Value;
@@ -233,17 +231,17 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
         var jsonBytes = stream.ToArray();
         return JsonDocument.Parse(jsonBytes).RootElement;
     }
-    private async Task<JsonPatchOperations_Operation?> CreateUpdatedPatch(JsonPatchOperations_Operation patch, Command command, PlaybookState playbookState)
-    {
-        var base64 = await UpdateAndEncode(playbookState, command);
 
+    private JsonPatchOperations_Operation CreateUpdatedPatch(JsonPatchOperations_Operation patch, Command command, string stateId, int cursor)
+    {
+        var nextCursor = ComputeNextCursor(command, cursor);
         return new JsonPatchOperations_Operation
         {
             OperationType = patch.OperationType,
             Path = patch.Path,
             Op = patch.Op,
             From = patch.From,
-            Value = JsonValue.Create(_path + base64)
+            Value = JsonValue.Create(BuildMutateUrl(stateId, nextCursor))
         };
     }
 }

@@ -1,7 +1,4 @@
-using System.Text;
-using System.Text.Json;
 using Altinn.ApiClients.Dialogporten.Features.V1;
-using Digdir.BDB.Dialogporten.ServiceProvider.Extensions;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
@@ -13,23 +10,17 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 [ApiController]
 [Route("playbook")]
 [EnableCors("AllowedOriginsPolicy")]
-public class PlaybookController(IServiceownerApi dialogporten, IOptions<ServiceProviderSettings> options) : ControllerBase
+public class PlaybookController(
+    IServiceownerApi dialogporten,
+    IPlaybookStateStore stateStore,
+    IOptions<ServiceProviderSettings> options,
+    ILogger<PlaybookController> logger) : ControllerBase
 {
-
-    [Route("encode")]
-    [Consumes("application/json")]
-    [HttpPost]
-    public async Task<IActionResult> Post([FromBody] JsonElement jsonBody)
-    {
-        return Content(await jsonBody.Encode(), "text/plain", Encoding.UTF8);
-    }
-
-
     [Authorize]
     [Route("create")]
     [Consumes("application/json")]
     [HttpPost]
-    public async Task<IActionResult> Post([FromBody] CreatePlaybookRequest createPlaybookRequest)
+    public async Task<IActionResult> Post([FromBody] CreatePlaybookRequest createPlaybookRequest, CancellationToken cancellationToken)
     {
         var playbookState = createPlaybookRequest.PlaybookState;
 
@@ -42,6 +33,27 @@ public class PlaybookController(IServiceownerApi dialogporten, IOptions<ServiceP
             return BadRequest("Cursor is out of range");
         }
 
+        if (createPlaybookRequest.FceContents is { } providedFceContents)
+        {
+            foreach (var (name, content) in providedFceContents)
+            {
+                if (!FceMediaTypes.IsAllowed(content.MediaType))
+                {
+                    return BadRequest($"FCE '{name}' has disallowed mediaType '{content.MediaType}'. Allowed: text/markdown, text/plain, text/html.");
+                }
+            }
+        }
+
+        var initialTitle = string.IsNullOrWhiteSpace(createPlaybookRequest.InitialTitle)
+            ? "Playbook"
+            : createPlaybookRequest.InitialTitle;
+        var initialSummary = string.IsNullOrWhiteSpace(createPlaybookRequest.InitialSummary)
+            ? "Playbook dialog"
+            : createPlaybookRequest.InitialSummary;
+        var initialLanguageCode = string.IsNullOrWhiteSpace(createPlaybookRequest.InitialLanguageCode)
+            ? "en"
+            : createPlaybookRequest.InitialLanguageCode;
+
         var dto = new V1ServiceOwnerDialogsCommandsCreate_Dialog
         {
             ServiceResource = createPlaybookRequest.ServiceResource,
@@ -52,10 +64,10 @@ public class PlaybookController(IServiceownerApi dialogporten, IOptions<ServiceP
                 {
                     Value =
                     [
-                        new()
+                        new V1CommonLocalizations_Localization
                         {
-                            Value = "Første tittel",
-                            LanguageCode = "nb"
+                            Value = initialTitle,
+                            LanguageCode = initialLanguageCode
                         }
                     ],
                     MediaType = "text/plain"
@@ -66,8 +78,8 @@ public class PlaybookController(IServiceownerApi dialogporten, IOptions<ServiceP
                     [
                         new V1CommonLocalizations_Localization
                         {
-                            Value = "Første Summary",
-                            LanguageCode = "nb"
+                            Value = initialSummary,
+                            LanguageCode = initialLanguageCode
                         }
                     ],
                     MediaType = "text/plain"
@@ -81,40 +93,54 @@ public class PlaybookController(IServiceownerApi dialogporten, IOptions<ServiceP
                 }
             ],
         };
-        var dialogResult = await dialogporten.V1ServiceOwnerDialogsCommandsCreateDialog(dto, CancellationToken.None);
+        var dialogResult = await dialogporten.V1ServiceOwnerDialogsCommandsCreateDialog(dto, cancellationToken);
         if (!dialogResult.IsSuccessful)
         {
-            return BadRequest(dialogResult.Error.Content);
+            logger.LogWarning(
+                "Dialogporten POST /dialogs returned {StatusCode}. Body: {Body}",
+                (int)dialogResult.StatusCode, dialogResult.Error?.Content);
+            return BadRequest(dialogResult.Error?.Content);
         }
 
-        if (!Guid.TryParse(dialogResult.Content!, out var guid))
+        if (!Guid.TryParse(dialogResult.Content!, out var dialogId))
         {
             return BadRequest("Parse Guid failed");
         }
 
-        playbookState.DialogId = guid;
+        var blueprint = new PlaybookBlueprint(
+            dialogId,
+            playbookState.Patches,
+            createPlaybookRequest.FceContents ?? new Dictionary<string, FceContent>());
+
+        var stateId = await stateStore.CreateAsync(blueprint, cancellationToken);
 
         var compiler = new PlaybookCompiler(options.Value) { Progress = 0 };
-        var compiledPatches = await compiler.CompilePatches(playbookState);
+        var compiledPatches = await compiler.CompilePatches(stateId, blueprint, playbookState.Cursor);
         if (compiledPatches.Count == 0)
         {
             return BadRequest("Cursor produced no patches.");
         }
 
-        var patchResult = await dialogporten.V1ServiceOwnerDialogsPatchDialog(guid, compiledPatches, null, CancellationToken.None);
+        var patchResult = await dialogporten.V1ServiceOwnerDialogsPatchDialog(dialogId, compiledPatches, null, cancellationToken);
         if (!patchResult.IsSuccessful)
         {
-            return BadRequest(patchResult.Error.Content);
+            logger.LogWarning(
+                "Dialogporten PATCH /dialogs/{DialogId} (bootstrap stage {Cursor}) returned {StatusCode}. Body: {Body}",
+                dialogId, playbookState.Cursor, (int)patchResult.StatusCode, patchResult.Error?.Content);
+            return BadRequest(patchResult.Error?.Content);
         }
 
-        return Ok(guid);
+        return Ok(new { dialogId, stateId });
     }
 }
 
 public class CreatePlaybookRequest
 {
-    public string Party { get; set; }
-    public string ServiceResource { get; set; }
-    public PlaybookState PlaybookState { get; set; }
-
+    public string Party { get; set; } = null!;
+    public string ServiceResource { get; set; } = null!;
+    public PlaybookState PlaybookState { get; set; } = null!;
+    public Dictionary<string, FceContent>? FceContents { get; set; }
+    public string? InitialTitle { get; set; }
+    public string? InitialSummary { get; set; }
+    public string? InitialLanguageCode { get; set; }
 }
