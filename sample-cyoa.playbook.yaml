@@ -1,0 +1,500 @@
+playbook:
+  party: urn:altinn:person:identifier-no:08895699684
+  service-resource: urn:altinn:resource:ttd-dialogporten-automated-tests
+  language: en
+  start: cold-wake
+
+  stages:
+    cold-wake:
+      title: The Last Watch — cold wake
+      summary: A short sci-fi choose-your-own-adventure aboard the science vessel Maren-7. Seven endings.
+      status: Draft
+      extended-status: Cold sleep — wake cycle
+      additional-info: "Choose-your-own-adventure. Tree-shaped, no inventory or stats. There are **seven possible endings**. The story is original and released under the same MIT licence as the rest of this repo — adapt freely."
+      content: wake
+      actions:
+        - Check the bridge → bridge
+        - Check engineering → engineering
+        - Stay in the pod and listen → hide
+
+    bridge:
+      title: The bridge
+      status: InProgress
+      extended-status: Bridge — empty
+      content: bridge
+      activity: DialogOpened
+      actions:
+        - "Read the full captain's log → log"
+        - Open the comms array → comms
+        - Go back to the pod → cold-wake
+
+    engineering:
+      title: Engineering deck
+      status: InProgress
+      extended-status: Engineering — wounded
+      content: engineering
+      activity: DialogOpened
+      actions:
+        - Stabilize the reactor → reactor-fixed
+        - Follow the blood trail → medbay
+        - Go back to the pod → cold-wake
+
+    hide:
+      title: Inside the pod
+      status: InProgress
+      extended-status: Hiding
+      content: hide
+      actions:
+        - Stay completely still → silenced
+        - Open the pod and follow the steps → engineering
+
+    log:
+      title: "Captain's log"
+      status: InProgress
+      extended-status: Reviewing logs
+      content: log
+      transmissions:
+        - type: Information
+          from: Captain Vela Korin
+          title: "Captain's final entry"
+          summary: Recovered from the bridge terminal.
+          content: log-tx
+      actions:
+        - Pull up the passenger manifest → manifest
+        - Head down to the cryopod array → pod-array
+
+    comms:
+      title: Comms array
+      status: InProgress
+      extended-status: Listening
+      content: comms
+      actions:
+        - Respond on the same frequency → rescued
+        - Stay quiet, just listen → hull
+
+    reactor-fixed:
+      title: Reactor stable
+      status: InProgress
+      extended-status: Reactor stable — 6 hours
+      content: reactor-fixed
+      activity:
+        type: Information
+        description: Reactor stabilized. Power restored to nominal.
+      actions:
+        - Go check on the passengers → pod-array
+        - Prep a lifepod and leave → drifted
+
+    medbay:
+      title: Medical bay
+      status: InProgress
+      extended-status: Med bay — captain dying
+      content: medbay
+      transmissions:
+        - type: Information
+          from: Captain Vela Korin
+          title: "The captain's last words"
+          summary: "Three words. They don't leave you."
+          content: medbay-tx
+      actions:
+        - Take her sidearm and go to the bridge → mirrored
+        - Run for the lifepods → drifted
+
+    silenced:
+      title: ENDING — Silenced
+      status: Completed
+      extended-status: "Outcome: silenced"
+      additional-info: One ending of seven. You can restart and try a different choice.
+      content: ending-silenced
+      activity: DialogClosed
+      actions:
+        - Restart the story → cold-wake
+
+    manifest:
+      title: Passenger manifest
+      status: InProgress
+      extended-status: Manifest
+      content: manifest
+      actions:
+        - Down to the cryopod array → pod-array
+        - Go confront whoever is on the bridge → mirrored
+
+    pod-array:
+      title: Cryopod array
+      status: InProgress
+      extended-status: 46 alive, 1 missing
+      content: pod-array
+      activity:
+        type: Information
+        description: Pod 47 — yours — was opened 2 hours ago. According to the log.
+      actions:
+        - Revive everyone → all-hands
+        - Seal the pods and decide alone → slow-dark
+
+    rescued:
+      title: ENDING — Rescued
+      status: Completed
+      extended-status: "Outcome: rescued"
+      additional-info: One ending of seven. You can restart and try a different path.
+      content: ending-rescued
+      transmissions:
+        - type: Acceptance
+          from: RCS Heron
+          title: Rescue corvette — telemetry
+          summary: Coordinates locked. ETA 18 hours.
+          content: ending-rescued-tx
+      activity: DialogClosed
+      actions:
+        - Restart the story → cold-wake
+
+    hull:
+      title: The hull
+      status: InProgress
+      extended-status: Hull breach — docked
+      content: silence
+      actions:
+        - Run for the lifepods → drifted
+        - Hide in the cargo hold → vented
+
+    drifted:
+      title: ENDING — Drifted
+      status: Completed
+      extended-status: "Outcome: drifted"
+      additional-info: One ending of seven. You can restart and try a different path.
+      content: ending-drifted
+      activity: DialogClosed
+      actions:
+        - Restart the story → cold-wake
+
+    mirrored:
+      title: ENDING — Mirrored
+      status: Completed
+      extended-status: "Outcome: mirrored"
+      additional-info: One ending of seven. The big twist. You can restart and try a different path.
+      content: ending-mirror
+      activity: DialogClosed
+      actions:
+        - Restart the story → cold-wake
+
+    all-hands:
+      title: ENDING — All hands
+      status: Completed
+      extended-status: "Outcome: all hands"
+      additional-info: One ending of seven — the heroic one. You can restart and try a different path.
+      content: ending-heroic
+      transmissions:
+        - type: Submission
+          from: ServiceOwner
+          title: Crew status — all alive
+          summary: Roster log forwarded to receiving station.
+          content: ending-heroic-tx
+      activity: DialogClosed
+      actions:
+        - Restart the story → cold-wake
+
+    slow-dark:
+      title: ENDING — The slow dark
+      status: Completed
+      extended-status: "Outcome: the slow dark"
+      additional-info: One ending of seven. Probably the worst one. You can restart and try a different path.
+      content: ending-tragedy
+      activity: DialogClosed
+      actions:
+        - Restart the story → cold-wake
+
+    vented:
+      title: ENDING — Vented
+      status: Completed
+      extended-status: "Outcome: vented"
+      additional-info: One ending of seven. Short and final. You can restart and try a different path.
+      content: ending-vented
+      activity: DialogClosed
+      actions:
+        - Restart the story → cold-wake
+
+  fce:
+    wake: |
+      # Cold wake
+
+      You wake in a cryopod aboard the science vessel **Maren-7**.
+
+      The pod light is amber — a warning colour. The cabin around you is dim. Air comes in through the recycler in slow, cold pulses. You can hear it. You can hear it because there is nothing else to hear.
+
+      Your last clear memory is launch day, three years ago. The mission was supposed to last eighteen months.
+
+      What do you do?
+
+    bridge: |
+      # The bridge
+
+      The pressure door slides open more slowly than it should. Inside, the bridge is empty.
+
+      The captain's chair is cold to the touch. The viewport is dark — no stars, no signs of debris, no other ships. Just black.
+
+      On the main screen, frozen at the top of an otherwise blank console: a single line of text.
+
+      > Last entry — 2h ago — passenger 47.
+
+    engineering: |
+      # Engineering
+
+      Warning klaxons are off. They've been off for a while — there's no sound now, just the dry blink of red lamps on the support frames.
+
+      The reactor reads thirty percent of nominal. It is not dead, but it is dying.
+
+      There is a smear of blood on the bulkhead by the access ladder. It's at shoulder height, like someone braced themselves there with a bleeding hand. The smear runs forward, in the direction of the medical bay.
+
+      Whoever was here, they are not here now.
+
+    hide: |
+      # Inside the pod
+
+      You stay in the pod and close your eyes.
+
+      The air comes and goes. The amber light pulses on the inside of your eyelids.
+
+      And then — footsteps. Soft, deliberate. They pause outside the pod, just out of view. They wait. Then they move on.
+
+      A minute passes. Then another.
+
+      The footsteps come back.
+
+    log: |
+      # Captain's log
+
+      You unlock the terminal. The last full entry is short:
+
+      > I'm putting this here in case I'm wrong, and in case I'm right.
+      >
+      > Passenger 47 isn't who they say. The manifest has been altered. I've sealed the bridge.
+      >
+      > If you're reading this — I'm probably dead.
+
+      Beneath it, three half-written drafts. Then a row of static.
+
+    log-tx: |
+      # Captain's final entry — full text
+
+      *Captain Vela Korin to ship's log, 02:14 ship-time.*
+
+      I'm putting this here in case I'm wrong, and in case I'm right.
+
+      Passenger 47 isn't who they say. The manifest has been altered. I've cross-checked it three times now. The face on the manifest is mine. The face on the pod is mine. The voice in the corridor is mine.
+
+      I've sealed the bridge from inside. I've routed the pod controls to my own biometrics, so she can't open them.
+
+      If you're reading this — I'm probably dead. I'm sorry. I tried.
+
+      *Entry ends. No further log activity detected.*
+
+    comms: |
+      # Comms array
+
+      The array hums to life under your hand. The standard frequencies are silent. The emergency channels are silent. The deep-space beacons are silent.
+
+      Then, on a non-standard frequency at the edge of the rolloff: a soft pattern of tones. Eight notes. A pause. Eight notes again.
+
+      It does not sound human. It does not sound automated, either. It sounds like a question.
+
+    reactor-fixed: |
+      # Reactor stable
+
+      It takes you forty minutes. Two of those minutes are spent shaking under the manifold cover, gripping a hot coupling that you know — you *know* — will burn you if your hand slips.
+
+      Your hand does not slip.
+
+      When you climb out of the manifold housing the gauges have stopped twitching. Output is back to sixty percent. Six hours of stable power, maybe seven.
+
+      It's enough time to make a decision. It is not enough time to make many decisions.
+
+    medbay: |
+      # Medical bay
+
+      The blood led here.
+
+      The captain is on the floor by the diagnostic bed. There's a thin metal rod through her ribs, going from front to back — not a weapon you recognise, almost a piece of structural framing.
+
+      Her eyes track you when you kneel down. She tries to speak, and most of it is just breath. Then she gets out three words. Clearly. Then she's gone.
+
+    medbay-tx: |
+      # The captain's last words
+
+      > She's already awake.
+
+      Three words.
+
+      She died saying them, and she meant for you to hear them, and you did.
+
+      You don't know what to do with them yet.
+
+    ending-silenced: |
+      # ENDING — Silenced
+
+      The footsteps come back, and this time they stop directly outside the pod, and they do not move on.
+
+      There is a long, very quiet pause.
+
+      Then a voice — your own voice, exactly, in its rhythm and its breath — says: *It's okay. You can come out now.*
+
+      You hold your breath because the voice asked you to come out, and you refuse.
+
+      The voice waits. It is patient. It can wait longer than you can.
+
+      After a time it stops asking. The pod light goes from amber to red. The recycler stops pulling. The cabin around you grows quiet, and then quieter, and then quiet enough.
+
+      *— End. One of seven.*
+
+    manifest: |
+      # Passenger manifest
+
+      Forty-seven entries. Forty-six have photographs, names, professions, blood types, allergies, next-of-kin.
+
+      Entry forty-seven has only a name.
+
+      **Vela Korin.**
+
+      That's the captain's name. The captain is the captain. Why is the captain also a passenger? And why does the entry for *you* — for what should have been *your* slot — not exist at all on this manifest?
+
+    pod-array: |
+      # Cryopod array
+
+      The array is dim but functional. Forty-six pods burn steady green — life signs nominal. Their occupants are alive, sleeping, unaware.
+
+      The forty-seventh pod is dark. It has been opened recently. The status board says it was unsealed two hours ago.
+
+      But *you've* been in your own pod this whole time, until you got up just now to investigate.
+
+      Unless that's not true. Unless something else is.
+
+    ending-rescued: |
+      # ENDING — Rescued
+
+      You respond on the same frequency.
+
+      The eight tones become twelve. The twelve become a voice — human, this time, tired, professional. It tells you the rescue corvette *Heron* is eighteen hours out. It tells you to stay still and breathe slowly and not try to be a hero.
+
+      You do as you are told.
+
+      When they come, they come fast and they come careful, and they get you out without ever explaining what was in the corridor with you.
+
+      You ask, later, in debrief. They don't answer. They never answer.
+
+      You were rescued. Some questions you carry home with you anyway.
+
+      *— End. One of seven.*
+
+    silence: |
+      # Silence
+
+      You don't respond. The eight tones repeat. Eight more times. Sixteen. Twenty-four.
+
+      Then they stop, mid-pattern.
+
+      A moment later the ship shudders — once, hard, then again, gentler. Something has docked on the hull. You can hear it through the bulkhead now: a soft, regular tapping, like fingertips testing the door of a room you should not be in.
+
+      It is moving.
+
+    ending-drifted: |
+      # ENDING — Drifted
+
+      You launch the lifepod alone. It punches out of the *Maren-7* on a long, slow arc. Behind you, the ship dwindles. You watch it become a point of light, then less than that.
+
+      The pod's beacon is a faint thing. The pod's recycler is good for two centuries if you sleep through them.
+
+      You sleep.
+
+      Somewhere in the years that follow — you'll never know exactly when — a salvage ship picks up your faint beacon and changes course, or it doesn't.
+
+      When you wake, you'll find out which.
+
+      *— End. One of seven.*
+
+    ending-mirror: |
+      # ENDING — Mirrored
+
+      You come around the corner onto the bridge with the captain's sidearm low against your thigh.
+
+      There you are.
+
+      Same face. Same scars. Same long hesitation in the eyes. You look at yourself, and yourself looks at you, and one of you raises the sidearm a fraction.
+
+      The other you — the one in the captain's chair, the one who has been awake longer — speaks first.
+
+      *I was hoping it would be you,* she says. *One of us has to stay awake. I'm tired. I've been tired for a long time.*
+
+      She gestures gently at the chair beside her, and at the long, soft black outside the viewport, and at the ship's silent corridors. *Sit. I'll show you how.*
+
+      You sit. You learn how. The watch is yours now.
+
+      *— End. One of seven. The twist.*
+
+    ending-heroic: |
+      # ENDING — All hands
+
+      You run the revive sequence on all forty-six pods at once. The system protests — it is not designed to wake this many people in this little time — and you override it twice and a third time, and the override holds.
+
+      For a long minute nothing happens.
+
+      Then forty-six pod lights, one after another, blink from green to white.
+
+      It takes hours for the crew to come up properly, and they come up cold and confused and angry, but they come up. They are forty-six in number and they are alive.
+
+      Twelve hours later a rescue corvette finds you, drifting but lit. You give them the manifest. They take it. They take you all, every single one of you.
+
+      You go home.
+
+      *— End. One of seven. The heroic one.*
+
+    ending-heroic-tx: |
+      # Crew status — all alive
+
+      *Maren-7 cryopod array — final log.*
+
+      | Pod | Occupant | Status |
+      |---|---|---|
+      | 1–46 | Crew & passengers | Revived. Vital signs nominal. |
+      | 47 | (you) | Active. On watch. |
+
+      Forwarded to receiving station. Acknowledge.
+
+    ending-rescued-tx: |
+      # Rescue corvette — telemetry
+
+      **Vessel** RCS *Heron*
+      **Origin** Tycho Station
+      **ETA** 18h 02m
+      **Crew aboard** 12
+
+      Maintain station. Do not attempt course correction. Acknowledge low-power posture and respond on this frequency only when prompted.
+
+      *Heron* out.
+
+    ending-tragedy: |
+      # ENDING — The slow dark
+
+      You seal the pods. The decision feels right at the time. You can think more clearly without forty-six other minds expecting things of you.
+
+      You ration the power. You are careful. You are patient.
+
+      Six hours becomes twelve. Twelve becomes twenty. The reactor coughs once — a small thing, almost polite, like a guest declining a second drink.
+
+      The lights go out. The recycler does not come back on.
+
+      Forty-six souls in cold sleep become forty-six bodies, in the same pods, in the same room, in the same dark. You die last and you die listening to the hum fade. You were the only one awake to hear it go.
+
+      *— End. One of seven. Probably the worst.*
+
+    ending-vented: |
+      # ENDING — Vented
+
+      You hide behind the cargo crates.
+
+      Footsteps go past. Many footsteps — light and dry and not entirely in sync, as if someone hasn't quite finished learning how to walk.
+
+      The steps pass. They do not come back.
+
+      Then, behind you, a soft hiss. The cargo bay's emergency vent has opened. You don't know why. You don't have time to figure out why.
+
+      You hold your breath. You hold it for as long as you can.
+
+      *— End. One of seven.*
+

@@ -4,6 +4,7 @@
 @using Altinn.ApiClients.Dialogporten.Features.V1
 @using Digdir.BDB.Dialogporten.ServiceProvider.Components.Input
 @using Digdir.BDB.Dialogporten.ServiceProvider.Playbook
+@using Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl
 @using Digdir.BDB.Dialogporten.ServiceProvider.Services
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using Microsoft.Extensions.Options
@@ -22,7 +23,7 @@
 </p>
 
 <fieldset>
-    <legend>Import playbook</legend>
+    <legend>Import playbook (JSON envelope)</legend>
     <p style="margin: 0 0 0.5rem 0;">
         Paste a full playbook envelope JSON (Party, serviceResource, playbookState, fceContents) and click Import.
         The form fields below will be populated and you can review/edit before submitting.
@@ -31,7 +32,20 @@
         <textarea id="import" rows="6" cols="100" placeholder="Paste playbook JSON here..."></textarea>
     </div>
     <div>
-        <button type="button" @onclick="ImportFromJson">Import</button>
+        <button type="button" @onclick="ImportFromJson">Import JSON</button>
+    </div>
+</fieldset>
+
+<fieldset>
+    <legend>Import playbook (YAML DSL)</legend>
+    <p style="margin: 0 0 0.5rem 0;">
+        Paste a <code>.playbook.yaml</code> source and click Import DSL. The form below will be populated with the compiled patches and FCE contents; review and click Create Playbook.
+    </p>
+    <div>
+        <textarea id="import-dsl" rows="6" cols="100" placeholder="Paste YAML here..."></textarea>
+    </div>
+    <div>
+        <button type="button" @onclick="ImportFromDsl">Import DSL</button>
     </div>
 </fieldset>
 
@@ -309,6 +323,53 @@
         FceContentsJson = fceNode?.ToJsonString(indented) ?? "{}";
 
         ShowPopup("Imported", "Form populated from playbook JSON. Review the fields and click Create Playbook.");
+    }
+
+    private async Task ImportFromDsl()
+    {
+        var yaml = await Js.InvokeAsync<string>("eval", "(document.getElementById('import-dsl') || {value: ''}).value");
+
+        if (string.IsNullOrWhiteSpace(yaml))
+        {
+            ShowPopup("Error", "Paste the YAML first.");
+            return;
+        }
+
+        DslCompileResult compiled;
+        try
+        {
+            compiled = DslCompiler.Compile(yaml);
+        }
+        catch (DslCompilationException ex)
+        {
+            ShowPopup("DSL compile error", ex.Message);
+            return;
+        }
+        catch (Exception ex)
+        {
+            ShowPopup("DSL compile error", ex.Message);
+            return;
+        }
+
+        var indented = new JsonSerializerOptions { WriteIndented = true };
+
+        Request.Party = compiled.Party;
+        Request.ServiceResource = compiled.ServiceResource;
+        Cursor = compiled.InitialCursor;
+        PatchesJson = compiled.Blueprint.Patches.ToJsonString(indented);
+
+        var fceObj = new JsonObject();
+        foreach (var (name, fce) in compiled.Blueprint.FceContents)
+        {
+            fceObj[name] = new JsonObject
+            {
+                ["mediaType"] = fce.MediaType,
+                ["content"] = fce.Content
+            };
+        }
+        FceContentsJson = fceObj.ToJsonString(indented);
+
+        ShowPopup("DSL Imported", "Compiled from YAML. Review the fields and click Create Playbook.");
     }
 
     private static JsonNode? FindProperty(JsonObject obj, string name)

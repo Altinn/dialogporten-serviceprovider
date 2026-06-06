@@ -1,5 +1,8 @@
+using System.IO;
+using System.Text.Json.Nodes;
 using Altinn.ApiClients.Dialogporten.Features.V1;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
+using Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
@@ -44,20 +47,68 @@ public class PlaybookController(
             }
         }
 
-        var initialTitle = string.IsNullOrWhiteSpace(createPlaybookRequest.InitialTitle)
-            ? "Playbook"
-            : createPlaybookRequest.InitialTitle;
-        var initialSummary = string.IsNullOrWhiteSpace(createPlaybookRequest.InitialSummary)
-            ? "Playbook dialog"
-            : createPlaybookRequest.InitialSummary;
-        var initialLanguageCode = string.IsNullOrWhiteSpace(createPlaybookRequest.InitialLanguageCode)
-            ? "en"
-            : createPlaybookRequest.InitialLanguageCode;
+        return await BootstrapPlaybookAsync(
+            createPlaybookRequest.Party,
+            createPlaybookRequest.ServiceResource,
+            createPlaybookRequest.InitialTitle,
+            createPlaybookRequest.InitialSummary,
+            createPlaybookRequest.InitialLanguageCode,
+            playbookState.Patches,
+            createPlaybookRequest.FceContents ?? new Dictionary<string, FceContent>(),
+            playbookState.Cursor,
+            cancellationToken);
+    }
+
+    [Authorize]
+    [Route("create-from-dsl")]
+    [Consumes("text/yaml", "application/x-yaml", "text/plain")]
+    [HttpPost]
+    public async Task<IActionResult> PostDsl(CancellationToken cancellationToken)
+    {
+        using var reader = new StreamReader(Request.Body);
+        var yaml = await reader.ReadToEndAsync(cancellationToken);
+
+        DslCompileResult compiled;
+        try
+        {
+            compiled = DslCompiler.Compile(yaml);
+        }
+        catch (DslCompilationException ex)
+        {
+            return BadRequest($"DSL compile error: {ex.Message}");
+        }
+
+        return await BootstrapPlaybookAsync(
+            compiled.Party,
+            compiled.ServiceResource,
+            compiled.InitialTitle,
+            compiled.InitialSummary,
+            compiled.Language,
+            compiled.Blueprint.Patches,
+            compiled.Blueprint.FceContents,
+            compiled.InitialCursor,
+            cancellationToken);
+    }
+
+    private async Task<IActionResult> BootstrapPlaybookAsync(
+        string party,
+        string serviceResource,
+        string? initialTitleOverride,
+        string? initialSummaryOverride,
+        string? initialLanguageOverride,
+        JsonArray patches,
+        IReadOnlyDictionary<string, FceContent> fceContents,
+        int initialCursor,
+        CancellationToken cancellationToken)
+    {
+        var initialTitle = string.IsNullOrWhiteSpace(initialTitleOverride) ? "Playbook" : initialTitleOverride;
+        var initialSummary = string.IsNullOrWhiteSpace(initialSummaryOverride) ? "Playbook dialog" : initialSummaryOverride;
+        var initialLanguageCode = string.IsNullOrWhiteSpace(initialLanguageOverride) ? "en" : initialLanguageOverride;
 
         var dto = new V1ServiceOwnerDialogsCommandsCreate_Dialog
         {
-            ServiceResource = createPlaybookRequest.ServiceResource,
-            Party = createPlaybookRequest.Party,
+            ServiceResource = serviceResource,
+            Party = party,
             Content = new V1ServiceOwnerDialogsCommandsCreate_Content
             {
                 Title = new V1CommonContent_ContentValue
@@ -107,15 +158,11 @@ public class PlaybookController(
             return BadRequest("Parse Guid failed");
         }
 
-        var blueprint = new PlaybookBlueprint(
-            dialogId,
-            playbookState.Patches,
-            createPlaybookRequest.FceContents ?? new Dictionary<string, FceContent>());
-
+        var blueprint = new PlaybookBlueprint(dialogId, patches, fceContents);
         var stateId = await stateStore.CreateAsync(blueprint, cancellationToken);
 
         var compiler = new PlaybookCompiler(options.Value) { Progress = 0 };
-        var compiledPatches = await compiler.CompilePatches(stateId, blueprint, playbookState.Cursor);
+        var compiledPatches = await compiler.CompilePatches(stateId, blueprint, initialCursor);
         if (compiledPatches.Count == 0)
         {
             return BadRequest("Cursor produced no patches.");
@@ -126,12 +173,13 @@ public class PlaybookController(
         {
             logger.LogWarning(
                 "Dialogporten PATCH /dialogs/{DialogId} (bootstrap stage {Cursor}) returned {StatusCode}. Body: {Body}",
-                dialogId, playbookState.Cursor, (int)patchResult.StatusCode, patchResult.Error?.Content);
+                dialogId, initialCursor, (int)patchResult.StatusCode, patchResult.Error?.Content);
             return BadRequest(patchResult.Error?.Content);
         }
 
         return Ok(new { dialogId, stateId });
     }
+
 }
 
 public class CreatePlaybookRequest

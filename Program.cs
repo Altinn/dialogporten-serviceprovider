@@ -116,30 +116,21 @@ await app.RunAsync();
 static void ValidateSampleFiles(WebApplication app)
 {
     var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("PlaybookSampleValidator");
-    var samples = Directory.EnumerateFiles(app.Environment.ContentRootPath, "sample-*.json").ToList();
-    if (samples.Count == 0)
-    {
-        return;
-    }
+    var root = app.Environment.ContentRootPath;
+    var jsonSamples = Directory.EnumerateFiles(root, "sample-*.json").ToList();
+    var yamlSamples = Directory.EnumerateFiles(root, "sample-*.playbook.yaml").ToList();
+    if (jsonSamples.Count == 0 && yamlSamples.Count == 0) return;
 
     var totalIssues = 0;
-    foreach (var path in samples)
+
+    foreach (var path in jsonSamples)
     {
         var fileName = Path.GetFileName(path);
         try
         {
             using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));
             var issues = Digdir.BDB.Dialogporten.ServiceProvider.Playbook.PlaybookSampleValidator.Validate(doc);
-            if (issues.Count == 0)
-            {
-                logger.LogInformation("Sample {File} OK", fileName);
-                continue;
-            }
-            totalIssues += issues.Count;
-            foreach (var issue in issues)
-            {
-                logger.LogWarning("[{File}] {Issue}", fileName, issue);
-            }
+            ReportIssues(logger, fileName, issues, ref totalIssues);
         }
         catch (Exception ex)
         {
@@ -147,9 +138,76 @@ static void ValidateSampleFiles(WebApplication app)
             totalIssues++;
         }
     }
+
+    foreach (var path in yamlSamples)
+    {
+        var fileName = Path.GetFileName(path);
+        try
+        {
+            var yaml = File.ReadAllText(path);
+            var compiled = Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl.DslCompiler.Compile(yaml);
+
+            // Reconstruct the envelope shape the JSON validator expects, then run it.
+            var envelope = new System.Text.Json.Nodes.JsonObject
+            {
+                ["Party"] = compiled.Party,
+                ["serviceResource"] = compiled.ServiceResource,
+                ["playbookState"] = new System.Text.Json.Nodes.JsonObject
+                {
+                    ["Cursor"] = compiled.InitialCursor,
+                    ["Patches"] = compiled.Blueprint.Patches.DeepClone()
+                },
+                ["fceContents"] = BuildFceContentsNode(compiled.Blueprint.FceContents)
+            };
+            using var doc = System.Text.Json.JsonDocument.Parse(envelope.ToJsonString());
+            var issues = Digdir.BDB.Dialogporten.ServiceProvider.Playbook.PlaybookSampleValidator.Validate(doc);
+            ReportIssues(logger, fileName, issues, ref totalIssues);
+        }
+        catch (Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl.DslCompilationException ex)
+        {
+            logger.LogWarning("[{File}] DSL compile error: {Message}", fileName, ex.Message);
+            totalIssues++;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to parse/validate sample {File}", fileName);
+            totalIssues++;
+        }
+    }
+
     if (totalIssues > 0)
     {
-        logger.LogWarning("Validated {Count} sample file(s); found {Issues} issue(s)", samples.Count, totalIssues);
+        logger.LogWarning("Validated {Count} sample file(s); found {Issues} issue(s)",
+            jsonSamples.Count + yamlSamples.Count, totalIssues);
+    }
+}
+
+static System.Text.Json.Nodes.JsonObject BuildFceContentsNode(
+    IReadOnlyDictionary<string, Digdir.BDB.Dialogporten.ServiceProvider.Playbook.FceContent> fce)
+{
+    var obj = new System.Text.Json.Nodes.JsonObject();
+    foreach (var (name, content) in fce)
+    {
+        obj[name] = new System.Text.Json.Nodes.JsonObject
+        {
+            ["mediaType"] = content.MediaType,
+            ["content"] = content.Content
+        };
+    }
+    return obj;
+}
+
+static void ReportIssues(ILogger logger, string fileName, IReadOnlyList<string> issues, ref int totalIssues)
+{
+    if (issues.Count == 0)
+    {
+        logger.LogInformation("Sample {File} OK", fileName);
+        return;
+    }
+    totalIssues += issues.Count;
+    foreach (var issue in issues)
+    {
+        logger.LogWarning("[{File}] {Issue}", fileName, issue);
     }
 }
 
