@@ -55,12 +55,26 @@ public class MutateController(
         // stateIds diverge, while the same playbook replays identically.
         var rng = CreateRng(sessionVars, stateId);
 
-        if (cursor < blueprint.StageBehaviors.Count)
+        // Phase E: effect + router loop. Apply the entered stage's effects; if the stage has
+        // goto rules, dispatch to the first matching target and repeat there. The stage the
+        // loop settles on is the one that renders.
+        const int maxGotoHops = 16;
+        var hops = 0;
+        var anyEffectsApplied = false;
+        while (true)
         {
+            if (cursor >= blueprint.StageBehaviors.Count)
+            {
+                logger.LogInformation(
+                    "[mutate]   NO stage behaviors at cursor={Cursor} (blueprint StageBehaviors.Count={Count}); Phase B inactive for this playbook",
+                    cursor, blueprint.StageBehaviors.Count);
+                break;
+            }
+
             var stageBehavior = blueprint.StageBehaviors[cursor];
             logger.LogInformation(
-                "[mutate]   stage[{Cursor}] effects={EffectCount} action-whens={WhenCount}",
-                cursor, stageBehavior.Effects.Count, stageBehavior.ActionWhens.Count(w => w != null));
+                "[mutate]   stage[{Cursor}] effects={EffectCount} action-whens={WhenCount} gotos={GotoCount}",
+                cursor, stageBehavior.Effects.Count, stageBehavior.ActionWhens.Count(w => w != null), stageBehavior.Gotos.Count);
 
             foreach (var stmt in stageBehavior.Effects)
             {
@@ -78,23 +92,47 @@ public class MutateController(
                     return BadRequest($"Effect failed: {ex.Message}");
                 }
             }
-            if (stageBehavior.Effects.Count > 0)
+            anyEffectsApplied |= stageBehavior.Effects.Count > 0;
+
+            if (stageBehavior.Gotos.Count == 0)
             {
-                await stateStore.UpdateSessionVarsAsync(stateId, sessionVars, cancellationToken);
+                break;
+            }
+
+            var next = ResolveGotoRules(stageBehavior.Gotos, sessionVars, blueprint.StageCursors, cursor, out var gotoError);
+            if (gotoError is not null)
+            {
+                logger.LogWarning("Goto dispatch failed for stateId={StateId} cursor={Cursor}: {Error}", stateId, cursor, gotoError);
+                return BadRequest($"Goto dispatch failed: {gotoError}");
+            }
+            if (next is null)
+            {
+                break; // no rule matched — fall through and render this stage
+            }
+            if (++hops > maxGotoHops)
+            {
+                logger.LogWarning("Goto chain exceeded {Max} hops for stateId={StateId} (possible cycle)", maxGotoHops, stateId);
+                return BadRequest($"Goto chain exceeded {maxGotoHops} hops (possible cycle)");
+            }
+            logger.LogInformation("[mutate]   goto dispatch: stage[{From}] → stage[{To}]", cursor, next.Value);
+            cursor = next.Value;
+            if (cursor < 0 || cursor >= blueprint.Patches.Count)
+            {
+                return BadRequest($"Goto dispatched to out-of-range cursor {cursor}");
             }
         }
-        else
+
+        if (anyEffectsApplied)
         {
-            logger.LogInformation(
-                "[mutate]   NO stage behaviors at cursor={Cursor} (blueprint StageBehaviors.Count={Count}); Phase B inactive for this playbook",
-                cursor, blueprint.StageBehaviors.Count);
+            await stateStore.UpdateSessionVarsAsync(stateId, sessionVars, cancellationToken);
         }
 
         var compiler = new PlaybookCompiler(options.Value)
         {
             Progress = 0,
             Rng = rng,
-            SessionVars = sessionVars
+            SessionVars = sessionVars,
+            StageCursors = blueprint.StageCursors
         };
 
         var dialogResponse = await dialogporten.V1ServiceOwnerDialogsQueriesGetDialog(blueprint.DialogId, null!, cancellationToken);
@@ -108,7 +146,17 @@ public class MutateController(
 
         compiler.Progress = dialogResponse.Content!.Progress ?? 0;
 
-        var patches = await compiler.CompilePatches(stateId, blueprint, cursor);
+        List<JsonPatchOperations_Operation> patches;
+        try
+        {
+            patches = await compiler.CompilePatches(stateId, blueprint, cursor);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // $gotovar resolution failure — var missing, not a string, or not a stage name.
+            logger.LogWarning("Patch compile failed for stateId={StateId} cursor={Cursor}: {Error}", stateId, cursor, ex.Message);
+            return BadRequest(ex.Message);
+        }
         if (patches.Count == 0)
         {
             return BadRequest();
@@ -139,6 +187,58 @@ public class MutateController(
         return Ok();
     }
 
+    /// <summary>
+    /// Evaluates a router stage's goto rules in order. Returns the target cursor of the first
+    /// matching rule, or null if none matched (fall-through: the stage renders normally).
+    /// A resolution failure is reported via <paramref name="error"/>.
+    /// </summary>
+    private int? ResolveGotoRules(
+        IReadOnlyList<GotoRule> rules,
+        IReadOnlyDictionary<string, object?> sessionVars,
+        IReadOnlyDictionary<string, int> stageCursors,
+        int cursor,
+        out string? error)
+    {
+        error = null;
+        foreach (var rule in rules)
+        {
+            if (rule.When is not null)
+            {
+                try
+                {
+                    if (Evaluator.Evaluate(rule.When, sessionVars) is not true)
+                    {
+                        continue;
+                    }
+                }
+                catch (ScriptException ex)
+                {
+                    error = $"goto when evaluation failed at stage[{cursor}]: {ex.Message}";
+                    return null;
+                }
+            }
+
+            if (rule.Cursor is { } fixedCursor)
+            {
+                return fixedCursor;
+            }
+
+            // Computed target: session var holds a stage name.
+            if (!sessionVars.TryGetValue(rule.Var!, out var raw) || raw is not string stageName || string.IsNullOrWhiteSpace(stageName))
+            {
+                error = $"goto @var({rule.Var}) at stage[{cursor}]: var does not hold a stage name";
+                return null;
+            }
+            if (!stageCursors.TryGetValue(stageName, out var varCursor))
+            {
+                error = $"goto @var({rule.Var}) at stage[{cursor}]: '{stageName}' is not a defined stage";
+                return null;
+            }
+            return varCursor;
+        }
+        return null;
+    }
+
     private void FilterActionsByWhen(
         List<JsonPatchOperations_Operation> patches,
         IReadOnlyList<Expr?> actionWhens,
@@ -153,7 +253,8 @@ public class MutateController(
             var actionsNode = NormaliseToJsonArray(op.Value);
             if (actionsNode is null) continue;
 
-            // Phase 1: evaluate each action's when; track which match and whether any with-when matched.
+            // Phase 1: evaluate expression whens. No when → always kept. `when: else` is
+            // deferred to phase 2 (kept iff no expression when matched).
             var anyWithWhenMatched = false;
             var keep = new bool[actionsNode.Count];
 
@@ -162,7 +263,13 @@ public class MutateController(
                 var when = i < actionWhens.Count ? actionWhens[i] : null;
                 if (when == null)
                 {
-                    logger.LogInformation("[mutate]   action[{Index}] no when (fallback candidate)", i);
+                    keep[i] = true;
+                    logger.LogInformation("[mutate]   action[{Index}] no when (always shown)", i);
+                    continue;
+                }
+                if (when is ElseLit)
+                {
+                    logger.LogInformation("[mutate]   action[{Index}] when=else (fallback candidate)", i);
                     continue;
                 }
                 try
@@ -184,11 +291,11 @@ public class MutateController(
                 }
             }
 
-            // Phase 2: fallbacks render iff no with-when matched.
+            // Phase 2: `when: else` actions render iff no expression-guarded action matched.
             for (var i = 0; i < actionsNode.Count; i++)
             {
                 var when = i < actionWhens.Count ? actionWhens[i] : null;
-                if (when == null && !anyWithWhenMatched)
+                if (when is ElseLit && !anyWithWhenMatched)
                 {
                     keep[i] = true;
                 }
@@ -307,7 +414,16 @@ public class MutateController(
         DecStmt dec => dec.By is null ? $"dec {dec.Var}" : $"dec {dec.Var} by {FormatExpr(dec.By)}",
         ListAddStmt add => $"add {add.Var} += {FormatExpr(add.Value)}",
         ListRemoveStmt rem => $"remove {rem.Var} -= {FormatExpr(rem.Value)}",
+        RollStmt roll => $"roll {roll.Var} = {FormatRollSpec(roll.Spec)}",
+        IfStmt cond => $"if {FormatExpr(cond.Cond)} then {FormatStmt(cond.Then)}",
         _ => s.ToString() ?? ""
+    };
+
+    private static string FormatRollSpec(RollSpec spec) => spec switch
+    {
+        DiceSpec d => $"{d.Count}d{d.Sides}",
+        RangeSpec r => $"{r.Lo}..{r.Hi}",
+        _ => spec.ToString() ?? ""
     };
 
     private static string FormatExpr(Expr e) => e switch
@@ -319,6 +435,7 @@ public class MutateController(
         UnaryNot n => $"!{FormatExpr(n.Operand)}",
         BinOp b => $"({FormatExpr(b.Left)} {b.Op} {FormatExpr(b.Right)})",
         Contains c => $"{c.ListVar} contains {FormatExpr(c.Value)}",
+        ElseLit => "else",
         _ => e.ToString() ?? ""
     };
 }

@@ -8,7 +8,13 @@ public enum CommandType
     Previous,
     Goto,
     GotoIfProgress,
-    Random
+    Random,
+
+    /// <summary>
+    /// <c>$gotovar=NAME</c>: the target cursor is resolved at render time from session var NAME,
+    /// which must hold the name of a stage. Compiled from the DSL target syntax <c>@var(NAME)</c>.
+    /// </summary>
+    GotoVar
 }
 
 public record Command(object Value, CommandType Type);
@@ -45,6 +51,7 @@ public static class Lexer
             "$goto" => new Command(int.Parse(temp[1]), CommandType.Goto),
             "$gotoIfProgress" => new Command(ParseGotoIfProgressCommand(temp[1]), CommandType.GotoIfProgress),
             "$random" => new Command(ParseRandomCommand(temp[1]), CommandType.Random),
+            "$gotovar" => new Command(temp[1], CommandType.GotoVar),
             _ => null
         };
 

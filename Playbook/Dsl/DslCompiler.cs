@@ -40,6 +40,11 @@ public static class DslCompiler
         var initialVars = NormaliseVars(source.Vars);
         var declaredVarNames = new HashSet<string>(initialVars.Keys);
 
+        foreach (var (name, fce) in fceContents)
+        {
+            ValidateTemplateBlocks(fce.Content, declaredVarNames, $"fce['{name}']");
+        }
+
         var patches = new JsonArray();
         var stageBehaviors = new List<StageBehavior>();
         foreach (var (_, stage) in stagesInOrder)
@@ -55,7 +60,8 @@ public static class DslCompiler
             patches,
             fceContents,
             initialVars,
-            stageBehaviors);
+            stageBehaviors,
+            cursorByName);
 
         return new DslCompileResult(
             source.Party,
@@ -228,6 +234,15 @@ public static class DslCompiler
         // Per-action when expressions (Phase B).
         var actionWhens = new List<Expr?>();
 
+        // Router rules (Phase E).
+        var gotos = CompileGotos(stage, cursorByName, declaredVars);
+
+        // Compile-time check of {if:EXPR} template blocks in author-visible text.
+        ValidateTemplateBlocks(stage.Title, declaredVars, "title");
+        ValidateTemplateBlocks(stage.Summary, declaredVars, "summary");
+        ValidateTemplateBlocks(stage.ExtendedStatus, declaredVars, "extended-status");
+        ValidateTemplateBlocks(stage.AdditionalInfo, declaredVars, "additional-info");
+
         if (stage.Title != null)
         {
             ops.Add(MakeOp("replace", "/content/title/value/0/value", JsonValue.Create(stage.Title)));
@@ -276,7 +291,7 @@ public static class DslCompiler
             for (var i = 0; i < stage.Actions.Count; i++)
             {
                 var parsed = ParseAction(stage.Actions[i]);
-                var resolvedTarget = ResolveTarget(parsed.Target ?? "", cursorByName);
+                var resolvedTarget = ResolveTarget(parsed.Target ?? "", cursorByName, declaredVars);
                 var priority = string.IsNullOrEmpty(parsed.Priority)
                     ? (i == 0 ? "primary" : i == 1 ? "secondary" : "tertiary")
                     : parsed.Priority;
@@ -290,8 +305,13 @@ public static class DslCompiler
                     ["title"] = new JsonArray { new JsonObject { ["languageCode"] = lang, ["value"] = parsed.Label } }
                 });
 
-                // Capture per-action when expression (Phase B).
-                if (!string.IsNullOrWhiteSpace(parsed.When))
+                // Capture per-action when expression (Phase B). "else" is the explicit
+                // fallback marker (Phase E); absent when = always rendered.
+                if (string.Equals(parsed.When?.Trim(), "else", StringComparison.Ordinal))
+                {
+                    actionWhens.Add(ElseLit.Instance);
+                }
+                else if (!string.IsNullOrWhiteSpace(parsed.When))
                 {
                     Expr whenExpr;
                     try
@@ -313,7 +333,120 @@ public static class DslCompiler
             ops.Add(MakeOp("add", "/guiActions", actionArray));
         }
 
-        return (ops, new StageBehavior(effects, actionWhens));
+        return (ops, new StageBehavior(effects, actionWhens, gotos));
+    }
+
+    private static readonly HashSet<string> GotoKeys = new(StringComparer.OrdinalIgnoreCase)
+        { "target", "when" };
+
+    private static List<GotoRule> CompileGotos(
+        StageSource stage, Dictionary<string, int> cursorByName, HashSet<string> declaredVars)
+    {
+        if (stage.Goto is not { Count: > 0 }) return [];
+
+        var rules = new List<GotoRule>();
+        var sawUnconditional = false;
+        foreach (var raw in stage.Goto)
+        {
+            string targetText;
+            string? whenText = null;
+            if (raw is string s)
+            {
+                targetText = s;
+            }
+            else
+            {
+                var d = AsStringDict(raw)
+                    ?? throw new DslCompilationException($"goto rule must be a string or object (got {DescribeType(raw)})");
+                RequireKnownKeys(d, GotoKeys, "goto rule");
+                targetText = TryGetString(d, "target")
+                    ?? throw new DslCompilationException("goto rule is missing 'target'");
+                whenText = TryGetString(d, "when");
+            }
+
+            if (sawUnconditional)
+            {
+                throw new DslCompilationException(
+                    $"goto rule targeting '{targetText}' is unreachable (a previous rule has no 'when')");
+            }
+
+            Expr? when = null;
+            if (!string.IsNullOrWhiteSpace(whenText))
+            {
+                try
+                {
+                    when = ScriptParser.ParseExpression(whenText);
+                }
+                catch (ScriptException ex)
+                {
+                    throw new DslCompilationException($"goto when '{whenText}' parse error: {ex.Message}");
+                }
+                ValidateExprVarRefs(when, declaredVars, whenText);
+            }
+            else
+            {
+                sawUnconditional = true;
+            }
+
+            if (TryParseVarTarget(targetText, out var varName))
+            {
+                Require(varName, declaredVars, targetText);
+                rules.Add(new GotoRule(when, null, varName));
+            }
+            else if (cursorByName.TryGetValue(targetText, out var cursor))
+            {
+                rules.Add(new GotoRule(when, cursor, null));
+            }
+            else
+            {
+                throw new DslCompilationException(
+                    $"goto rule targets unknown stage '{targetText}' (not a defined stage or @var(NAME))");
+            }
+        }
+        return rules;
+    }
+
+    /// <summary>
+    /// Parses every <c>{if:EXPR}</c> block in a template string at compile time so expression
+    /// errors and undeclared vars surface as compile errors rather than inline render markers.
+    /// </summary>
+    private static void ValidateTemplateBlocks(string? text, HashSet<string> declared, string context)
+    {
+        if (string.IsNullOrEmpty(text) || !text.Contains("{if:", StringComparison.Ordinal)) return;
+
+        var i = 0;
+        while ((i = text.IndexOf("{if:", i, StringComparison.Ordinal)) >= 0)
+        {
+            i += 4;
+            var exprText = Evaluator.ScanTemplateExpr(text, ref i)
+                ?? throw new DslCompilationException($"{context}: unterminated {{if:...}} block");
+            Expr expr;
+            try
+            {
+                expr = ScriptParser.ParseExpression(exprText);
+            }
+            catch (ScriptException ex)
+            {
+                throw new DslCompilationException($"{context}: {{if:{exprText}}} parse error: {ex.Message}");
+            }
+            ValidateExprVarRefs(expr, declared, $"{context}: {{if:{exprText}}}");
+        }
+    }
+
+    /// <summary>Matches the computed-target syntax <c>@var(NAME)</c>.</summary>
+    private static bool TryParseVarTarget(string target, out string varName)
+    {
+        varName = "";
+        if (!target.StartsWith("@var(", StringComparison.Ordinal) || !target.EndsWith(')'))
+        {
+            return false;
+        }
+        varName = target[5..^1].Trim();
+        if (varName.Length == 0)
+        {
+            throw new DslCompilationException("@var() target is missing a variable name");
+        }
+        return true;
     }
 
     private static void ValidateStmtVarRefs(Stmt stmt, HashSet<string> declared, string source)
@@ -325,6 +458,8 @@ public static class DslCompiler
             case DecStmt d: Require(d.Var, declared, source); if (d.By != null) ValidateExprVarRefs(d.By, declared, source); break;
             case ListAddStmt a: Require(a.Var, declared, source); ValidateExprVarRefs(a.Value, declared, source); break;
             case ListRemoveStmt r: Require(r.Var, declared, source); ValidateExprVarRefs(r.Value, declared, source); break;
+            case RollStmt roll: Require(roll.Var, declared, source); break;
+            case IfStmt cond: ValidateExprVarRefs(cond.Cond, declared, source); ValidateStmtVarRefs(cond.Then, declared, source); break;
         }
     }
 
@@ -494,12 +629,20 @@ public static class DslCompiler
         return new ActionSource { Label = label, Target = target };
     }
 
-    private static string ResolveTarget(string target, Dictionary<string, int> stageCursors)
+    private static string ResolveTarget(string target, Dictionary<string, int> stageCursors, HashSet<string> declaredVars)
     {
         if (string.IsNullOrWhiteSpace(target))
             throw new DslCompilationException("action target is empty");
 
         if (target.StartsWith('$')) return target;
+
+        // Computed target: @var(NAME) — resolved at render time from the stage name held in
+        // session var NAME.
+        if (TryParseVarTarget(target, out var varName))
+        {
+            Require(varName, declaredVars, target);
+            return $"$gotovar={varName}";
+        }
 
         // Random: ?(a, b, c) or ?(a:1, b:3) — uniform or weighted random pick.
         if (target.StartsWith("?(") && target.EndsWith(')'))

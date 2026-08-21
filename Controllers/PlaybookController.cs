@@ -53,8 +53,10 @@ public class PlaybookController(
             createPlaybookRequest.InitialTitle,
             createPlaybookRequest.InitialSummary,
             createPlaybookRequest.InitialLanguageCode,
-            playbookState.Patches,
-            createPlaybookRequest.FceContents ?? new Dictionary<string, FceContent>(),
+            new PlaybookBlueprint(
+                Guid.Empty,
+                playbookState.Patches,
+                createPlaybookRequest.FceContents ?? new Dictionary<string, FceContent>()),
             playbookState.Cursor,
             cancellationToken);
     }
@@ -84,8 +86,7 @@ public class PlaybookController(
             compiled.InitialTitle,
             compiled.InitialSummary,
             compiled.Language,
-            compiled.Blueprint.Patches,
-            compiled.Blueprint.FceContents,
+            compiled.Blueprint,
             compiled.InitialCursor,
             cancellationToken);
     }
@@ -96,8 +97,7 @@ public class PlaybookController(
         string? initialTitleOverride,
         string? initialSummaryOverride,
         string? initialLanguageOverride,
-        JsonArray patches,
-        IReadOnlyDictionary<string, FceContent> fceContents,
+        PlaybookBlueprint blueprintTemplate,
         int initialCursor,
         CancellationToken cancellationToken)
     {
@@ -158,13 +158,17 @@ public class PlaybookController(
             return BadRequest("Parse Guid failed");
         }
 
-        var blueprint = new PlaybookBlueprint(dialogId, patches, fceContents);
+        // Bind the freshly created dialog id onto the compiled blueprint. Previously this
+        // rebuilt the blueprint via the Phase A constructor, silently dropping InitialVars and
+        // StageBehaviors for DSL-created playbooks.
+        var blueprint = blueprintTemplate with { DialogId = dialogId };
         var stateId = await stateStore.CreateAsync(blueprint, cancellationToken);
 
         var compiler = new PlaybookCompiler(options.Value)
         {
             Progress = 0,
-            SessionVars = blueprint.InitialVars
+            SessionVars = blueprint.InitialVars,
+            StageCursors = blueprint.StageCursors
         };
         var compiledPatches = await compiler.CompilePatches(stateId, blueprint, initialCursor);
         if (compiledPatches.Count == 0)

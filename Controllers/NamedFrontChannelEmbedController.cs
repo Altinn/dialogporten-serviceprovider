@@ -44,10 +44,11 @@ public class NamedFrontChannelEmbedController(IPlaybookStateStore stateStore) : 
         Response.Headers["X-Content-Type-Options"] = "nosniff";
         Response.Headers["Content-Security-Policy"] = "sandbox; default-src 'none'; style-src 'unsafe-inline'";
 
-        // Phase D: interpolate {vars.X} in the FCE body using current session vars,
-        // so embed content reflects live state when Arbeidsflate loads the iframe.
+        // Phase D/E: render {if:...} conditional blocks and interpolate {vars.X} in the FCE body
+        // using current session vars, so embed content reflects live state when Arbeidsflate
+        // loads the iframe.
         var sessionVars = await stateStore.GetSessionVarsAsync(stateId, cancellationToken);
-        var body = Evaluator.Interpolate(content.Content, sessionVars);
+        var body = Evaluator.RenderTemplate(content.Content, sessionVars);
         return Content(body, content.MediaType);
     }
 }

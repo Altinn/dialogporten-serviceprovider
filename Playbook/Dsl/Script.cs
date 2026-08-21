@@ -16,6 +16,8 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl;
 //               | 'dec' ident ('by' expr)?
 //               | 'add' ident '+=' expr
 //               | 'remove' ident '-=' expr
+//               | 'roll' ident '=' (dice | range)
+//               | 'if' expr 'then' stmt
 //
 // Values are int (long), bool, string, or list-of-the-same.
 
@@ -30,7 +32,17 @@ public sealed record BinOp(string Op, Expr Left, Expr Right) : Expr;
 public sealed record UnaryNot(Expr Operand) : Expr;
 public sealed record Contains(string ListVar, Expr Value) : Expr;
 
+/// <summary>
+/// Sentinel for an action's <c>when: else</c>: rendered iff no expression-guarded action in the
+/// same stage matched. Never evaluated as an expression.
+/// </summary>
+public sealed record ElseLit : Expr
+{
+    public static readonly ElseLit Instance = new();
+}
+
 public abstract record Stmt;
+public sealed record IfStmt(Expr Cond, Stmt Then) : Stmt;
 public sealed record SetStmt(string Var, Expr Value) : Stmt;
 public sealed record IncStmt(string Var, Expr? By) : Stmt;
 public sealed record DecStmt(string Var, Expr? By) : Stmt;
@@ -188,9 +200,16 @@ internal sealed class Parser(List<Tok> tokens)
 
     public Stmt ParseStatement()
     {
+        var s = ParseStatementBody();
+        if (Peek().Kind != TokKind.Eof) throw new ScriptException($"unexpected '{Peek().Text}' at position {Peek().Pos}");
+        return s;
+    }
+
+    private Stmt ParseStatementBody()
+    {
         var t = Peek();
         if (t.Kind != TokKind.Ident) throw new ScriptException($"expected statement verb at position {t.Pos}");
-        Stmt s = t.Text switch
+        return t.Text switch
         {
             "set" => ParseSet(),
             "inc" => ParseIncDec(positive: true),
@@ -198,10 +217,23 @@ internal sealed class Parser(List<Tok> tokens)
             "add" => ParseListAdd(),
             "remove" => ParseListRemove(),
             "roll" => ParseRoll(),
+            "if" => ParseIf(),
             _ => throw new ScriptException($"unknown statement verb '{t.Text}'")
         };
-        if (Peek().Kind != TokKind.Eof) throw new ScriptException($"unexpected '{Peek().Text}' at position {Peek().Pos}");
-        return s;
+    }
+
+    private Stmt ParseIf()
+    {
+        Take(); // 'if'
+        var cond = ParseOr();
+        var t = Peek();
+        if (t.Kind != TokKind.Ident || t.Text != "then")
+        {
+            throw new ScriptException($"expected 'then' after if-condition, got '{t.Text}' at position {t.Pos}");
+        }
+        Take(); // 'then'
+        var then = ParseStatementBody();
+        return new IfStmt(cond, then);
     }
 
     private Stmt ParseSet()
@@ -463,6 +495,11 @@ public static class Evaluator
 
     public static IReadOnlyDictionary<string, object?> Apply(Stmt stmt, IReadOnlyDictionary<string, object?> vars, Random? rng = null)
     {
+        if (stmt is IfStmt ifs)
+        {
+            return ToBool(Evaluate(ifs.Cond, vars)) ? Apply(ifs.Then, vars, rng) : vars;
+        }
+
         var next = new Dictionary<string, object?>(vars);
         switch (stmt)
         {
@@ -584,6 +621,123 @@ public static class Evaluator
             var name = m.Groups[1].Value;
             return vars.TryGetValue(name, out var v) ? FormatVarForDisplay(v) : m.Value;
         });
+    }
+
+    /// <summary>
+    /// Full template pass for author-visible text: first resolves conditional blocks
+    /// <c>{if:EXPR}...{else}...{end}</c> (nesting supported; <c>{else}</c> optional; EXPR uses the
+    /// same expression language as action <c>when</c> clauses), then substitutes <c>{vars.X}</c>
+    /// placeholders via <see cref="Interpolate"/>. A malformed block renders an inline
+    /// <c>[template error: ...]</c> marker so authors can spot it in the dialog.
+    /// </summary>
+    public static string RenderTemplate(string source, IReadOnlyDictionary<string, object?> vars)
+    {
+        if (source.Contains("{if:", StringComparison.Ordinal))
+        {
+            var sb = new System.Text.StringBuilder(source.Length);
+            var i = 0;
+            RenderTemplateSequence(source, ref i, vars, sb, stopAtMarkers: false, emit: true);
+            source = sb.ToString();
+        }
+        return Interpolate(source, vars);
+    }
+
+    /// <summary>
+    /// Renders source from position <paramref name="i"/> until <c>{else}</c>/<c>{end}</c> (when
+    /// <paramref name="stopAtMarkers"/>) or end of input. Returns the marker it stopped at
+    /// ("else", "end") or "" at end of input. When <paramref name="emit"/> is false the text is
+    /// consumed (including nested blocks, without evaluating their conditions) but not output.
+    /// </summary>
+    private static string RenderTemplateSequence(
+        string s, ref int i, IReadOnlyDictionary<string, object?> vars,
+        System.Text.StringBuilder sb, bool stopAtMarkers, bool emit)
+    {
+        while (i < s.Length)
+        {
+            if (s[i] == '{')
+            {
+                if (s.AsSpan(i).StartsWith("{if:", StringComparison.Ordinal))
+                {
+                    i += 4;
+                    var exprText = ScanTemplateExpr(s, ref i);
+                    var cond = false;
+                    if (emit)
+                    {
+                        if (exprText is null)
+                        {
+                            sb.Append("[template error: unterminated {if:...}]");
+                        }
+                        else
+                        {
+                            try
+                            {
+                                cond = ToBool(Evaluate(ScriptParser.ParseExpression(exprText), vars));
+                            }
+                            catch (ScriptException ex)
+                            {
+                                sb.Append($"[template error: {ex.Message}]");
+                            }
+                        }
+                    }
+                    if (exprText is null) return ""; // unterminated — bail out
+                    var stopped = RenderTemplateSequence(s, ref i, vars, sb, stopAtMarkers: true, emit: emit && cond);
+                    if (stopped == "else")
+                    {
+                        stopped = RenderTemplateSequence(s, ref i, vars, sb, stopAtMarkers: true, emit: emit && !cond);
+                    }
+                    if (stopped != "end" && emit)
+                    {
+                        sb.Append("[template error: missing {end}]");
+                    }
+                    continue;
+                }
+                if (stopAtMarkers && s.AsSpan(i).StartsWith("{else}", StringComparison.Ordinal))
+                {
+                    i += 6;
+                    return "else";
+                }
+                if (stopAtMarkers && s.AsSpan(i).StartsWith("{end}", StringComparison.Ordinal))
+                {
+                    i += 5;
+                    return "end";
+                }
+            }
+            if (emit) sb.Append(s[i]);
+            i++;
+        }
+        return "";
+    }
+
+    /// <summary>
+    /// Scans an {if:...} condition up to its closing '}' (quote-aware, so string literals may
+    /// contain '}'). Returns null if unterminated. Internal so the DSL compiler can reuse it for
+    /// compile-time validation of template blocks.
+    /// </summary>
+    internal static string? ScanTemplateExpr(string s, ref int i)
+    {
+        var start = i;
+        var inString = false;
+        while (i < s.Length)
+        {
+            var c = s[i];
+            if (inString)
+            {
+                if (c == '\\' && i + 1 < s.Length) { i += 2; continue; }
+                if (c == '"') inString = false;
+            }
+            else if (c == '"')
+            {
+                inString = true;
+            }
+            else if (c == '}')
+            {
+                var expr = s[start..i];
+                i++; // consume '}'
+                return expr;
+            }
+            i++;
+        }
+        return null;
     }
 
     public static string FormatVarForDisplay(object? v) => v switch

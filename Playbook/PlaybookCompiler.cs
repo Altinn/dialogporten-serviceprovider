@@ -8,6 +8,7 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
 {
     private readonly string _baseUri = settings.MutateBaseUri.TrimEnd('/');
     private const int MaxDepth = 32;
+    private const string FceUrlMarker = "/fce/named/";
     private const int MaxNodes = 1000;
     private int _visitedNodes;
 
@@ -25,6 +26,13 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
     /// </summary>
     public IReadOnlyDictionary<string, object?> SessionVars { get; set; } =
         new Dictionary<string, object?>();
+
+    /// <summary>
+    /// Phase E: stage-name → cursor map used to resolve <c>$gotovar=NAME</c> commands, where
+    /// session var NAME holds a stage name. Empty dictionary = computed targets unresolvable.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> StageCursors { get; set; } =
+        new Dictionary<string, int>();
 
     public Task<List<JsonPatchOperations_Operation>> CompilePatches(string stateId, PlaybookBlueprint blueprint, int cursor)
     {
@@ -104,8 +112,26 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
             CommandType.Goto => (int)command.Value,
             CommandType.GotoIfProgress => ResolveGotoIfProgress((GotoIfProgressValue)command.Value),
             CommandType.Random => PickWeighted((RandomValue)command.Value),
+            CommandType.GotoVar => ResolveGotoVar((string)command.Value),
             _ => throw new ArgumentOutOfRangeException()
         };
+    }
+
+    private int ResolveGotoVar(string varName)
+    {
+        if (!SessionVars.TryGetValue(varName, out var raw))
+        {
+            throw new InvalidOperationException($"$gotovar: session var '{varName}' is not defined");
+        }
+        if (raw is not string stageName || string.IsNullOrWhiteSpace(stageName))
+        {
+            throw new InvalidOperationException($"$gotovar: session var '{varName}' does not hold a stage name (value: '{raw}')");
+        }
+        if (!StageCursors.TryGetValue(stageName, out var cursor))
+        {
+            throw new InvalidOperationException($"$gotovar: session var '{varName}' holds '{stageName}', which is not a defined stage");
+        }
+        return cursor;
     }
 
     private int PickWeighted(RandomValue rv)
@@ -128,12 +154,33 @@ public class PlaybookCompiler(ServiceProviderSettings settings)
         $"{_baseUri}/mutate/{stateId}/{cursor}";
 
     private static bool ContainsPlaceholder(string raw) =>
-        raw.Contains("{baseUri}") || raw.Contains("{stateId}") || raw.Contains("{vars.");
+        raw.Contains("{baseUri}") || raw.Contains("{stateId}") || raw.Contains("{vars.")
+        || raw.Contains("{if:", StringComparison.Ordinal)
+        || raw.Contains(FceUrlMarker, StringComparison.Ordinal);
 
     private string SubstitutePlaceholders(string raw, string stateId) =>
-        Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl.Evaluator.Interpolate(
-            raw.Replace("{baseUri}", _baseUri).Replace("{stateId}", stateId),
-            SessionVars);
+        AppendCacheBuster(
+            Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl.Evaluator.RenderTemplate(
+                raw.Replace("{baseUri}", _baseUri).Replace("{stateId}", stateId),
+                SessionVars));
+
+    /// <summary>
+    /// Arbeidsflate only reloads an FCE iframe when its URL actually changes. Since an FCE body can
+    /// change without its URL changing (same named FCE re-referenced by a later stage, or
+    /// <c>{vars.X}</c> interpolation inside the body), every compiled FCE URL gets a fresh random
+    /// query parameter. Deliberately uses <see cref="Random.Shared"/> rather than <see cref="Rng"/>:
+    /// cache busting must stay unique even during deterministic seeded playback.
+    /// </summary>
+    private static string AppendCacheBuster(string url)
+    {
+        if (!url.Contains(FceUrlMarker, StringComparison.Ordinal))
+        {
+            return url;
+        }
+
+        var separator = url.Contains('?') ? '&' : '?';
+        return $"{url}{separator}_cb={Random.Shared.Next():x8}";
+    }
 
     private bool ExceedsLimits(int depth)
     {
