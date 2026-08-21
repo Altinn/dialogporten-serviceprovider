@@ -1,0 +1,862 @@
+playbook:
+  party: urn:altinn:person:identifier-no:08895699684
+  service-resource: urn:altinn:resource:ttd-dialogporten-automated-tests
+  language: en
+  start: start
+
+  initial:
+    title: "The Catacomb Below"
+    summary: "A MUD-like dungeon crawler demo for the Dialogporten playbook DSL."
+
+  # ---------------------------------------------------------------------------
+  # The map. Rooms are stages; exits are actions. Room state lives in the
+  # cleared/looted/used sets, keyed by room name. `location` always holds the
+  # stage name of the room the player is in — shared subsystems (combat, loot)
+  # return to it via the computed target @var(location).
+  #
+  #             [sanctum]    Crystal Sentinel guards the Crystal of Aetheria
+  #                 |
+  #  [armory] - [shrine]     dart trap + whetstone / healing pool (once)
+  #                 |
+  #   [crypt] -- [hall] -- [vault]   skeleton + key / goblin gate / locked chest
+  #                 |
+  #  [market] - [entry]      shopkeeper / the way out
+  # ---------------------------------------------------------------------------
+
+  vars:
+    hp: 10
+    max_hp: 10
+    gold: 0
+    xp: 0
+    weapon_bonus: 0
+    last_dmg: 0
+    monster_hp: 0
+    monster_max_hp: 0
+    monster_attack_mod: 0
+    monster_xp_value: 0
+    monster_gold_value: 0
+    current_monster_name: ""
+    player_base: 0
+    monster_base: 0
+    player_dmg: 0
+    monster_dmg: 0
+    inventory: []
+    cleared: []
+    looted: []
+    used: []
+    location: "entry"
+    _debug: false
+
+  stages:
+    # ----- character creation ------------------------------------------------
+    start:
+      title: "The Catacomb Below"
+      summary: "Pick a weapon to begin your descent."
+      status: Draft
+      extended-status: Choose loadout
+      content: start
+      additional-info: &statusbar |
+        **HP {vars.hp}/{vars.max_hp}** · **{vars.gold}g** · **XP {vars.xp}** · **Atk +{vars.weapon_bonus}** · **📍 {vars.location}**
+      actions:
+        - label: Take the iron sword
+          target: pick-sword
+        - label: Take the wizard's staff
+          target: pick-staff
+        - label: Take the swift dagger
+          target: pick-dagger
+
+    pick-sword:
+      title: A sturdy blade
+      summary: "Iron sword in hand — +2 to attack. The catacombs are waiting."
+      status: InProgress
+      extended-status: Sword chosen
+      content: pick-sword
+      additional-info: *statusbar
+      effects:
+        - set weapon_bonus = 2
+      transmissions:
+        - type: Information
+          from: Inventory
+          title: Iron sword
+          summary: "A plain, well-balanced blade. +2 to attack rolls."
+      actions:
+        - Descend into the catacombs → entry
+
+    pick-staff:
+      title: A worn wizard's staff
+      summary: "Staff in hand — +1 attack and {vars.max_hp} max HP."
+      status: InProgress
+      extended-status: Staff chosen
+      content: pick-staff
+      additional-info: *statusbar
+      effects:
+        - set weapon_bonus = 1
+        - set max_hp = 12
+        - set hp = 12
+      transmissions:
+        - type: Information
+          from: Inventory
+          title: Wizard's staff
+          summary: "Worn hardwood, smooth from years of use. +1 attack and a little protective magic (+2 max HP)."
+      actions:
+        - Descend into the catacombs → entry
+
+    pick-dagger:
+      title: A swift dagger
+      summary: "Dagger in hand — +1 attack and {vars.gold}g in your pocket."
+      status: InProgress
+      extended-status: Dagger chosen
+      content: pick-dagger
+      additional-info: *statusbar
+      effects:
+        - set weapon_bonus = 1
+        - set gold = 5
+      transmissions:
+        - type: Information
+          from: Inventory
+          title: Swift dagger
+          summary: "Light and quick. +1 attack. You also have 5g from your last job."
+      actions:
+        - Descend into the catacombs → entry
+
+    # ----- the entrance hall ---------------------------------------------------
+    entry:
+      title: The entrance hall
+      summary: '{if:inventory contains "crystal"}The Crystal hums in your pack. Daylight is one climb away.{else}Cold air from the north. The market glow to the west.{end}'
+      status: InProgress
+      extended-status: Entrance hall
+      content: entry
+      additional-info: *statusbar
+      effects:
+        - set location = "entry"
+      actions:
+        - Go north to the hall → hall
+        - Go west to the market → market
+        - label: Climb out with the Crystal
+          target: escape-ending
+          when: inventory contains "crystal"
+        - label: Give up and crawl back to daylight
+          target: abandon-ending
+          when: else
+
+    # ----- the market ----------------------------------------------------------
+    market:
+      title: A hooded shopkeeper
+      summary: "Goods laid out on a folding table, {vars.gold}g in your purse."
+      status: InProgress
+      extended-status: Market
+      content: market
+      additional-info: *statusbar
+      effects:
+        - set location = "market"
+      actions:
+        - label: "Buy a healing draught (5g)"
+          target: buy-potion
+          when: gold >= 5
+        - label: "Have your weapon sharpened (15g)"
+          target: buy-sharpen
+          when: gold >= 15
+        - Go east to the entrance hall → entry
+
+    buy-potion:
+      title: A bitter draught
+      summary: "The wounds knit. {vars.hp}/{vars.max_hp} HP, {vars.gold}g left."
+      status: InProgress
+      extended-status: Healed
+      content: buy-potion
+      additional-info: *statusbar
+      effects:
+        - dec gold by 5
+        - inc hp by 10
+        - if hp > max_hp then set hp = max_hp
+      activity:
+        type: Information
+        description: "You drink. The world steadies. Now {vars.hp}/{vars.max_hp} HP, -5g."
+      actions:
+        - Back to the market → market
+
+    buy-sharpen:
+      title: Sharpened edge
+      summary: "Fifteen gold well spent — attack is now +{vars.weapon_bonus}, {vars.gold}g left."
+      status: InProgress
+      extended-status: Sharper now
+      content: buy-sharpen
+      additional-info: *statusbar
+      effects:
+        - dec gold by 15
+        - inc weapon_bonus by 1
+      activity:
+        type: Information
+        description: "The shopkeeper hones your weapon. +1 attack, -15g."
+      actions:
+        - Back to the market → market
+
+    # ----- the hall: a goblin gates the deeper rooms ---------------------------
+    hall:
+      title: The pillared hall
+      summary: '{if:cleared contains "hall"}The goblin lies where it fell. Passages lead north, west and east.{else}A goblin blocks the way, rock in hand.{end}'
+      status: InProgress
+      extended-status: Pillared hall
+      content: hall
+      additional-info: *statusbar
+      effects:
+        - set location = "hall"
+      actions:
+        - label: Confront the goblin
+          target: goblin-encounter
+          when: '!(cleared contains "hall")'
+        - label: Go north to the shrine
+          target: shrine
+          when: cleared contains "hall"
+        - label: Go west to the crypt
+          target: crypt
+          when: cleared contains "hall"
+        - label: Go east to the iron door
+          target: vault-door
+          when: cleared contains "hall"
+        - Go south to the entrance hall → entry
+
+    # ----- the crypt: a skeleton guards the iron key ---------------------------
+    crypt:
+      title: The sunken crypt
+      summary: '{if:cleared contains "crypt"}Scattered bones. On the altar{if:inventory contains "key"}, an empty hook{else}, an iron key{end}.{else}Bones unfold from a heap in the corner.{end}'
+      status: InProgress
+      extended-status: Sunken crypt
+      content: crypt
+      additional-info: *statusbar
+      effects:
+        - set location = "crypt"
+      actions:
+        - label: Fight the skeleton
+          target: skeleton-encounter
+          when: '!(cleared contains "crypt")'
+        - label: Take the iron key
+          target: take-key
+          when: 'cleared contains "crypt" && !(inventory contains "key")'
+        - Go east to the hall → hall
+
+    take-key:
+      title: Key acquired
+      summary: "The key is in your pack. Carrying: {vars.inventory}."
+      status: InProgress
+      extended-status: Key in pack
+      content: take-key
+      additional-info: *statusbar
+      effects:
+        - add inventory += "key"
+      transmissions:
+        - type: Information
+          from: Inventory
+          title: Iron key
+          summary: "Heavy, cold to the touch. It fits the iron door east of the hall."
+      actions:
+        - Back to the crypt → crypt
+
+    # ----- the vault: locked door (router stage), chest inside -----------------
+    # vault-door never renders: it dispatches on entry based on whether the
+    # player carries the key.
+    vault-door:
+      goto:
+        - target: vault
+          when: inventory contains "key"
+        - target: vault-locked
+
+    vault-locked:
+      title: A locked iron door
+      summary: "The keyhole is old but oiled. Someone means to come back."
+      status: InProgress
+      extended-status: Locked out
+      content: vault-locked
+      additional-info: *statusbar
+      effects:
+        - set location = "vault-locked"
+      actions:
+        - Go west to the hall → hall
+
+    vault:
+      title: The vault
+      summary: '{if:looted contains "vault"}The great chest stands open and empty.{else}A great banded chest squats in the middle of the floor.{end}'
+      status: InProgress
+      extended-status: The vault
+      content: vault
+      additional-info: *statusbar
+      effects:
+        - set location = "vault"
+      actions:
+        - label: Open the great chest
+          target: open-chest
+          when: '!(looted contains "vault")'
+        - Go west to the hall → hall
+
+    open-chest:
+      title: The chest yields
+      summary: "25 gold and a humming amulet. +5 max HP, now {vars.hp}/{vars.max_hp}."
+      status: InProgress
+      extended-status: Chest looted
+      content: open-chest
+      additional-info: *statusbar
+      effects:
+        - add looted += "vault"
+        - inc gold by 25
+        - add inventory += "amulet"
+        - inc max_hp by 5
+        - inc hp by 5
+      transmissions:
+        - type: Information
+          from: Inventory
+          title: Amulet of protection
+          summary: "Faintly humming silver from the vault chest. +5 max HP, healed to match."
+      actions:
+        - Back to the vault → vault
+
+    # ----- the shrine: a pool that helps — usually -----------------------------
+    shrine:
+      title: The quiet shrine
+      summary: '{if:used contains "shrine-pool"}The pool is still and dark, its gift spent.{else}A shallow pool glows faintly at the foot of a worn idol.{end}'
+      status: InProgress
+      extended-status: Quiet shrine
+      content: shrine
+      additional-info: *statusbar
+      effects:
+        - set location = "shrine"
+      actions:
+        - label: Drink from the pool
+          target: '?(pool-blessing:3, pool-curse:1)'
+          when: '!(used contains "shrine-pool")'
+        - Go north to the sanctum → sanctum
+        - Go west to the armory → armory
+        - Go south to the hall → hall
+
+    pool-blessing:
+      title: The pool blesses you
+      summary: "Warmth spreads from your fingertips. Restored to {vars.hp}/{vars.max_hp} HP."
+      status: InProgress
+      extended-status: Blessed
+      content: pool-blessing
+      additional-info: *statusbar
+      effects:
+        - add used += "shrine-pool"
+        - set hp = max_hp
+      activity:
+        type: Information
+        description: "The pool accepts you. Fully healed."
+      actions:
+        - Back to the shrine → shrine
+
+    pool-curse:
+      title: The pool bites back
+      summary: "The water turns black in your cupped hands. -{vars.last_dmg} HP, now {vars.hp}/{vars.max_hp}."
+      status: InProgress
+      extended-status: Cursed
+      content: pool-curse
+      additional-info: *statusbar
+      effects:
+        - add used += "shrine-pool"
+        - roll last_dmg = 1d4
+        - dec hp by last_dmg
+      activity:
+        type: Information
+        description: "The idol was watching. You take {vars.last_dmg} damage."
+      actions:
+        - label: Back away from the pool
+          target: shrine
+          when: hp > 0
+        - label: Collapse at the water's edge
+          target: death-ending
+          when: hp <= 0
+
+    # ----- the armory: a dart trap fires once, a whetstone waits ----------------
+    armory:
+      title: The old armory
+      summary: '{if:last_dmg > 0}A dart trap clips you for {vars.last_dmg} — {vars.hp}/{vars.max_hp} HP left.{else}Racks of rusted arms. The sprung trap sits quiet.{end}'
+      status: InProgress
+      extended-status: Old armory
+      content: armory
+      additional-info: *statusbar
+      effects:
+        - set location = "armory"
+        - set last_dmg = 0
+        - if !(used contains "armory-trap") then roll last_dmg = 1d6
+        - if last_dmg > 0 then add used += "armory-trap"
+        - dec hp by last_dmg
+      actions:
+        - label: Take the whetstone
+          target: take-whetstone
+          when: '!(looted contains "armory") && hp > 0'
+        - label: Go east to the shrine
+          target: shrine
+          when: hp > 0
+        - label: Collapse among the rusted arms
+          target: death-ending
+          when: hp <= 0
+
+    take-whetstone:
+      title: A soldier's whetstone
+      summary: "A few patient strokes — attack is now +{vars.weapon_bonus}."
+      status: InProgress
+      extended-status: Edge honed
+      content: take-whetstone
+      additional-info: *statusbar
+      effects:
+        - add looted += "armory"
+        - inc weapon_bonus by 1
+      transmissions:
+        - type: Information
+          from: Inventory
+          title: Soldier's whetstone
+          summary: "Found in the old armory. +1 attack."
+      actions:
+        - Back to the armory → armory
+
+    # ----- the sanctum: the Sentinel and the Crystal ----------------------------
+    sanctum:
+      title: The crystal sanctum
+      summary: '{if:cleared contains "sanctum"}The Sentinel lies in fragments{if:inventory contains "crystal"}. The plinth is bare.{else} around a bare-lit plinth — and the Crystal.{end}{else}Something made of glass unfolds to its feet.{end}'
+      status: InProgress
+      extended-status: The sanctum
+      content: sanctum
+      additional-info: *statusbar
+      effects:
+        - set location = "sanctum"
+      actions:
+        - label: Face the Crystal Sentinel
+          target: sentinel-encounter
+          when: '!(cleared contains "sanctum")'
+        - label: Pry the Crystal free
+          target: take-crystal
+          when: 'cleared contains "sanctum" && !(inventory contains "crystal")'
+        - Go south to the shrine → shrine
+
+    take-crystal:
+      title: The Crystal of Aetheria
+      summary: "Cool, silent, impossibly clear. Now climb out alive."
+      status: InProgress
+      extended-status: Crystal claimed
+      content: take-crystal
+      additional-info: *statusbar
+      effects:
+        - add inventory += "crystal"
+      transmissions:
+        - type: Information
+          from: Inventory
+          title: Crystal of Aetheria
+          summary: "Cool, silent, impossibly clear. Your prize."
+      activity:
+        type: Information
+        description: "The Crystal of Aetheria comes free of the plinth."
+      actions:
+        - Back to the shrine passage → sanctum
+
+    # ----- shared combat subsystem ----------------------------------------------
+    # Encounters stage the monster; the single fight loop and victory stage are
+    # shared by every room. combat-victory marks the room in `location` as
+    # cleared and the computed target @var(location) walks the player back to
+    # whichever room the fight started in.
+    goblin-encounter:
+      title: A snarling goblin
+      summary: "5 HP, hits light. Worth 2 XP and 3g if it goes down."
+      status: InProgress
+      extended-status: Goblin!
+      content: goblin-encounter
+      additional-info: *statusbar
+      effects:
+        - set monster_hp = 5
+        - set monster_max_hp = 5
+        - set monster_attack_mod = 0
+        - set monster_xp_value = 2
+        - set monster_gold_value = 3
+        - set current_monster_name = "goblin"
+      actions:
+        - Engage → fight
+
+    skeleton-encounter:
+      title: A clattering skeleton
+      summary: "8 HP and +1 to hit. Worth 4 XP and 5g if it goes down."
+      status: InProgress
+      extended-status: Skeleton!
+      content: skeleton-encounter
+      additional-info: *statusbar
+      effects:
+        - set monster_hp = 8
+        - set monster_max_hp = 8
+        - set monster_attack_mod = 1
+        - set monster_xp_value = 4
+        - set monster_gold_value = 5
+        - set current_monster_name = "skeleton"
+      actions:
+        - Engage → fight
+
+    sentinel-encounter:
+      title: The Crystal Sentinel
+      summary: "20 HP and +3 to hit. The Crystal is behind it."
+      status: InProgress
+      extended-status: BOSS FIGHT
+      content: sentinel-encounter
+      additional-info: *statusbar
+      effects:
+        - set monster_hp = 20
+        - set monster_max_hp = 20
+        - set monster_attack_mod = 3
+        - set monster_xp_value = 25
+        - set monster_gold_value = 0
+        - set current_monster_name = "Crystal Sentinel"
+      actions:
+        - Engage → fight
+
+    fight:
+      title: "Battle: {vars.current_monster_name} — you {vars.hp}/{vars.max_hp} HP · foe {vars.monster_hp}/{vars.monster_max_hp} HP"
+      summary: "You hit for {vars.player_dmg}, it hit back for {vars.monster_dmg}."
+      status: InProgress
+      extended-status: In combat
+      content: fight
+      additional-info: *statusbar
+      effects:
+        - roll player_base = 1d6
+        - set player_dmg = player_base + weapon_bonus
+        - dec monster_hp by player_dmg
+        - roll monster_base = 1d3
+        - set monster_dmg = monster_base + monster_attack_mod
+        - dec hp by monster_dmg
+      activity:
+        type: Information
+        description: "You strike the {vars.current_monster_name} for {vars.player_dmg}. It hits back for {vars.monster_dmg}."
+      actions:
+        - label: "Victory — loot the corpse"
+          target: combat-victory
+          when: monster_hp <= 0
+        - label: You fall
+          target: death-ending
+          when: hp <= 0
+        - label: Press the attack
+          target: fight
+          when: hp > 0 && monster_hp > 0
+        - label: Break off and retreat
+          target: '@var(location)'
+          when: hp > 0 && monster_hp > 0
+
+    combat-victory:
+      title: Victorious
+      summary: "The {vars.current_monster_name} is down. +{vars.monster_xp_value} XP, +{vars.monster_gold_value}g."
+      status: InProgress
+      extended-status: Won
+      content: combat-victory
+      additional-info: *statusbar
+      effects:
+        - inc xp by monster_xp_value
+        - inc gold by monster_gold_value
+        - add cleared += location
+        # If the killing blow was traded both ways, you barely survive.
+        - if hp <= 0 then set hp = 1
+      activity:
+        type: Information
+        description: "You stand over the {vars.current_monster_name}. +{vars.monster_xp_value} XP, +{vars.monster_gold_value}g."
+      actions:
+        - label: Catch your breath and look around
+          target: '@var(location)'
+
+    # ----- respawn and endings ----------------------------------------------------
+    respawn:
+      title: You wake at the entrance
+      summary: "The catacombs kept half your gold. {vars.hp}/{vars.max_hp} HP, {vars.gold}g."
+      status: InProgress
+      extended-status: Second wind
+      content: respawn
+      additional-info: *statusbar
+      effects:
+        - set hp = max_hp
+        - set gold = gold / 2
+      activity:
+        type: Information
+        description: "You wake at the entrance, lighter of purse. The rooms you cleared stay cleared."
+      actions:
+        - Stagger to your feet → entry
+
+    escape-ending:
+      title: "Out of the dark — final HP {vars.hp}"
+      summary: "Out with the Crystal of Aetheria, {vars.gold}g and {vars.xp} XP."
+      status: Completed
+      extended-status: You escape
+      content: escape-ending
+      additional-info: |
+        **HP {vars.hp}/{vars.max_hp}** · **{vars.gold}g** · **XP {vars.xp}** · **Atk +{vars.weapon_bonus}**
+
+        ## The end
+        You climb out of the dark with the Crystal of Aetheria.
+        Carried out: {vars.inventory}.
+      activity:
+        type: DialogClosed
+      actions:
+        - Delve again → respawn
+
+    death-ending:
+      title: You die
+      summary: "Dead in the {vars.location} with {vars.gold}g unspent and {vars.xp} XP earned."
+      status: Completed
+      extended-status: Defeated
+      content: death-ending
+      additional-info: |
+        **HP {vars.hp}/{vars.max_hp}** · **{vars.gold}g** · **XP {vars.xp}** · **Atk +{vars.weapon_bonus}** · **📍 {vars.location}**
+
+        ## Fallen
+        The dark takes you where you stand.
+        Inventory still on your back when found: {vars.inventory}.
+      activity:
+        type: DialogClosed
+      actions:
+        - Rise again → respawn
+
+    abandon-ending:
+      title: Back to daylight
+      summary: "You leave with {vars.gold}g, {vars.xp} XP and no Crystal."
+      status: Completed
+      extended-status: Gave up
+      content: abandon-ending
+      additional-info: |
+        **HP {vars.hp}/{vars.max_hp}** · **{vars.gold}g** · **XP {vars.xp}** · **Atk +{vars.weapon_bonus}**
+
+        ## Unfinished business
+        The catacombs keep their Crystal. For now.
+      activity:
+        type: DialogClosed
+      actions:
+        - Steel yourself and go back in → entry
+
+  fce:
+    start: |
+      # The Catacomb Below
+      Cold smoke spills from the cave mouth. Three weapons lie waiting on a rack
+      just inside the threshold — relics of those who came before, didn't return.
+      Pick one. You'll need it.
+
+    pick-sword: |
+      # Iron sword
+      A plain blade, straight, well-balanced. Heavy enough to mean it, light
+      enough to swing all day. Better than nothing. Better than most things.
+
+    pick-staff: |
+      # Wizard's staff
+      A length of dark hardwood, worn smooth at the grip. There's a faint
+      sheen of old protective magic still in it — enough to take a hit or two.
+
+    pick-dagger: |
+      # Swift dagger
+      Curved, narrow, made for going in fast and coming out faster. You also
+      have five gold pieces from your last job — that buys options later.
+
+    entry: |
+      # The entrance hall
+      The catacombs swallow your footsteps. A cold draught comes down the
+      northern passage; a faint lamp glow leaks from the west.
+
+      ```
+                  [sanctum]
+                      |
+       [armory] - [shrine]
+                      |
+        [crypt] -- [hall] -- [vault]
+                      |
+       [market] - [entry]
+                      |
+                    (out)
+      ```
+
+      {if:inventory contains "crystal"}
+      The Crystal of Aetheria is warm against your back. The way out is right
+      there. All you have to do is climb.
+      {else}
+      Somewhere below all this, they say, lies the Crystal of Aetheria.
+      {end}
+
+    market: |
+      # The market
+      A figure in a worn cloak sits behind a folding table, far too calm for
+      the circumstances. Goods laid out. "Adventurer rates," they say.
+
+      - **Healing draught** — 5g. Closes wounds on the spot.
+      - **Sharpening service** — 15g. A permanently keener edge.
+
+    buy-potion: |
+      # The draught
+      Bitter on the tongue. Warm on the way down. The wounds knit.
+
+    buy-sharpen: |
+      # Sharper now
+      The shopkeeper produces a whetstone and works on your weapon with an
+      expertise that suggests they've done this often. Whatever they charge,
+      it's a good deal.
+
+    hall: |
+      # The pillared hall
+      Six squat pillars hold up a ceiling lost in the dark. Passages lead
+      north, west and east; the way you came is south.
+
+      {if:cleared contains "hall"}
+      The goblin lies crumpled by the second pillar. Nothing else here moves.
+      {else}
+      A goblin steps out from behind a pillar, rock in hand, and plants itself
+      in the middle of the hall. It has no intention of letting you past.
+      {end}
+
+    crypt: |
+      # The sunken crypt
+      Stone shelves line the walls, each with its quiet occupant. An altar
+      stands at the far end.
+
+      {if:cleared contains "crypt"}
+      The skeleton's bones lie scattered where they fell.
+      {if:inventory contains "key"}The altar hook hangs empty.{else}On the
+      altar, an **iron key** hangs from a hook.{end}
+      {else}
+      Bones unfold from a heap beside the altar. They were waiting.
+      {end}
+
+    take-key: |
+      # Key in pack
+      You lift the key from its hook. There's a satisfying weight to it —
+      and a keyhole east of the hall that it will fit.
+
+    vault-locked: |
+      # A locked iron door
+      The door east of the hall is iron, banded, and very locked. The keyhole
+      is old but oiled. Whatever is behind it, someone meant to come back for.
+
+      Perhaps a key waits somewhere in these rooms.
+
+    vault: |
+      # The vault
+      Coin shelves, all swept bare long ago — except for the great banded
+      chest in the middle of the floor.
+
+      {if:looted contains "vault"}
+      The chest stands open, exactly as empty as you left it.
+      {else}
+      The chest is shut. It is not locked. That's almost worse.
+      {end}
+
+    open-chest: |
+      # The chest yields
+      Hinges shriek. Inside: a purse of **25 gold** and a silver amulet,
+      humming faintly. You put it on. You feel slightly more durable than
+      you were a second ago.
+
+    shrine: |
+      # The quiet shrine
+      A worn idol watches over a shallow pool. The air is still in a way the
+      rest of the catacombs is not.
+
+      {if:used contains "shrine-pool"}
+      The pool is dark and ordinary now. Its gift — or its grudge — is spent.
+      {else}
+      The water glows, very faintly. It could be a blessing. The idol's face
+      suggests it could also not be.
+      {end}
+
+    pool-blessing: |
+      # The pool blesses you
+      The water is sweet and cold. Warmth spreads from your fingertips to
+      everything that hurts, and then nothing hurts.
+
+    pool-curse: |
+      # The pool bites back
+      The water turns black in your cupped hands. The idol's expression has
+      not changed, but you understand it differently now.
+
+    armory: |
+      # The old armory
+      Racks of rusted spears and split shields. Whoever kept this room took
+      the good pieces and left the rest — and a welcome for visitors.
+
+      {if:last_dmg > 0}
+      A plate clicks underfoot. A dart snaps out of the wall and takes you
+      for **{vars.last_dmg}** before you even see the mechanism.
+      {else}
+      The dart trap by the door has already fired. You step over the tripped
+      plate with exaggerated care.
+      {end}
+
+      {if:looted contains "armory"}
+      The workbench is bare where the whetstone used to sit.
+      {else}
+      On a workbench: a **soldier's whetstone**, barely used.
+      {end}
+
+    take-whetstone: |
+      # A soldier's whetstone
+      A few patient strokes along the edge and your weapon whispers where it
+      used to rasp. +1 attack, permanently.
+
+    sanctum: |
+      # The crystal sanctum
+      The walls here are glass-smooth obsidian. A plinth stands at the centre
+      of the room under a shaft of light with no obvious source.
+
+      {if:cleared contains "sanctum"}
+      The Sentinel lies in fragments across the floor.
+      {if:inventory contains "crystal"}The plinth is bare. Time to leave.{else}
+      On the plinth: the **Crystal of Aetheria**, perfectly still.{end}
+      {else}
+      Something that looks like a person made of glass unfolds to its feet
+      between you and the plinth. It moves like one too — fast where you
+      expect slow, slow where you expect fast.
+      {end}
+
+    take-crystal: |
+      # The Crystal
+      It comes free of the plinth with no resistance at all, which is somehow
+      the most unnerving thing in the whole catacomb. Cool, silent,
+      impossibly clear. Yours — if you make it out.
+
+    goblin-encounter: |
+      # A snarling goblin
+      Short, lean, mean. Picks up a rock when it sees you.
+
+    skeleton-encounter: |
+      # A clattering skeleton
+      Bones unfold from a heap in the corner. They were waiting.
+
+    sentinel-encounter: |
+      # The Crystal Sentinel
+      It looks like a person made of glass. Its edges catch the sourceless
+      light. Between it and you: nothing. Between it and the Crystal: you,
+      shortly.
+
+    fight: |
+      # Combat
+      You and the {vars.current_monster_name} trade blows.
+
+      - You dealt **{vars.player_dmg}** this round (rolled {vars.player_base}, +{vars.weapon_bonus} from your weapon).
+      - It hit back for **{vars.monster_dmg}** (rolled {vars.monster_base}, +{vars.monster_attack_mod}).
+      - It has **{vars.monster_hp}/{vars.monster_max_hp}** HP left.
+      - You have **{vars.hp}/{vars.max_hp}** HP left.
+
+      {if:monster_hp > 0 && hp > 0}You can press on, or break off and retreat
+      to the {vars.location}.{end}
+
+    combat-victory: |
+      # Standing
+      You catch your breath. The {vars.current_monster_name} doesn't.
+      Pickings: **{vars.monster_gold_value}g**, **{vars.monster_xp_value} XP**.
+
+      The {vars.location} is yours now.
+
+    respawn: |
+      # Second wind
+      You wake on the cold flagstones of the entrance hall with a headache
+      and a lighter purse. The catacombs remember what you did to them —
+      every room you cleared is still clear. So is your debt to this place.
+
+    escape-ending: |
+      # The surface
+      Daylight. Wet leaves. A crow somewhere.
+      You walk out of the catacombs with the Crystal of Aetheria in your pack
+      and the sense that something below has finally gone quiet.
+
+    death-ending: |
+      # Cold stone
+      The catacombs keep what they take. Your kit will be found, eventually,
+      by the next delver. Some of it might even still be useful.
+
+    abandon-ending: |
+      # Back to daylight
+      No shame in walking out. That's what you tell yourself on the climb,
+      and the crows agree loudly enough that you almost believe it.

@@ -120,7 +120,24 @@ GET {baseUrl}/fce?html=false
 
 ### Playbook
 
+A playbook is a scripted, multi-step dialog: one YAML file describing a set of stages that are
+compiled into JSON Patch operations and applied to a single Dialogporten dialog, with every GUI
+action advancing to the next stage.
+
+- **Authoring reference: [`docs/playbook-dsl.md`](docs/playbook-dsl.md)** — the full
+  `*.playbook.yaml` format (stages, session variables, effects, conditional actions, routers,
+  randomness, front channel embeds), plus the gotchas checklist.
+- Worked examples: `sample-complex.playbook.yaml`, `sample-cyoa.playbook.yaml`,
+  `sample-game.playbook.yaml`, `sample-dungeon.playbook.yaml`.
+- Upload a file at `/playbook/create` in the running app, or
+  `POST /playbook/create-from-dsl` with `Content-Type: text/yaml`.
+- Validate without starting the server:
+  `dotnet run --project .claude/skills/playbook-author/lint -- <file.playbook.yaml>`
+
 #### Commands
+
+These are the low-level cursor commands the compiler emits. When authoring in YAML you use the
+DSL's targets (`next`, `previous`, `restart`, stage names, `?(...)`, `@var(...)`) instead.
 
 |           Command           | Params                             |                            Description                             |
 |:---------------------------:|:-----------------------------------|:------------------------------------------------------------------:|

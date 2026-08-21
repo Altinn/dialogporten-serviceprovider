@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>playbook-lint</AssemblyName>
+    <RootNamespace>PlaybookLint</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Compiles the playbook with the exact same DslCompiler the server uses. -->
+    <ProjectReference Include="../../../../Digdir.BDB.Dialogporten.ServiceProvider.csproj" />
+  </ItemGroup>
+
+</Project>
