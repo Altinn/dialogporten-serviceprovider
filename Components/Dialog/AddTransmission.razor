@@ -92,7 +92,7 @@
                     <InputLocalization @bind-Value="@attachment.DisplayName"/>
                 </td>
                 <td>
-                    <InputTransmissionAttachmentUrlUpdate @bind-Value="@attachment.Urls"/>
+                    <InputTransmissionAttachmentUrlTransmission @bind-Value="@attachment.Urls"/>
                 </td>
                 <button type="button"
                         @onclick="() => RemoveAttachment(attachment)">Remove
@@ -111,7 +111,7 @@
 
     public V1ServiceOwnerDialogsCommandsCreateTransmission_TransmissionRequest CreateTransmissionCommand { get; } = new()
     {
-        Content = new V1ServiceOwnerDialogsCommandsUpdate_TransmissionContent(),
+        Content = new V1ServiceOwnerDialogsCommandsCreateTransmission_TransmissionContent(),
         Attachments = []
     };
 
@@ -177,7 +177,7 @@
             CreateTransmissionCommand.RelatedTransmissionId = SelectedTransmission;
         }
     }
-    private void RemoveAttachment(V1ServiceOwnerDialogsCommandsUpdate_TransmissionAttachment attachment)
+    private void RemoveAttachment(V1ServiceOwnerDialogsCommandsCreateTransmission_TransmissionAttachment attachment)
     {
         CreateTransmissionCommand.Attachments.Remove(attachment);
         StateHasChanged();
@@ -185,7 +185,10 @@
 
     private void AddAttachment()
     {
-        CreateTransmissionCommand.Attachments.Add(new V1ServiceOwnerDialogsCommandsUpdate_TransmissionAttachment());
+        CreateTransmissionCommand.Attachments.Add(new V1ServiceOwnerDialogsCommandsCreateTransmission_TransmissionAttachment
+        {
+            Urls = []
+        });
         StateHasChanged();
     }
 }

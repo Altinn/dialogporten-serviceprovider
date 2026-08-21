@@ -1,4 +1,5 @@
 using Altinn.ApiClients.Dialogporten.Features.V1;
+using Digdir.BDB.Dialogporten.ServiceProvider.Extensions;
 using Org.BouncyCastle.Security;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider;
@@ -133,14 +134,14 @@ public static class SeedImporter
                 case "activity":
                     ParseActivity(createDialogCommand, fieldData, value);
                     break;
-                case "serviceonwerlabel":
+                case "serviceownerlabel":
                     createDialogCommand.ServiceOwnerContext.ServiceOwnerLabels.Add(new V1ServiceOwnerDialogsCommandsCreate_ServiceOwnerLabel
                     {
                         Value = value
                     });
                     break;
                 default:
-                    throw new InvalidParameterException($"Field: {seedData.First()}, is not supported");
+                    throw new InvalidParameterException($"Field: \"{seedData.First()}\", is not supported");
             }
         }
     }

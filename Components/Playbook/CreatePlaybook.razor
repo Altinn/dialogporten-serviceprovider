@@ -1,0 +1,190 @@
+@page "/playbook/create"
+@using System.IO
+@using Altinn.ApiClients.Dialogporten.Features.V1
+@using Digdir.BDB.Dialogporten.ServiceProvider.Playbook
+@using Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Microsoft.Extensions.Options
+@inject ProtectedLocalStorage ProtectedLocalStore
+@inject IServiceownerApi ServiceOwnerApi
+@inject IPlaybookStateStore StateStore
+@inject IOptions<ServiceProviderSettings> ServiceProviderOptions
+@inject ILogger<CreatePlaybook> Logger
+@rendermode InteractiveServer
+
+<h3>Create Playbook</h3>
+
+<p>
+    Upload a <code>.playbook.yaml</code> file. The serviceprovider will compile it, create the
+    Dialogporten dialog, store the playbook server-side, and apply the initial stage in one go.
+</p>
+
+<div style="margin: 1rem 0;">
+    <InputFile OnChange="OnFileSelected" accept=".yaml,.yml" disabled="@_busy" />
+</div>
+
+@if (_busy)
+{
+    <p><em>Working…</em></p>
+}
+
+@if (DialogId != Guid.Empty)
+{
+    <fieldset>
+        <legend>Playbook ready</legend>
+        <p>
+            <a href="@InboxUrl" target="_blank" rel="noopener">Open in Arbeidsflate ↗</a>
+        </p>
+        <p style="font-size: 0.85em; color: #666;">
+            Dialog id: <code>@DialogId</code><br/>
+            State id: <code>@StateId</code>
+        </p>
+    </fieldset>
+}
+
+@if (_showPopUp)
+{
+    <PopUpMessage Header="@_header" Message="@_message" OnClick="() => _showPopUp = false"/>
+}
+
+@code {
+    private bool _busy;
+    private bool _showPopUp;
+    private string? _header;
+    private string? _message;
+
+    private Guid DialogId { get; set; }
+    private string StateId { get; set; } = "";
+
+    private string InboxUrl => $"{ServiceProviderOptions.Value.AfUri.TrimEnd('/')}/inbox/{DialogId}";
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            string yaml;
+            await using (var stream = e.File.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024))
+            using (var reader = new StreamReader(stream))
+            {
+                yaml = await reader.ReadToEndAsync();
+            }
+            await CreateFromYaml(yaml, e.File.Name);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Playbook upload failed");
+            ShowPopup("Upload error", ex.Message);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CreateFromYaml(string yaml, string fileName)
+    {
+        DslCompileResult compiled;
+        try
+        {
+            compiled = DslCompiler.Compile(yaml);
+        }
+        catch (DslCompilationException ex)
+        {
+            Logger.LogWarning("DSL compile error in {File}: {Message}", fileName, ex.Message);
+            ShowPopup("DSL compile error", ex.Message);
+            return;
+        }
+
+        var totalWhens = compiled.Blueprint.StageBehaviors.Sum(sb => sb.ActionWhens.Count(w => w != null));
+        var totalEffects = compiled.Blueprint.StageBehaviors.Sum(sb => sb.Effects.Count);
+        Logger.LogInformation(
+            "Compiled {File}: {Stages} stages, {Vars} vars, {Effects} effect stmts, {Whens} action-whens",
+            fileName, compiled.Blueprint.Patches.Count, compiled.Blueprint.InitialVars.Count, totalEffects, totalWhens);
+
+        var initialTitle = string.IsNullOrWhiteSpace(compiled.InitialTitle) ? "Playbook" : compiled.InitialTitle;
+        var initialSummary = string.IsNullOrWhiteSpace(compiled.InitialSummary) ? "Playbook dialog" : compiled.InitialSummary;
+        var lang = string.IsNullOrWhiteSpace(compiled.Language) ? "en" : compiled.Language;
+
+        var dto = new V1ServiceOwnerDialogsCommandsCreate_Dialog
+        {
+            ServiceResource = compiled.ServiceResource,
+            Party = compiled.Party,
+            Content = new V1ServiceOwnerDialogsCommandsCreate_Content
+            {
+                Title = new V1CommonContent_ContentValue
+                {
+                    Value = [new V1CommonLocalizations_Localization { Value = initialTitle, LanguageCode = lang }],
+                    MediaType = "text/plain"
+                },
+                Summary = new V1CommonContent_ContentValue
+                {
+                    Value = [new V1CommonLocalizations_Localization { Value = initialSummary, LanguageCode = lang }],
+                    MediaType = "text/plain"
+                }
+            },
+            SearchTags = [new V1ServiceOwnerDialogsCommandsCreate_Tag { Value = "Playbook" }]
+        };
+
+        var dialogResult = await ServiceOwnerApi.V1ServiceOwnerDialogsCommandsCreateDialog(dto, CancellationToken.None);
+        if (!dialogResult.IsSuccessful)
+        {
+            Logger.LogWarning(
+                "Dialogporten POST /dialogs returned {StatusCode}. Body: {Body}",
+                (int)dialogResult.StatusCode, dialogResult.Error?.Content);
+            ShowPopup(dialogResult.StatusCode.ToString(), dialogResult.Error?.Content ?? "Failed to create dialog.");
+            return;
+        }
+
+        var guidString = (dialogResult.Content ?? string.Empty).Trim('"');
+        if (!Guid.TryParse(guidString, out var dialogId))
+        {
+            ShowPopup("Error", "Parse Guid failed.");
+            return;
+        }
+
+        var blueprint = compiled.Blueprint with { DialogId = dialogId };
+        var stateId = await StateStore.CreateAsync(blueprint, CancellationToken.None);
+
+        var compiler = new PlaybookCompiler(ServiceProviderOptions.Value)
+        {
+            Progress = 0,
+            SessionVars = blueprint.InitialVars
+        };
+        var compiledPatches = await compiler.CompilePatches(stateId, blueprint, compiled.InitialCursor);
+        if (compiledPatches.Count == 0)
+        {
+            ShowPopup("Error", "Initial cursor produced no patches.");
+            return;
+        }
+
+        var patchResult = await ServiceOwnerApi.V1ServiceOwnerDialogsPatchDialog(dialogId, compiledPatches, null, CancellationToken.None);
+        if (!patchResult.IsSuccessStatusCode)
+        {
+            Logger.LogWarning(
+                "Dialogporten PATCH /dialogs/{DialogId} (bootstrap stage {Cursor}) returned {StatusCode}. Body: {Body}",
+                dialogId, compiled.InitialCursor, (int)patchResult.StatusCode, patchResult.Error?.Content);
+            ShowPopup(patchResult.StatusCode.ToString(), patchResult.Error?.Content ?? "Failed to apply bootstrap patches.");
+            return;
+        }
+
+        DialogId = dialogId;
+        StateId = stateId;
+
+        var dialogStorageResult = await ProtectedLocalStore.GetAsync<List<Guid>>("dialogs");
+        var dialogs = dialogStorageResult is { Success: true, Value: not null }
+            ? dialogStorageResult.Value
+            : [];
+        dialogs.Add(dialogId);
+        _ = ProtectedLocalStore.SetAsync("dialogs", dialogs);
+    }
+
+    private void ShowPopup(string header, string message)
+    {
+        _header = header;
+        _message = message;
+        _showPopUp = true;
+    }
+}

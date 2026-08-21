@@ -44,8 +44,8 @@ public class EdDsaSecurityKeysCacheService : IHostedService, IDisposable
     // which we could get from an injected IConfiguration/IOptions
     private readonly List<string> _wellKnownEndpoints =
     [
-        // "https://localhost:7214/api/v1/.well-known/jwks.json",
-        "https://altinn-dev-api.azure-api.net/dialogporten/api/v1/.well-known/jwks.json",
+       // "https://localhost:7214/api/v1/.well-known/jwks.json",
+        "https://platform.at23.altinn.cloud/dialogporten/api/v1/.well-known/jwks.json",
         "https://platform.tt02.altinn.no/dialogporten/api/v1/.well-known/jwks.json"
     ];
 

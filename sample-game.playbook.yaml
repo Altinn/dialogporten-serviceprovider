@@ -1,0 +1,203 @@
+playbook:
+  party: urn:altinn:person:identifier-no:08895699684
+  service-resource: urn:altinn:resource:ttd-dialogporten-automated-tests
+  language: en
+  start: start
+
+  vars:
+    hp: 5
+    gold: 0
+    has_sword: false
+    visited: []
+    damage: 0
+    _seed: "demo-2026"
+    _debug: true
+
+  stages:
+    start:
+      title: "Town square — HP {vars.hp}, gold {vars.gold}"
+      summary: "Phase B/C/D demo: vars, effects, conditional actions, random targets, dice, interpolation, debug."
+      status: Draft
+      extended-status: A quiet morning
+      content: start
+      additional-info: |
+        # A tiny demo
+        Walk around town to pick up items. Items affect later choices.
+        Variables and visited locations persist between stages — and across restarts of this playbook.
+      actions:
+        - label: Pick up the sword from the smithy
+          target: sword
+          when: '!has_sword'
+        - label: Open the locked chest
+          target: chest
+          when: '!(visited contains "chest")'
+        - label: Roll the dice on the forest path
+          target: '?(forest, lucky-find)'
+        - Walk to the forest → forest
+
+    sword:
+      title: The smithy
+      status: InProgress
+      extended-status: Sword in hand
+      content: sword
+      effects:
+        - set has_sword = true
+      activity:
+        type: Information
+        description: You strap the sword across your back.
+      actions:
+        - Back to the square → start
+
+    chest:
+      title: The chest
+      status: InProgress
+      extended-status: 10 gold richer
+      content: chest
+      effects:
+        - inc gold by 10
+        - add visited += "chest"
+      activity:
+        type: Information
+        description: You find ten gold coins inside.
+      actions:
+        - Back to the square → start
+
+    lucky-find:
+      title: A stranger's gift
+      status: InProgress
+      extended-status: A windfall
+      content: lucky-find
+      effects:
+        - inc gold by 5
+        - add visited += "stranger"
+      actions:
+        - Back to the square → start
+        - Onwards to the forest → forest
+
+    forest:
+      title: "The forest path — HP {vars.hp}"
+      status: InProgress
+      extended-status: A wolf, growling
+      content: forest
+      effects:
+        - add visited += "forest"
+      actions:
+        - label: Fight the wolf
+          target: combat
+          when: has_sword
+        - label: Bribe the wolf with 5 gold
+          target: safe
+          when: gold >= 5
+        - Curl up and accept your fate → dead
+
+    combat:
+      title: "Combat — HP {vars.hp}"
+      status: InProgress
+      extended-status: A hard fight
+      content: combat
+      effects:
+        - roll damage = 1d4
+        - dec hp by damage
+      actions:
+        - label: Stand victorious
+          target: victory
+          when: hp > 0
+        - label: Collapse
+          target: dead
+          when: hp <= 0
+
+    victory:
+      title: "Victory — {vars.hp} HP left"
+      status: Completed
+      extended-status: You won
+      content: victory
+      additional-info: |
+        ## Victory
+        You stand over the wolf. The forest is yours.
+        You took {vars.damage} damage in the fight, leaving {vars.hp} HP.
+      activity: DialogClosed
+      actions:
+        - Try again → start
+
+    safe:
+      title: Safe at home
+      status: Completed
+      extended-status: Lived to tell
+      content: safe
+      additional-info: |
+        ## Safe at home
+        You bought your way past the wolf with the last of your gold.
+        Cowardly but effective. Visited: {vars.visited}.
+      activity: DialogClosed
+      actions:
+        - Try again → start
+
+    dead:
+      title: You die
+      status: Completed
+      extended-status: Defeated
+      content: dead
+      additional-info: |
+        ## Defeated
+        A regrettable choice. Or fate. Or both.
+        Final HP: {vars.hp}. Visited along the way: {vars.visited}.
+      activity: DialogClosed
+      actions:
+        - Try again → start
+
+  fce:
+    start: |
+      # The town square
+      A small market town, just after dawn. Wood smoke. A blacksmith hammers somewhere.
+      Two things look promising: the smithy at the corner, and a chest on a cart at the
+      square's edge. Past the square, a path winds into the forest.
+
+      You currently have **{vars.gold} gold** and **{vars.hp} HP**.
+
+    sword: |
+      # The smithy
+      The blacksmith looks up, nods, and goes back to his anvil.
+      A sword sits on a rack, plain but well-balanced. You take it.
+
+    chest: |
+      # The chest
+      The lock is brittle and gives on the second try. Inside: a small leather purse,
+      ten gold coins. You pocket them. You now carry **{vars.gold} gold**.
+
+    lucky-find: |
+      # A stranger's gift
+      A traveller on the forest path tosses you five coins for the trouble of
+      pointing them toward town. Easy money. You now carry **{vars.gold} gold**.
+
+    forest: |
+      # The forest path
+      Twenty paces in, the wolf finds you. Lean and grey-furred, head low, hackles up.
+      It hasn't decided yet whether to commit. Your options depend on what you brought:
+
+      - **Fight** — only viable if you have something to fight *with*.
+      - **Bribe** — wolves are smart enough to take payment, if you've got the gold.
+      - **Surrender** — you can always lie down and hope.
+
+      You currently have **{vars.hp} HP** and **{vars.gold} gold**.
+
+    combat: |
+      # Combat
+      You meet the wolf head-on. It's faster than you. You're stronger.
+      The damage roll: **{vars.damage}** (out of a possible 4).
+      You both come away bleeding. Remaining HP: **{vars.hp}**.
+
+    victory: |
+      # Victory
+      The wolf lies still. You wipe the blade on the grass. The forest is quiet again,
+      and you walk through it unhindered.
+
+      Final HP: **{vars.hp}**.
+
+    safe: |
+      # Safe at home
+      The wolf took the coins and let you pass. Not glorious, but you're alive
+      and the path home is clear.
+
+    dead: |
+      # The end
+      You don't get up.
