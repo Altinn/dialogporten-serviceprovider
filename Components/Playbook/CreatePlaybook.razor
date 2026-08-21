@@ -151,7 +151,8 @@
         var compiler = new PlaybookCompiler(ServiceProviderOptions.Value)
         {
             Progress = 0,
-            SessionVars = blueprint.InitialVars
+            SessionVars = blueprint.InitialVars,
+            StageCursors = blueprint.StageCursors
         };
         var compiledPatches = await compiler.CompilePatches(stateId, blueprint, compiled.InitialCursor);
         if (compiledPatches.Count == 0)
