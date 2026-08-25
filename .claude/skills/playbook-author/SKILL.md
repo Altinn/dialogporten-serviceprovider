@@ -47,9 +47,11 @@ writing anything non-trivial — this file is the working procedure plus a synta
 
 6. **Walk the checklist** in [`docs/playbook-dsl.md` §12](../../../docs/playbook-dsl.md#12-gotchas-checklist).
 
-7. **To run it:** upload at `/playbook/create` in the running app, or
-   `curl -X POST {baseUri}/playbook/create-from-dsl -H 'Content-Type: text/yaml' --data-binary @file.yaml`
-   with a service-owner token (the `altinn-test-token` skill can mint one).
+7. **To run it:** upload at `/playbook/create` in the running app (the page has an environment
+   picker), or
+   `curl -X POST '{baseUri}/playbook/create-from-dsl?environment=tt02' -H 'Content-Type: text/yaml' --data-binary @file.yaml`
+   with a service-owner token (the `altinn-test-token` skill can mint one). `environment` is
+   optional (`tt02`, `at23`, `local`; default from configuration) and never part of the YAML.
 
 ## Syntax card
 

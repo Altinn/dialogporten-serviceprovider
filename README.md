@@ -131,6 +131,11 @@ action advancing to the next stage.
   `sample-game.playbook.yaml`, `sample-dungeon.playbook.yaml`.
 - Upload a file at `/playbook/create` in the running app, or
   `POST /playbook/create-from-dsl` with `Content-Type: text/yaml`.
+- **Environment.** The create page has an environment picker (TT02, AT23, local); the API takes
+  `?environment=<key>` (`create-from-dsl`) or an `environment` field in the JSON body (`create`).
+  Omitting it uses `DialogportenEnvironments:Default`. `GET /playbook/environments` lists the
+  configured environments. Whichever environment a playbook is created in is stored with its
+  server-side state, so every later stage is patched into that same environment.
 - Validate without starting the server:
   `dotnet run --project .claude/skills/playbook-author/lint -- <file.playbook.yaml>`
 
@@ -145,6 +150,38 @@ DSL's targets (`next`, `previous`, `restart`, stage names, `?(...)`, `@var(...)`
 |          $previous          | n/a                                |                        Moves the crusor -1                         |
 |          $goto=(1)          | 1 = number                         |                Moves the cursor to a spesific index                |
 | $gotoIfProgress=(1)-(2)-(3) | 1 = number, 2 = number, 3 = number | goto (param 1) if (param 2) == dialog.progress else goto (param 3) |
+
+#### Environment configuration
+
+The environments a playbook can target are configured in `appsettings.json`. Only the playbook
+flows are environment-aware; the other endpoints and pages use the single client configured by
+`DialogportenSettings:BaseUri`.
+
+```json
+"DialogportenEnvironments": {
+  "Default": "tt02",
+  "Environments": {
+    "tt02": {
+      "DisplayName": "TT02",
+      "DialogportenBaseUri": "https://platform.tt02.altinn.no/dialogporten",
+      "AfUri": "https://af.tt02.altinn.no/"
+    },
+    "local": {
+      "DisplayName": "Local",
+      "DialogportenBaseUri": "https://localhost:7214",
+      "AfUri": "http://localhost:3000/",
+      "UseMaskinporten": false
+    }
+  }
+}
+```
+
+`DialogportenBaseUri` is the Dialogporten base URI up to but excluding `/api/v1`; `AfUri` is used
+to build the "Open in Arbeidsflate" link. All environments share the Maskinporten settings under
+`DialogportenSettings:Maskinporten` (Maskinporten test serves both TT02 and the AT environments);
+set `UseMaskinporten: false` for a local Dialogporten running with authentication disabled.
+Dialog tokens are accepted from every configured environment — the JWKS cache polls each one, and
+an environment that is not reachable is logged and skipped.
 
 ### Current limitations
 

@@ -1,13 +1,16 @@
 @page "/playbook/create"
 @using System.IO
 @using Altinn.ApiClients.Dialogporten.Features.V1
+@using Digdir.BDB.Dialogporten.ServiceProvider.Clients
 @using Digdir.BDB.Dialogporten.ServiceProvider.Playbook
 @using Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl
+@using Digdir.BDB.Dialogporten.ServiceProvider.Services
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using Microsoft.Extensions.Options
 @inject ProtectedLocalStorage ProtectedLocalStore
-@inject IServiceownerApi ServiceOwnerApi
+@inject IDialogportenApiProvider DialogportenApis
+@inject IDialogportenEnvironmentRegistry Environments
 @inject IPlaybookStateStore StateStore
 @inject IOptions<ServiceProviderSettings> ServiceProviderOptions
 @inject ILogger<CreatePlaybook> Logger
@@ -19,6 +22,20 @@
     Upload a <code>.playbook.yaml</code> file. The serviceprovider will compile it, create the
     Dialogporten dialog, store the playbook server-side, and apply the initial stage in one go.
 </p>
+
+<div style="margin: 1rem 0;">
+    <label for="playbook-environment" style="display: block; font-weight: 600;">Environment</label>
+    <select id="playbook-environment" @bind="_environmentKey" disabled="@_busy">
+        @foreach (var environment in Environments.All)
+        {
+            <option value="@environment.Key">@environment.DisplayName</option>
+        }
+    </select>
+    <p style="font-size: 0.85em; color: #666; margin: 0.25rem 0 0;">
+        Dialogporten: <code>@SelectedEnvironment.DialogportenBaseUri</code><br/>
+        Arbeidsflate: <code>@SelectedEnvironment.AfUri</code>
+    </p>
+</div>
 
 <div style="margin: 1rem 0;">
     <InputFile OnChange="OnFileSelected" accept=".yaml,.yml" disabled="@_busy" />
@@ -37,6 +54,7 @@
             <a href="@InboxUrl" target="_blank" rel="noopener">Open in Arbeidsflate ↗</a>
         </p>
         <p style="font-size: 0.85em; color: #666;">
+            Environment: <code>@CreatedEnvironment?.DisplayName</code><br/>
             Dialog id: <code>@DialogId</code><br/>
             State id: <code>@StateId</code>
         </p>
@@ -57,7 +75,17 @@
     private Guid DialogId { get; set; }
     private string StateId { get; set; } = "";
 
-    private string InboxUrl => $"{ServiceProviderOptions.Value.AfUri.TrimEnd('/')}/inbox/{DialogId}";
+    private string _environmentKey = "";
+
+    /// <summary>Environment picked in the form, ie. where the next upload is created.</summary>
+    private DialogportenEnvironment SelectedEnvironment => Environments.Resolve(_environmentKey);
+
+    /// <summary>Environment the playbook currently shown as "ready" was created in.</summary>
+    private DialogportenEnvironment? CreatedEnvironment { get; set; }
+
+    private string InboxUrl => CreatedEnvironment?.InboxUrl(DialogId) ?? "";
+
+    protected override void OnInitialized() => _environmentKey = Environments.Default.Key;
 
     private async Task OnFileSelected(InputFileChangeEventArgs e)
     {
@@ -86,6 +114,9 @@
 
     private async Task CreateFromYaml(string yaml, string fileName)
     {
+        var environment = SelectedEnvironment;
+        var serviceOwnerApi = DialogportenApis.GetApi(environment);
+
         DslCompileResult compiled;
         try
         {
@@ -101,8 +132,8 @@
         var totalWhens = compiled.Blueprint.StageBehaviors.Sum(sb => sb.ActionWhens.Count(w => w != null));
         var totalEffects = compiled.Blueprint.StageBehaviors.Sum(sb => sb.Effects.Count);
         Logger.LogInformation(
-            "Compiled {File}: {Stages} stages, {Vars} vars, {Effects} effect stmts, {Whens} action-whens",
-            fileName, compiled.Blueprint.Patches.Count, compiled.Blueprint.InitialVars.Count, totalEffects, totalWhens);
+            "Compiled {File} for {Environment}: {Stages} stages, {Vars} vars, {Effects} effect stmts, {Whens} action-whens",
+            fileName, environment.Key, compiled.Blueprint.Patches.Count, compiled.Blueprint.InitialVars.Count, totalEffects, totalWhens);
 
         var initialTitle = string.IsNullOrWhiteSpace(compiled.InitialTitle) ? "Playbook" : compiled.InitialTitle;
         var initialSummary = string.IsNullOrWhiteSpace(compiled.InitialSummary) ? "Playbook dialog" : compiled.InitialSummary;
@@ -128,12 +159,12 @@
             SearchTags = [new V1ServiceOwnerDialogsCommandsCreate_Tag { Value = "Playbook" }]
         };
 
-        var dialogResult = await ServiceOwnerApi.V1ServiceOwnerDialogsCommandsCreateDialog(dto, CancellationToken.None);
+        var dialogResult = await serviceOwnerApi.V1ServiceOwnerDialogsCommandsCreateDialog(dto, CancellationToken.None);
         if (!dialogResult.IsSuccessful)
         {
             Logger.LogWarning(
-                "Dialogporten POST /dialogs returned {StatusCode}. Body: {Body}",
-                (int)dialogResult.StatusCode, dialogResult.Error?.Content);
+                "Dialogporten ({Environment}) POST /dialogs returned {StatusCode}. Body: {Body}",
+                environment.Key, (int)dialogResult.StatusCode, dialogResult.Error?.Content);
             ShowPopup(dialogResult.StatusCode.ToString(), dialogResult.Error?.Content ?? "Failed to create dialog.");
             return;
         }
@@ -145,7 +176,7 @@
             return;
         }
 
-        var blueprint = compiled.Blueprint with { DialogId = dialogId };
+        var blueprint = compiled.Blueprint with { DialogId = dialogId, EnvironmentKey = environment.Key };
         var stateId = await StateStore.CreateAsync(blueprint, CancellationToken.None);
 
         var compiler = new PlaybookCompiler(ServiceProviderOptions.Value)
@@ -161,7 +192,7 @@
             return;
         }
 
-        var patchResult = await ServiceOwnerApi.V1ServiceOwnerDialogsPatchDialog(dialogId, compiledPatches, null, CancellationToken.None);
+        var patchResult = await serviceOwnerApi.V1ServiceOwnerDialogsPatchDialog(dialogId, compiledPatches, null, CancellationToken.None);
         if (!patchResult.IsSuccessStatusCode)
         {
             Logger.LogWarning(
@@ -173,6 +204,7 @@
 
         DialogId = dialogId;
         StateId = stateId;
+        CreatedEnvironment = environment;
 
         var dialogStorageResult = await ProtectedLocalStore.GetAsync<List<Guid>>("dialogs");
         var dialogs = dialogStorageResult is { Success: true, Value: not null }
