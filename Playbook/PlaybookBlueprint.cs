@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl;
+using Digdir.BDB.Dialogporten.ServiceProvider.Services;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
 
@@ -17,6 +18,12 @@ public sealed record PlaybookBlueprint(
     /// environment. Null/empty means the configured default environment.
     /// </summary>
     public string? EnvironmentKey { get; init; }
+
+    /// <summary>
+    /// Base URI the playbook's GUI action and FCE URLs were built from, kept so later stages emit
+    /// the same URLs the dialog already carries. Null/empty means "resolve it again".
+    /// </summary>
+    public string? MutateBaseUri { get; init; }
 
     // Phase A back-compat constructor — no vars, no per-stage behavior metadata, no stage names.
     public PlaybookBlueprint(Guid dialogId, JsonArray patches, IReadOnlyDictionary<string, FceContent> fceContents)

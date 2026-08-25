@@ -2,8 +2,10 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Altinn.ApiClients.Dialogporten.Features.V1;
 using Digdir.BDB.Dialogporten.ServiceProvider.Clients;
+using Digdir.BDB.Dialogporten.ServiceProvider.Extensions;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl;
+using Digdir.BDB.Dialogporten.ServiceProvider.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +20,7 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 public class MutateController(
     IDialogportenApiProvider apiProvider,
     IPlaybookStateStore stateStore,
+    IDialogportenEnvironmentRegistry environments,
     IOptions<ServiceProviderSettings> options,
     ILogger<MutateController> logger) : ControllerBase
 {
@@ -46,24 +49,26 @@ public class MutateController(
         }
 
         // The dialog lives in the environment it was created in, so every mutation must be sent there.
-        IServiceownerApi dialogporten;
-        try
-        {
-            dialogporten = apiProvider.GetApi(blueprint.EnvironmentKey);
-        }
-        catch (ArgumentException ex)
+        if (!environments.TryResolve(blueprint.EnvironmentKey, out var environment))
         {
             logger.LogWarning(
-                "Playbook stateId={StateId} references unknown environment '{Environment}': {Error}",
-                stateId, blueprint.EnvironmentKey, ex.Message);
-            return BadRequest(ex.Message);
+                "Playbook stateId={StateId} references unknown environment '{Environment}'",
+                stateId, blueprint.EnvironmentKey);
+            return BadRequest($"Unknown environment '{blueprint.EnvironmentKey}'.");
         }
+        var dialogporten = apiProvider.GetApi(environment);
+
+        // Keep emitting the callback base URI the dialog was created with, so the URLs stay stable
+        // for the whole run even if this request arrives on a different host.
+        var callbackBaseUri = string.IsNullOrWhiteSpace(blueprint.MutateBaseUri)
+            ? environment.ResolveCallbackBaseUri(options.Value.MutateBaseUri, this.AppBaseUri())
+            : blueprint.MutateBaseUri;
 
         // Phase B: apply this stage's effects to session vars, then persist.
         var sessionVars = await stateStore.GetSessionVarsAsync(stateId, cancellationToken);
         logger.LogInformation(
             "[mutate] stateId={StateId} env={Environment} cursor={Cursor} entry-vars={Vars} blueprint-has-{NumBehaviors}-stage-behaviors",
-            stateId, blueprint.EnvironmentKey ?? "(default)", cursor, FormatVars(sessionVars), blueprint.StageBehaviors.Count);
+            stateId, environment.Key, cursor, FormatVars(sessionVars), blueprint.StageBehaviors.Count);
 
         // Phase C: per-render RNG. If session var _seed is set, derive a deterministic seed
         // from "<_seed>|<stateId>" via MD5 so two playbooks with the same _seed but different
@@ -142,7 +147,7 @@ public class MutateController(
             await stateStore.UpdateSessionVarsAsync(stateId, sessionVars, cancellationToken);
         }
 
-        var compiler = new PlaybookCompiler(options.Value)
+        var compiler = new PlaybookCompiler(callbackBaseUri)
         {
             Progress = 0,
             Rng = rng,
