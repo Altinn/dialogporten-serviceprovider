@@ -1,4 +1,6 @@
 using Altinn.ApiClients.Dialogporten;
+using Altinn.ApiClients.Maskinporten.Extensions;
+using Altinn.ApiClients.Maskinporten.Services;
 using Digdir.BDB.Dialogporten.ServiceProvider.Auth;
 using Digdir.BDB.Dialogporten.ServiceProvider.Clients;
 using Digdir.BDB.Dialogporten.ServiceProvider.Components;
@@ -31,6 +33,17 @@ builder.Services.TryAddSingleton<IOptions<ServiceProviderSettings>>(new OptionsW
 var dialogportenSettings = builder.Configuration
     .GetSection("DialogportenSettings")
     .Get<DialogportenSettings>()!;
+
+// The environments a playbook can be created in (Dialogporten + Arbeidsflate base URIs per
+// environment). Validated eagerly so a misconfiguration fails at startup rather than on upload.
+var dialogportenEnvironments = new DialogportenEnvironmentRegistry(
+    builder.Configuration
+        .GetSection("DialogportenEnvironments")
+        .Get<DialogportenEnvironmentsSettings>()
+    ?? throw new InvalidOperationException("Missing configuration section 'DialogportenEnvironments'."));
+
+builder.Services.AddSingleton<IDialogportenEnvironmentRegistry>(dialogportenEnvironments);
+builder.Services.AddSingleton<IDialogportenApiProvider, DialogportenApiProvider>();
 
 builder.Services
     .AddEndpointsApiExplorer()
@@ -72,6 +85,22 @@ builder.Services
         });
     })
     .AddDialogportenClient(dialogportenSettings);
+
+// AddDialogportenClient can only bind IServiceownerApi to a single base address, so the playbook
+// flows resolve their client through IDialogportenApiProvider instead: one named HttpClient per
+// configured environment, reusing the Maskinporten client definition registered above.
+foreach (var environment in dialogportenEnvironments.All)
+{
+    var environmentClient = builder.Services.AddHttpClient(
+        environment.HttpClientName,
+        client => client.BaseAddress = new Uri(environment.DialogportenBaseUri));
+
+    if (environment.UseMaskinporten)
+    {
+        environmentClient.AddMaskinportenHttpMessageHandler<SettingsJwkClientDefinition>(
+            DialogportenClientDefinitions.MaskinportenClientDefinitionKey);
+    }
+}
 
 builder.Services.AddSingleton<InMemoryUserStoreContext>();
 
@@ -225,7 +254,6 @@ public sealed class ServiceProviderSettings
 {
     public string RegistryUri { get; set; } = null!;
     public string MutateBaseUri { get; set; } = null!;
-    public string AfUri { get; set; } = null!;
     public DefaultAccount DefaultAccount { get; set; } = null!;
 
 }
@@ -234,4 +262,14 @@ public sealed class DefaultAccount
 {
     public string Username { get; set; } = null!;
     public string Password { get; set; } = null!;
+}
+
+public static class DialogportenClientDefinitions
+{
+    /// <summary>
+    /// The Maskinporten client definition key Altinn.ApiClients.Dialogporten registers internally
+    /// (<c>ServiceCollectionExtensions.ClientDefinitionKey</c>). Reused for the per-environment
+    /// clients so they share the SDK's Maskinporten settings and token cache.
+    /// </summary>
+    public const string MaskinportenClientDefinitionKey = "dialogporten-sp-sdk";
 }

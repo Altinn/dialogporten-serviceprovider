@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Altinn.ApiClients.Dialogporten.Features.V1;
+using Digdir.BDB.Dialogporten.ServiceProvider.Clients;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl;
 using Microsoft.AspNetCore.Authorization;
@@ -15,7 +16,7 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 [Route("mutate")]
 [EnableCors("AllowedOriginsPolicy")]
 public class MutateController(
-    IServiceownerApi dialogporten,
+    IDialogportenApiProvider apiProvider,
     IPlaybookStateStore stateStore,
     IOptions<ServiceProviderSettings> options,
     ILogger<MutateController> logger) : ControllerBase
@@ -44,11 +45,25 @@ public class MutateController(
             return NotFound();
         }
 
+        // The dialog lives in the environment it was created in, so every mutation must be sent there.
+        IServiceownerApi dialogporten;
+        try
+        {
+            dialogporten = apiProvider.GetApi(blueprint.EnvironmentKey);
+        }
+        catch (ArgumentException ex)
+        {
+            logger.LogWarning(
+                "Playbook stateId={StateId} references unknown environment '{Environment}': {Error}",
+                stateId, blueprint.EnvironmentKey, ex.Message);
+            return BadRequest(ex.Message);
+        }
+
         // Phase B: apply this stage's effects to session vars, then persist.
         var sessionVars = await stateStore.GetSessionVarsAsync(stateId, cancellationToken);
         logger.LogInformation(
-            "[mutate] stateId={StateId} cursor={Cursor} entry-vars={Vars} blueprint-has-{NumBehaviors}-stage-behaviors",
-            stateId, cursor, FormatVars(sessionVars), blueprint.StageBehaviors.Count);
+            "[mutate] stateId={StateId} env={Environment} cursor={Cursor} entry-vars={Vars} blueprint-has-{NumBehaviors}-stage-behaviors",
+            stateId, blueprint.EnvironmentKey ?? "(default)", cursor, FormatVars(sessionVars), blueprint.StageBehaviors.Count);
 
         // Phase C: per-render RNG. If session var _seed is set, derive a deterministic seed
         // from "<_seed>|<stateId>" via MD5 so two playbooks with the same _seed but different

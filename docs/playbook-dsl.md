@@ -462,8 +462,12 @@ as `actorName`.
 
 ## 11. Runtime pipeline
 
-1. **Upload.** Either the Blazor page `/playbook/create` (file picker) or
+1. **Upload.** Either the Blazor page `/playbook/create` (file picker + environment picker) or
    `POST /playbook/create-from-dsl` with `Content-Type: text/yaml` and the file as the raw body.
+   The **environment** (TT02, AT23, local — see `DialogportenEnvironments` in configuration) is
+   chosen here, not in the YAML: the picker on the page, or `?environment=<key>` on the endpoint.
+   It is stored with the playbook's server-side state, so every later stage is patched into the
+   same environment, and the "open in inbox" link points at that environment's Arbeidsflate.
 2. **Compile.** `DslCompiler.Compile` produces a blueprint: one JSON Patch array per stage, plus
    per-stage behavior (effects, action guards, router rules), the initial vars, and the
    stage-name → cursor map.

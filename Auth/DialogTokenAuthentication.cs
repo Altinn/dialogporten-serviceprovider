@@ -1,3 +1,4 @@
+using Digdir.BDB.Dialogporten.ServiceProvider.Services;
 using Microsoft.IdentityModel.Tokens;
 using ScottBrady.IdentityModel;
 using ScottBrady.IdentityModel.Tokens;
@@ -38,21 +39,23 @@ public class EdDsaSecurityKeysCacheService : IHostedService, IDisposable
 
     private readonly TimeSpan _refreshInterval = TimeSpan.FromHours(12);
 
+    // We accept dialog tokens from every configured environment, since a playbook may be created in
+    // any of them (see DialogportenEnvironments in configuration). Usually one would only allow a
+    // single environment (issuer) here. Endpoints that cannot be reached are logged and skipped, so
+    // eg. a configured-but-not-running local Dialogporten is harmless.
+    private readonly List<string> _wellKnownEndpoints;
 
-    // In this service we allow keys for all non-production environments for
-    // simplicity. Usually one would only allow a single environment (issuer) here,
-    // which we could get from an injected IConfiguration/IOptions
-    private readonly List<string> _wellKnownEndpoints =
-    [
-       // "https://localhost:7214/api/v1/.well-known/jwks.json",
-        "https://platform.at23.altinn.cloud/dialogporten/api/v1/.well-known/jwks.json",
-        "https://platform.tt02.altinn.no/dialogporten/api/v1/.well-known/jwks.json"
-    ];
-
-    public EdDsaSecurityKeysCacheService(IHttpClientFactory httpClientFactory, ILogger<EdDsaSecurityKeysCacheService> logger)
+    public EdDsaSecurityKeysCacheService(
+        IHttpClientFactory httpClientFactory,
+        IDialogportenEnvironmentRegistry environments,
+        ILogger<EdDsaSecurityKeysCacheService> logger)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
+        _wellKnownEndpoints = environments.All
+            .Select(x => x.JwksUri)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -108,7 +111,9 @@ public class EdDsaSecurityKeysCacheService : IHostedService, IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to retrieve keys from {endpoint}", endpoint);
+                // A configured environment may simply not be running (typically local Dialogporten),
+                // so keep this to a single line and carry on with the endpoints that do answer.
+                _logger.LogWarning("Failed to retrieve keys from {endpoint}: {error}", endpoint, ex.Message);
             }
         }
 

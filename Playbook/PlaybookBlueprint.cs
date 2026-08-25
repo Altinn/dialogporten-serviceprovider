@@ -11,6 +11,13 @@ public sealed record PlaybookBlueprint(
     IReadOnlyList<StageBehavior> StageBehaviors,
     IReadOnlyDictionary<string, int> StageCursors)
 {
+    /// <summary>
+    /// Key of the environment (see <c>DialogportenEnvironments</c> in configuration) this playbook's
+    /// dialog lives in. Set when the dialog is created; every later mutation must target the same
+    /// environment. Null/empty means the configured default environment.
+    /// </summary>
+    public string? EnvironmentKey { get; init; }
+
     // Phase A back-compat constructor — no vars, no per-stage behavior metadata, no stage names.
     public PlaybookBlueprint(Guid dialogId, JsonArray patches, IReadOnlyDictionary<string, FceContent> fceContents)
         : this(

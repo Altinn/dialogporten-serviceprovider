@@ -1,8 +1,10 @@
 using System.IO;
 using System.Text.Json.Nodes;
 using Altinn.ApiClients.Dialogporten.Features.V1;
+using Digdir.BDB.Dialogporten.ServiceProvider.Clients;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl;
+using Digdir.BDB.Dialogporten.ServiceProvider.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
@@ -14,11 +16,28 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 [Route("playbook")]
 [EnableCors("AllowedOriginsPolicy")]
 public class PlaybookController(
-    IServiceownerApi dialogporten,
+    IDialogportenApiProvider apiProvider,
     IPlaybookStateStore stateStore,
+    IDialogportenEnvironmentRegistry environments,
     IOptions<ServiceProviderSettings> options,
     ILogger<PlaybookController> logger) : ControllerBase
 {
+    /// <summary>Lists the environments a playbook can be created in.</summary>
+    [Authorize]
+    [Route("environments")]
+    [HttpGet]
+    public IActionResult GetEnvironments() => Ok(new
+    {
+        @default = environments.Default.Key,
+        environments = environments.All.Select(e => new
+        {
+            key = e.Key,
+            displayName = e.DisplayName,
+            dialogportenBaseUri = e.DialogportenBaseUri,
+            afUri = e.AfUri
+        })
+    });
+
     [Authorize]
     [Route("create")]
     [Consumes("application/json")]
@@ -48,6 +67,7 @@ public class PlaybookController(
         }
 
         return await BootstrapPlaybookAsync(
+            createPlaybookRequest.Environment,
             createPlaybookRequest.Party,
             createPlaybookRequest.ServiceResource,
             createPlaybookRequest.InitialTitle,
@@ -65,7 +85,9 @@ public class PlaybookController(
     [Route("create-from-dsl")]
     [Consumes("text/yaml", "application/x-yaml", "text/plain")]
     [HttpPost]
-    public async Task<IActionResult> PostDsl(CancellationToken cancellationToken)
+    public async Task<IActionResult> PostDsl(
+        [FromQuery] string? environment,
+        CancellationToken cancellationToken)
     {
         using var reader = new StreamReader(Request.Body);
         var yaml = await reader.ReadToEndAsync(cancellationToken);
@@ -81,6 +103,7 @@ public class PlaybookController(
         }
 
         return await BootstrapPlaybookAsync(
+            environment,
             compiled.Party,
             compiled.ServiceResource,
             compiled.InitialTitle,
@@ -92,6 +115,7 @@ public class PlaybookController(
     }
 
     private async Task<IActionResult> BootstrapPlaybookAsync(
+        string? environmentKey,
         string party,
         string serviceResource,
         string? initialTitleOverride,
@@ -101,6 +125,13 @@ public class PlaybookController(
         int initialCursor,
         CancellationToken cancellationToken)
     {
+        if (!environments.TryResolve(environmentKey, out var environment))
+        {
+            return BadRequest(
+                $"Unknown environment '{environmentKey}'. Valid values: {string.Join(", ", environments.All.Select(e => e.Key))}.");
+        }
+        var dialogporten = apiProvider.GetApi(environment);
+
         var initialTitle = string.IsNullOrWhiteSpace(initialTitleOverride) ? "Playbook" : initialTitleOverride;
         var initialSummary = string.IsNullOrWhiteSpace(initialSummaryOverride) ? "Playbook dialog" : initialSummaryOverride;
         var initialLanguageCode = string.IsNullOrWhiteSpace(initialLanguageOverride) ? "en" : initialLanguageOverride;
@@ -148,8 +179,8 @@ public class PlaybookController(
         if (!dialogResult.IsSuccessful)
         {
             logger.LogWarning(
-                "Dialogporten POST /dialogs returned {StatusCode}. Body: {Body}",
-                (int)dialogResult.StatusCode, dialogResult.Error?.Content);
+                "Dialogporten ({Environment}) POST /dialogs returned {StatusCode}. Body: {Body}",
+                environment.Key, (int)dialogResult.StatusCode, dialogResult.Error?.Content);
             return BadRequest(dialogResult.Error?.Content);
         }
 
@@ -161,7 +192,7 @@ public class PlaybookController(
         // Bind the freshly created dialog id onto the compiled blueprint. Previously this
         // rebuilt the blueprint via the Phase A constructor, silently dropping InitialVars and
         // StageBehaviors for DSL-created playbooks.
-        var blueprint = blueprintTemplate with { DialogId = dialogId };
+        var blueprint = blueprintTemplate with { DialogId = dialogId, EnvironmentKey = environment.Key };
         var stateId = await stateStore.CreateAsync(blueprint, cancellationToken);
 
         var compiler = new PlaybookCompiler(options.Value)
@@ -185,13 +216,21 @@ public class PlaybookController(
             return BadRequest(patchResult.Error?.Content);
         }
 
-        return Ok(new { dialogId, stateId });
+        return Ok(new
+        {
+            dialogId,
+            stateId,
+            environment = environment.Key,
+            inboxUrl = environment.InboxUrl(dialogId)
+        });
     }
 
 }
 
 public class CreatePlaybookRequest
 {
+    /// <summary>Environment key (eg. tt02, at23, local). Omitted means the configured default.</summary>
+    public string? Environment { get; set; }
     public string Party { get; set; } = null!;
     public string ServiceResource { get; set; } = null!;
     public PlaybookState PlaybookState { get; set; } = null!;
