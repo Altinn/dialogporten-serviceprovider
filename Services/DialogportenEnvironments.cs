@@ -28,6 +28,13 @@ public sealed class DialogportenEnvironmentSettings
     public string AfUri { get; set; } = null!;
 
     /// <summary>
+    /// Optional pin for the base URI this environment's playbook callback URLs (GUI actions, FCEs)
+    /// point at. Leave unset to use the URL the app itself is being browsed on — see
+    /// <see cref="DialogportenEnvironment.ResolveCallbackBaseUri"/>.
+    /// </summary>
+    public string? MutateBaseUri { get; set; }
+
+    /// <summary>
     /// Whether service owner API calls to this environment should carry a Maskinporten token.
     /// Set to false for a local Dialogporten running with authentication disabled.
     /// </summary>
@@ -43,6 +50,7 @@ public sealed record DialogportenEnvironment(
     string DisplayName,
     string DialogportenBaseUri,
     string AfUri,
+    string? MutateBaseUri,
     bool UseMaskinporten)
 {
     public string HttpClientName => $"dialogporten-env-{Key}";
@@ -50,6 +58,35 @@ public sealed record DialogportenEnvironment(
     public string JwksUri => $"{DialogportenBaseUri.TrimEnd('/')}/api/v1/.well-known/jwks.json";
 
     public string InboxUrl(Guid dialogId) => $"{AfUri.TrimEnd('/')}/inbox/{dialogId}";
+
+    /// <summary>
+    /// Base URI a playbook's GUI action and FCE URLs point back at, ie. where this service provider
+    /// is reachable from the browser showing Arbeidsflate. In order: this environment's
+    /// <c>MutateBaseUri</c>, then <c>ServiceProvider:mutateBaseUri</c>, then the URL the app itself
+    /// is being reached on — the last being what makes a playbook created through the deployed app
+    /// call back to the deployed app instead of to some configured localhost.
+    /// </summary>
+    public string ResolveCallbackBaseUri(string? configuredFallback, string appBaseUri)
+    {
+        var resolved = new[] { MutateBaseUri, configuredFallback, appBaseUri }
+            .First(x => !string.IsNullOrWhiteSpace(x))!;
+        return resolved.Trim().TrimEnd('/');
+    }
+
+    /// <summary>
+    /// Dialogporten rejects GUI action URLs that are not valid https, and every playbook button is
+    /// one, so a bad callback base is reported before the create call rather than as an opaque 400.
+    /// </summary>
+    public static string? ValidateCallbackBaseUri(string callbackBaseUri)
+    {
+        if (!Uri.TryCreate(callbackBaseUri, UriKind.Absolute, out var uri))
+        {
+            return $"Callback base URI '{callbackBaseUri}' is not an absolute URL. Set ServiceProvider:mutateBaseUri or the environment's MutateBaseUri.";
+        }
+        return uri.Scheme == Uri.UriSchemeHttps
+            ? null
+            : $"Callback base URI '{callbackBaseUri}' must be https — Dialogporten rejects GUI action URLs that are not https. Browse the app over https, or pin ServiceProvider:mutateBaseUri.";
+    }
 }
 
 public interface IDialogportenEnvironmentRegistry
@@ -98,6 +135,7 @@ public sealed class DialogportenEnvironmentRegistry : IDialogportenEnvironmentRe
                 string.IsNullOrWhiteSpace(env.DisplayName) ? key.ToUpperInvariant() : env.DisplayName,
                 env.DialogportenBaseUri,
                 env.AfUri,
+                env.MutateBaseUri,
                 env.UseMaskinporten);
         }
 

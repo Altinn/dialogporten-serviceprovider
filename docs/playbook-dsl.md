@@ -484,8 +484,12 @@ as `actorName`.
 `POST /playbook/create` (JSON) is the older, lower-level path: it takes a pre-built patch array
 directly instead of YAML.
 
-Dialogporten requires every GUI action `url` to be **valid HTTPS** and ≤ 1023 characters, so
-`ServiceProvider:mutateBaseUri` must be an `https://` URL reachable from Arbeidsflate.
+Dialogporten requires every GUI action `url` to be **valid HTTPS** and ≤ 1023 characters. The base
+those URLs are built from is resolved per playbook, in this order: the chosen environment's
+`MutateBaseUri`, then `ServiceProvider:mutateBaseUri`, then **the URL the app itself is being reached
+on** — so a playbook created locally calls back to localhost and one created through the deployed app
+calls back to the deployed app. The resolved value is shown on the create page, stored with the
+playbook, and reused for every later stage.
 
 ---
 

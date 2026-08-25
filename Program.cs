@@ -253,7 +253,14 @@ static void ReportIssues(ILogger logger, string fileName, IReadOnlyList<string> 
 public sealed class ServiceProviderSettings
 {
     public string RegistryUri { get; set; } = null!;
-    public string MutateBaseUri { get; set; } = null!;
+
+    /// <summary>
+    /// Optional pin for the base URI playbook callback URLs (GUI actions, FCEs) point at. Unset —
+    /// the normal case — means "the URL this app is being browsed on", so a playbook created locally
+    /// calls back to localhost and one created through the deployed app calls back to the deployed
+    /// app. Set it only when neither is reachable from the browser (eg. an ngrok tunnel).
+    /// </summary>
+    public string? MutateBaseUri { get; set; }
     public DefaultAccount DefaultAccount { get; set; } = null!;
 
 }

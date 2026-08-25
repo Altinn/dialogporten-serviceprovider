@@ -4,9 +4,14 @@ using Altinn.ApiClients.Dialogporten.Features.V1;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
 
-public class PlaybookCompiler(ServiceProviderSettings settings)
+/// <param name="mutateBaseUri">
+/// Base URI that <c>{baseUri}</c>, mutate URLs and FCE URLs are built from, ie. where this service
+/// provider is reachable from the browser showing Arbeidsflate. Comes from the playbook's target,
+/// so a playbook keeps emitting the URLs it was created with.
+/// </param>
+public class PlaybookCompiler(string mutateBaseUri)
 {
-    private readonly string _baseUri = settings.MutateBaseUri.TrimEnd('/');
+    private readonly string _baseUri = mutateBaseUri.TrimEnd('/');
     private const int MaxDepth = 32;
     private const string FceUrlMarker = "/fce/named/";
     private const int MaxNodes = 1000;

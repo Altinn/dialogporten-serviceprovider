@@ -2,6 +2,7 @@ using System.IO;
 using System.Text.Json.Nodes;
 using Altinn.ApiClients.Dialogporten.Features.V1;
 using Digdir.BDB.Dialogporten.ServiceProvider.Clients;
+using Digdir.BDB.Dialogporten.ServiceProvider.Extensions;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl;
 using Digdir.BDB.Dialogporten.ServiceProvider.Services;
@@ -34,7 +35,8 @@ public class PlaybookController(
             key = e.Key,
             displayName = e.DisplayName,
             dialogportenBaseUri = e.DialogportenBaseUri,
-            afUri = e.AfUri
+            afUri = e.AfUri,
+            callbackBaseUri = e.ResolveCallbackBaseUri(options.Value.MutateBaseUri, this.AppBaseUri())
         })
     });
 
@@ -130,6 +132,15 @@ public class PlaybookController(
             return BadRequest(
                 $"Unknown environment '{environmentKey}'. Valid values: {string.Join(", ", environments.All.Select(e => e.Key))}.");
         }
+
+        // Where the dialog's buttons and FCEs will point back at: this app, as reachable from the
+        // browser showing Arbeidsflate.
+        var callbackBaseUri = environment.ResolveCallbackBaseUri(options.Value.MutateBaseUri, this.AppBaseUri());
+        if (DialogportenEnvironment.ValidateCallbackBaseUri(callbackBaseUri) is { } callbackError)
+        {
+            return BadRequest(callbackError);
+        }
+
         var dialogporten = apiProvider.GetApi(environment);
 
         var initialTitle = string.IsNullOrWhiteSpace(initialTitleOverride) ? "Playbook" : initialTitleOverride;
@@ -192,10 +203,15 @@ public class PlaybookController(
         // Bind the freshly created dialog id onto the compiled blueprint. Previously this
         // rebuilt the blueprint via the Phase A constructor, silently dropping InitialVars and
         // StageBehaviors for DSL-created playbooks.
-        var blueprint = blueprintTemplate with { DialogId = dialogId, EnvironmentKey = environment.Key };
+        var blueprint = blueprintTemplate with
+        {
+            DialogId = dialogId,
+            EnvironmentKey = environment.Key,
+            MutateBaseUri = callbackBaseUri
+        };
         var stateId = await stateStore.CreateAsync(blueprint, cancellationToken);
 
-        var compiler = new PlaybookCompiler(options.Value)
+        var compiler = new PlaybookCompiler(callbackBaseUri)
         {
             Progress = 0,
             SessionVars = blueprint.InitialVars,
@@ -221,6 +237,7 @@ public class PlaybookController(
             dialogId,
             stateId,
             environment = environment.Key,
+            callbackBaseUri,
             inboxUrl = environment.InboxUrl(dialogId)
         });
     }

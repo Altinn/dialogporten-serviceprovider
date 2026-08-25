@@ -177,7 +177,14 @@ flows are environment-aware; the other endpoints and pages use the single client
 ```
 
 `DialogportenBaseUri` is the Dialogporten base URI up to but excluding `/api/v1`; `AfUri` is used
-to build the "Open in Arbeidsflate" link. All environments share the Maskinporten settings under
+to build the "Open in Arbeidsflate" link.
+
+**Callback URLs** (the GUI action and FCE URLs a playbook writes into its dialog) are based on the
+first of: the environment's optional `MutateBaseUri`, `ServiceProvider:mutateBaseUri`, or — normally
+— the URL the app itself is being browsed on. That last fallback is what makes a playbook created
+through the deployed app call back to the deployed app; pin one of the settings only when neither is
+reachable from the browser showing Arbeidsflate (eg. an ngrok tunnel). The create page shows the
+resolved value, and it is stored with the playbook so later stages emit the same URLs. All environments share the Maskinporten settings under
 `DialogportenSettings:Maskinporten` (Maskinporten test serves both TT02 and the AT environments);
 set `UseMaskinporten: false` for a local Dialogporten running with authentication disabled.
 Dialog tokens are accepted from every configured environment — the JWKS cache polls each one, and
