@@ -1,8 +1,11 @@
+using Digdir.BDB.Dialogporten.ServiceProvider.Extensions;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook;
 using Digdir.BDB.Dialogporten.ServiceProvider.Playbook.Dsl;
+using Digdir.BDB.Dialogporten.ServiceProvider.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 
@@ -10,10 +13,13 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 [Route("fce/named")]
 [Authorize(AuthenticationSchemes = "DialogToken")]
 [EnableCors("AllowedOriginsPolicy")]
-public class NamedFrontChannelEmbedController(IPlaybookStateStore stateStore) : ControllerBase
+public class NamedFrontChannelEmbedController(
+    IPlaybookStateStore stateStore,
+    IDialogportenEnvironmentRegistry environments,
+    IOptions<ServiceProviderSettings> options) : ControllerBase
 {
     [HttpGet]
-    [Route("{stateId}/{fceName}")]
+    [Route("{stateId:guid}/{fceName}")]
     public async Task<IActionResult> Get(
         [FromRoute] string stateId,
         [FromRoute] string fceName,
@@ -48,7 +54,16 @@ public class NamedFrontChannelEmbedController(IPlaybookStateStore stateStore) : 
         // using current session vars, so embed content reflects live state when Arbeidsflate
         // loads the iframe.
         var sessionVars = await stateStore.GetSessionVarsAsync(stateId, cancellationToken);
-        var body = Evaluator.RenderTemplate(content.Content, sessionVars);
+
+        // Mirrors PlaybookCompiler.SubstitutePlaceholders, which only runs on patch values.
+        var baseUri = string.IsNullOrWhiteSpace(blueprint.MutateBaseUri)
+            ? environments.TryResolve(blueprint.EnvironmentKey, out var environment)
+                ? environment.ResolveCallbackBaseUri(options.Value.MutateBaseUri, this.AppBaseUri())
+                : this.AppBaseUri()
+            : blueprint.MutateBaseUri;
+        var body = Evaluator.RenderTemplate(
+            content.Content.Replace("{baseUri}", baseUri).Replace("{stateId}", stateId),
+            sessionVars);
         return Content(body, content.MediaType);
     }
 }

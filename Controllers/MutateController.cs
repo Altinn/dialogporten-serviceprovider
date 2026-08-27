@@ -25,13 +25,15 @@ public class MutateController(
     ILogger<MutateController> logger) : ControllerBase
 {
     [HttpPost]
-    [Route("{stateId}/{cursor:int}")]
+    [Route("{stateId:guid}/{cursor:int}")]
     public async Task<IActionResult> MutatePlaybook(
-        [FromRoute] string stateId,
+        [FromRoute] Guid stateId,
         [FromRoute] int cursor,
         CancellationToken cancellationToken)
     {
-        var blueprint = await stateStore.GetAsync(stateId, cancellationToken);
+        var stateIdStr = stateId.ToString();
+
+        var blueprint = await stateStore.GetAsync(stateIdStr, cancellationToken);
         if (blueprint is null)
         {
             return NotFound();
@@ -65,15 +67,15 @@ public class MutateController(
             : blueprint.MutateBaseUri;
 
         // Phase B: apply this stage's effects to session vars, then persist.
-        var sessionVars = await stateStore.GetSessionVarsAsync(stateId, cancellationToken);
+        var sessionVars = await stateStore.GetSessionVarsAsync(stateIdStr, cancellationToken);
         logger.LogInformation(
             "[mutate] stateId={StateId} env={Environment} cursor={Cursor} entry-vars={Vars} blueprint-has-{NumBehaviors}-stage-behaviors",
-            stateId, environment.Key, cursor, FormatVars(sessionVars), blueprint.StageBehaviors.Count);
+            stateId, environment.Key, cursor, SanitizeForLog(FormatVars(sessionVars)), blueprint.StageBehaviors.Count);
 
         // Phase C: per-render RNG. If session var _seed is set, derive a deterministic seed
         // from "<_seed>|<stateId>" via MD5 so two playbooks with the same _seed but different
         // stateIds diverge, while the same playbook replays identically.
-        var rng = CreateRng(sessionVars, stateId);
+        var rng = CreateRng(sessionVars, stateIdStr);
 
         // Phase E: effect + router loop. Apply the entered stage's effects; if the stage has
         // goto rules, dispatch to the first matching target and repeat there. The stage the
@@ -104,11 +106,11 @@ public class MutateController(
                     sessionVars = Evaluator.Apply(stmt, sessionVars, rng);
                     logger.LogInformation(
                         "[mutate]   effect {Stmt} applied: {Before} → {After}",
-                        FormatStmt(stmt), FormatVars(before), FormatVars(sessionVars));
+                        SanitizeForLog(FormatStmt(stmt)), SanitizeForLog(FormatVars(before)), SanitizeForLog(FormatVars(sessionVars)));
                 }
                 catch (ScriptException ex)
                 {
-                    logger.LogWarning("Effect failed for stateId={StateId} cursor={Cursor}: {Error}", stateId, cursor, ex.Message);
+                    logger.LogWarning("Effect failed for stateId={StateId} cursor={Cursor}: {Error}", stateId, cursor, SanitizeForLog(ex.Message));
                     return BadRequest($"Effect failed: {ex.Message}");
                 }
             }
@@ -122,7 +124,7 @@ public class MutateController(
             var next = ResolveGotoRules(stageBehavior.Gotos, sessionVars, blueprint.StageCursors, cursor, out var gotoError);
             if (gotoError is not null)
             {
-                logger.LogWarning("Goto dispatch failed for stateId={StateId} cursor={Cursor}: {Error}", stateId, cursor, gotoError);
+                logger.LogWarning("Goto dispatch failed for stateId={StateId} cursor={Cursor}: {Error}", stateId, cursor, SanitizeForLog(gotoError));
                 return BadRequest($"Goto dispatch failed: {gotoError}");
             }
             if (next is null)
@@ -142,11 +144,6 @@ public class MutateController(
             }
         }
 
-        if (anyEffectsApplied)
-        {
-            await stateStore.UpdateSessionVarsAsync(stateId, sessionVars, cancellationToken);
-        }
-
         var compiler = new PlaybookCompiler(callbackBaseUri)
         {
             Progress = 0,
@@ -160,7 +157,7 @@ public class MutateController(
         {
             logger.LogWarning(
                 "Dialogporten GET /dialogs/{DialogId} returned {StatusCode}. Body: {Body}",
-                blueprint.DialogId, (int)dialogResponse.StatusCode, dialogResponse.Error?.Content);
+                blueprint.DialogId, (int)dialogResponse.StatusCode, SanitizeForLog(dialogResponse.Error?.Content));
             return BadRequest();
         }
 
@@ -169,12 +166,12 @@ public class MutateController(
         List<JsonPatchOperations_Operation> patches;
         try
         {
-            patches = await compiler.CompilePatches(stateId, blueprint, cursor);
+            patches = await compiler.CompilePatches(stateIdStr, blueprint, cursor);
         }
         catch (InvalidOperationException ex)
         {
             // $gotovar resolution failure — var missing, not a string, or not a stage name.
-            logger.LogWarning("Patch compile failed for stateId={StateId} cursor={Cursor}: {Error}", stateId, cursor, ex.Message);
+            logger.LogWarning("Patch compile failed for stateId={StateId} cursor={Cursor}: {Error}", stateId, cursor, SanitizeForLog(ex.Message));
             return BadRequest(ex.Message);
         }
         if (patches.Count == 0)
@@ -185,14 +182,19 @@ public class MutateController(
         // Phase B: filter /guiActions by per-action when expressions using current session vars.
         if (cursor < blueprint.StageBehaviors.Count)
         {
-            FilterActionsByWhen(patches, blueprint.StageBehaviors[cursor].ActionWhens, sessionVars);
+            var whenError = FilterActionsByWhen(patches, blueprint.StageBehaviors[cursor].ActionWhens, sessionVars);
+            if (whenError is not null)
+            {
+                logger.LogWarning("Action when evaluation failed for stateId={StateId} cursor={Cursor}: {Error}", stateId, cursor, SanitizeForLog(whenError));
+                return BadRequest($"Action when evaluation failed: {whenError}");
+            }
         }
 
         // Phase D: when session var _debug=true, append a markdown debug block to
         // /content/additionalInfo so authors can watch state evolve live in the dialog.
         if (sessionVars.TryGetValue("_debug", out var dbg) && dbg is bool dflag && dflag)
         {
-            AppendDebugBlock(patches, stateId, cursor, sessionVars);
+            AppendDebugBlock(patches, stateIdStr, cursor, sessionVars);
         }
 
         var patchResult = await dialogporten.V1ServiceOwnerDialogsPatchDialog(blueprint.DialogId, patches, null, cancellationToken);
@@ -200,8 +202,15 @@ public class MutateController(
         {
             logger.LogWarning(
                 "Dialogporten PATCH /dialogs/{DialogId} for stateId={StateId} cursor={Cursor} returned {StatusCode}. Body: {Body}",
-                blueprint.DialogId, stateId, cursor, (int)patchResult.StatusCode, patchResult.Error?.Content);
+                blueprint.DialogId, stateId, cursor, (int)patchResult.StatusCode, SanitizeForLog(patchResult.Error?.Content));
             return BadRequest(patchResult.Error?.Content);
+        }
+
+        // Must stay after the PATCH: persisting earlier means a failed request leaves vars
+        // advanced, and the retry applies this stage's effects a second time.
+        if (anyEffectsApplied)
+        {
+            await stateStore.UpdateSessionVarsAsync(stateIdStr, sessionVars, cancellationToken);
         }
 
         return Ok();
@@ -259,12 +268,12 @@ public class MutateController(
         return null;
     }
 
-    private void FilterActionsByWhen(
+    private string? FilterActionsByWhen(
         List<JsonPatchOperations_Operation> patches,
         IReadOnlyList<Expr?> actionWhens,
         IReadOnlyDictionary<string, object?> sessionVars)
     {
-        if (actionWhens.Count == 0) return;
+        if (actionWhens.Count == 0) return null;
 
         foreach (var op in patches)
         {
@@ -298,7 +307,7 @@ public class MutateController(
                     var matched = result is bool b && b;
                     logger.LogInformation(
                         "[mutate]   action[{Index}] when={When} → {Result} (match={Matched})",
-                        i, FormatExpr(when), result, matched);
+                        i, SanitizeForLog(FormatExpr(when)), SanitizeForLog(result?.ToString()), matched);
                     if (matched)
                     {
                         keep[i] = true;
@@ -307,7 +316,7 @@ public class MutateController(
                 }
                 catch (ScriptException ex)
                 {
-                    logger.LogWarning("when expression evaluation failed: {Error}", ex.Message);
+                    return $"action[{i}]: {ex.Message}";
                 }
             }
 
@@ -336,6 +345,7 @@ public class MutateController(
             }
             op.Value = filtered;
         }
+        return null;
     }
 
     private static void AppendDebugBlock(
@@ -412,6 +422,17 @@ public class MutateController(
             _ => null
         };
     }
+
+    // Log-forging guard (CWE-117) for caller-controlled text. Not char.IsControl: that misses
+    // U+2028/U+2029, which log viewers still render as line breaks.
+    private static string SanitizeForLog(string? value) =>
+        string.IsNullOrEmpty(value)
+            ? ""
+            : string.Concat(value.Select(c => char.GetUnicodeCategory(c) is
+                System.Globalization.UnicodeCategory.Control
+                or System.Globalization.UnicodeCategory.LineSeparator
+                or System.Globalization.UnicodeCategory.ParagraphSeparator
+                ? ' ' : c));
 
     private static string FormatVars(IReadOnlyDictionary<string, object?> vars)
     {

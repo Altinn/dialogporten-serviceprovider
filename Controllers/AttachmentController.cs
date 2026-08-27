@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 
 namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers
 {
@@ -47,7 +48,10 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers
                 return NotFound();
             }
 
-            Response.Headers["Content-Disposition"] = $"{(inline ? "inline" : "attachment")}; filename=\"{filename}\"";
+            // Not interpolated: the header type escapes quotes in the filename.
+            var contentDisposition = new ContentDispositionHeaderValue(inline ? "inline" : "attachment");
+            contentDisposition.SetHttpFileName(filename);
+            Response.Headers.ContentDisposition = contentDisposition.ToString();
 
             var fileBytes = System.IO.File.ReadAllBytes(filePath);
             return File(fileBytes, contentType);
