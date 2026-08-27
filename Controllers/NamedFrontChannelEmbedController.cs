@@ -14,7 +14,7 @@ namespace Digdir.BDB.Dialogporten.ServiceProvider.Controllers;
 public class NamedFrontChannelEmbedController(IPlaybookStateStore stateStore) : ControllerBase
 {
     [HttpGet]
-    [Route("{stateId}/{fceName}")]
+    [Route("{stateId:guid}/{fceName}")]
     public async Task<IActionResult> Get(
         [FromRoute] string stateId,
         [FromRoute] string fceName,

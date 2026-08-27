@@ -26,7 +26,7 @@ public class MutateController(
     ILogger<MutateController> logger) : ControllerBase
 {
     [HttpPost]
-    [Route("{stateId}/{cursor:int}")]
+    [Route("{stateId:guid}/{cursor:int}")]
     public async Task<IActionResult> MutatePlaybook(
         [FromRoute] string stateId,
         [FromRoute] int cursor,
@@ -60,7 +60,7 @@ public class MutateController(
     [HttpPost]
     [HttpGet]
     [AllowAnonymous]
-    [Route("form/{stateId}/{cursor:int}")]
+    [Route("form/{stateId:guid}/{cursor:int}")]
     public async Task<IActionResult> SubmitEmbeddedForm(
         [FromRoute] string stateId,
         [FromRoute] int cursor,
