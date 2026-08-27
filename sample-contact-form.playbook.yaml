@@ -1,0 +1,188 @@
+playbook:
+  party: urn:altinn:person:identifier-no:23905497111
+  service-resource: urn:altinn:resource:ttd-dialogporten-automated-tests
+  language: en
+  start: form
+
+  initial:
+    title: Contact us
+    summary: A contact form served as an HTML front channel embed, posted back to the service provider.
+
+  # Fields the form is allowed to write. The form sink only accepts submitted fields whose names
+  # match a declared var, and coerces each value to the type declared here.
+  vars:
+    contact_name: ""
+    contact_email: ""
+    contact_topic: ""
+    contact_message: ""
+    contact_copy: false
+    submissions: 0
+
+  stages:
+    form:
+      title: Contact us
+      summary: Fill in the form in the embed below and submit it.
+      status: RequiresAttention
+      extended-status: Awaiting your enquiry
+      content: contact-form
+      additional-info: |
+        The form above is an HTML front channel embed. Submitting it posts straight to this
+        service provider, which stores the fields and then adds a transmission whose
+        `contentReference` renders what it received.
+      actions:
+        - No thanks, close this → closed
+
+    received:
+      title: "Enquiry received — {vars.contact_topic}"
+      summary: "Registered on behalf of {vars.contact_name}. We answer within three working days."
+      status: Awaiting
+      extended-status: Enquiry registered
+      content: received-html
+      effects:
+        - inc submissions
+      additional-info: |
+        Enquiry **#{vars.submissions}** was registered from the form submission.
+        The transmission below carries the submitted data as its `contentReference`.
+      transmissions:
+        - type: Submission
+          title: "Enquiry: {vars.contact_topic}"
+          summary: "Submitted by {vars.contact_name} ({vars.contact_email})"
+          content: submission-html
+      activity:
+        type: Information
+        description: Contact form submitted.
+      actions:
+        - Send another enquiry → form
+        - label: Close the enquiry
+          target: closed
+          priority: secondary
+
+    closed:
+      title: Contact request closed
+      summary: Nothing further is required from you.
+      status: Completed
+      extended-status: Closed
+      content: closed-html
+      activity: DialogClosed
+      actions:
+        - Open a new enquiry → form
+
+  fce:
+    # {formAction:received} expands, when this embed is served, to
+    # {baseUri}/mutate/form/{stateId}/<cursor of the received stage> — so the form posts back and
+    # the `received` stage runs exactly as if a GUI action had been clicked.
+    contact-form:
+      media-type: text/html
+      content: |
+        <div style="font-family: system-ui, sans-serif; color: #1a1a1a; padding: 8px 4px; max-width: 640px;">
+          <h2 style="margin-top: 0;">Contact us</h2>
+          {if:submissions > 0}
+            <p style="padding: 8px 12px; background: #eef3f9; border-left: 4px solid #0062BA;">
+              You have already sent {vars.submissions} enquiry/enquiries in this dialog. The fields
+              below are prefilled with what you sent last.
+            </p>
+          {end}
+
+          <form method="post" action="{formAction:received}" target="_self">
+            <p style="margin: 0 0 12px;">
+              <label for="contact_name" style="display: block; font-weight: 600; margin-bottom: 4px;">Your name</label>
+              <input id="contact_name" name="contact_name" type="text" required
+                     value="{vars.contact_name}"
+                     style="width: 100%; padding: 8px; border: 1px solid #8a9aab; border-radius: 4px;">
+            </p>
+
+            <p style="margin: 0 0 12px;">
+              <label for="contact_email" style="display: block; font-weight: 600; margin-bottom: 4px;">Email</label>
+              <input id="contact_email" name="contact_email" type="email" required
+                     value="{vars.contact_email}"
+                     style="width: 100%; padding: 8px; border: 1px solid #8a9aab; border-radius: 4px;">
+            </p>
+
+            <p style="margin: 0 0 12px;">
+              <label for="contact_topic" style="display: block; font-weight: 600; margin-bottom: 4px;">Topic</label>
+              <select id="contact_topic" name="contact_topic"
+                      style="width: 100%; padding: 8px; border: 1px solid #8a9aab; border-radius: 4px;">
+                <option value="Invoice">Invoice</option>
+                <option value="Technical">Technical</option>
+                <option value="Change of address">Change of address</option>
+                <option value="Something else">Something else</option>
+              </select>
+            </p>
+
+            <p style="margin: 0 0 12px;">
+              <label for="contact_message" style="display: block; font-weight: 600; margin-bottom: 4px;">Your message</label>
+              <textarea id="contact_message" name="contact_message" rows="5" required
+                        style="width: 100%; padding: 8px; border: 1px solid #8a9aab; border-radius: 4px;">{vars.contact_message}</textarea>
+            </p>
+
+            <p style="margin: 0 0 16px;">
+              <!-- An unticked checkbox posts nothing, so the hidden field ahead of it supplies the
+                   "false" that the checkbox overrides when ticked (the sink takes the last value). -->
+              <input type="hidden" name="contact_copy" value="false">
+              <label>
+                <input type="checkbox" name="contact_copy" value="true" {if:contact_copy}checked{end}>
+                Send me a copy by email
+              </label>
+            </p>
+
+            <button type="submit">
+              Send enquiry
+            </button>
+          </form>
+        </div>
+
+    # The transmission's contentReference: a plain render of what the service provider received.
+    submission-html:
+      media-type: text/html
+      content: |
+        <div style="font-family: system-ui, sans-serif; color: #1a1a1a; padding: 8px 4px;">
+          <h3 style="margin-top: 0;">Submitted enquiry #{vars.submissions}</h3>
+          <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
+            <tbody>
+              <tr>
+                <th style="text-align: left; padding: 8px; border: 1px solid #c9d6e4; background: #eef3f9; width: 30%;">Name</th>
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">{vars.contact_name}</td>
+              </tr>
+              <tr>
+                <th style="text-align: left; padding: 8px; border: 1px solid #c9d6e4; background: #eef3f9;">Email</th>
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">{vars.contact_email}</td>
+              </tr>
+              <tr>
+                <th style="text-align: left; padding: 8px; border: 1px solid #c9d6e4; background: #eef3f9;">Topic</th>
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">{vars.contact_topic}</td>
+              </tr>
+              <tr>
+                <th style="text-align: left; padding: 8px; border: 1px solid #c9d6e4; background: #eef3f9;">Message</th>
+                <td style="padding: 8px; border: 1px solid #c9d6e4; white-space: pre-wrap;">{vars.contact_message}</td>
+              </tr>
+              <tr>
+                <th style="text-align: left; padding: 8px; border: 1px solid #c9d6e4; background: #eef3f9;">Copy by email</th>
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">{if:contact_copy}Yes{else}No{end}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+    received-html:
+      media-type: text/html
+      content: |
+        <div style="font-family: system-ui, sans-serif; color: #1a1a1a; padding: 8px 4px;">
+          <h2 style="margin-top: 0;">Thank you, {vars.contact_name}</h2>
+          <p>
+            Your enquiry about <strong>{vars.contact_topic}</strong> is registered. We will reply to
+            <strong>{vars.contact_email}</strong> within three working days.
+          </p>
+          <p>The transmission in this dialog holds exactly what we received.</p>
+        </div>
+
+    closed-html:
+      media-type: text/html
+      content: |
+        <div style="font-family: system-ui, sans-serif; color: #1a1a1a; padding: 8px 4px;">
+          <h2 style="margin-top: 0;">Closed</h2>
+          {if:submissions > 0}
+            <p>{vars.submissions} enquiry/enquiries were registered in this dialog.</p>
+          {else}
+            <p>No enquiry was sent.</p>
+          {end}
+        </div>

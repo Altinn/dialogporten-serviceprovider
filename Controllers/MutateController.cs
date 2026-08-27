@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Altinn.ApiClients.Dialogporten.Features.V1;
@@ -43,6 +44,94 @@ public class MutateController(
             return Forbid();
         }
 
+        return await RunStageAsync(stateId, cursor, blueprint, cancellationToken);
+    }
+
+    /// <summary>
+    /// Anonymous form sink for HTML front channel embeds. An embed body can carry a plain
+    /// <c>&lt;form method="post" action="{formAction:some-stage}"&gt;</c>; the browser submits it
+    /// straight from the embed, which means there is no dialog token on the request — the
+    /// <paramref name="stateId"/> in the URL is the only thing gating it, so anyone holding it can
+    /// advance the dialog. Demo-grade by design.
+    /// Submitted fields whose names match declared playbook vars are written into session state,
+    /// then the stage at <paramref name="cursor"/> runs exactly as if a GUI action had been
+    /// clicked — so its transmissions, activities and content all see the submitted values.
+    /// </summary>
+    [HttpPost]
+    [HttpGet]
+    [AllowAnonymous]
+    [Route("form/{stateId}/{cursor:int}")]
+    public async Task<IActionResult> SubmitEmbeddedForm(
+        [FromRoute] string stateId,
+        [FromRoute] int cursor,
+        CancellationToken cancellationToken)
+    {
+        var blueprint = await stateStore.GetAsync(stateId, cancellationToken);
+        if (blueprint is null)
+        {
+            return NotFound();
+        }
+
+        var submitted = await ReadSubmittedFieldsAsync(cancellationToken);
+        var sessionVars = await stateStore.GetSessionVarsAsync(stateId, cancellationToken);
+        var updated = new Dictionary<string, object?>(sessionVars);
+        var accepted = new List<KeyValuePair<string, object?>>();
+        var ignored = new List<string>();
+
+        foreach (var (field, values) in submitted)
+        {
+            // Underscore names are the DSL's own knobs (_seed, _debug) and are not up for grabs
+            // from a browser form; anything not declared under playbook.vars has nowhere to go.
+            if (field.StartsWith('_') || !updated.TryGetValue(field, out var current))
+            {
+                ignored.Add(field);
+                continue;
+            }
+
+            var value = CoerceToVarType(current, values);
+            updated[field] = value;
+            accepted.Add(new KeyValuePair<string, object?>(field, value));
+        }
+
+        logger.LogInformation(
+            "[form] stateId={StateId} cursor={Cursor} accepted={Accepted} ignored=[{Ignored}]",
+            stateId, cursor, FormatVars(accepted.ToDictionary(kv => kv.Key, kv => kv.Value)), string.Join(",", ignored));
+
+        if (accepted.Count > 0)
+        {
+            await stateStore.UpdateSessionVarsAsync(stateId, updated, cancellationToken);
+        }
+
+        var stageResult = await RunStageAsync(stateId, cursor, blueprint, cancellationToken);
+        if (stageResult is not OkResult)
+        {
+            var detail = stageResult is ObjectResult { Value: { } value } ? value.ToString() : stageResult.GetType().Name;
+            return SubmissionPage(
+                "Submission failed",
+                $"<p>The fields were stored, but advancing the dialog failed: <code>{HtmlEscape(detail ?? "")}</code></p>",
+                blueprint,
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        var rows = accepted.Count == 0
+            ? "<p>No submitted field matched a declared playbook variable.</p>"
+            : "<table><tbody>" + string.Join("", accepted.Select(kv =>
+                $"<tr><th align=\"left\">{HtmlEscape(kv.Key)}</th><td>{HtmlEscape(Evaluator.FormatVarForDisplay(kv.Value))}</td></tr>")) + "</tbody></table>";
+
+        return SubmissionPage("Thanks — we have registered your enquiry", rows, blueprint);
+    }
+
+    /// <summary>
+    /// Applies a stage: effects and router hops, then compiles and PATCHes the stage's operations
+    /// onto the dialog. Shared by the GUI-action entry point and the embedded-form entry point,
+    /// which differ only in how they authenticate.
+    /// </summary>
+    private async Task<IActionResult> RunStageAsync(
+        string stateId,
+        int cursor,
+        PlaybookBlueprint blueprint,
+        CancellationToken cancellationToken)
+    {
         if (cursor < 0 || cursor >= blueprint.Patches.Count)
         {
             return NotFound();
@@ -412,6 +501,101 @@ public class MutateController(
             _ => null
         };
     }
+
+    /// <summary>Longest submitted field value kept — dialog titles are not essay containers.</summary>
+    private const int MaxSubmittedFieldLength = 500;
+
+    /// <summary>
+    /// Collects the fields of an embedded-form submission. A POSTed form body is the normal case;
+    /// query parameters are read too, so an embed that cannot post (an iframe sandbox without
+    /// <c>allow-forms</c>, or a plain link) can still drive the playbook with a query string.
+    /// </summary>
+    private async Task<List<KeyValuePair<string, string[]>>> ReadSubmittedFieldsAsync(CancellationToken cancellationToken)
+    {
+        var fields = new Dictionary<string, string[]>(StringComparer.Ordinal);
+
+        foreach (var (key, values) in Request.Query)
+        {
+            fields[key] = values.Select(v => v ?? "").ToArray();
+        }
+
+        if (Request.HasFormContentType)
+        {
+            var form = await Request.ReadFormAsync(cancellationToken);
+            foreach (var (key, values) in form)
+            {
+                fields[key] = values.Select(v => v ?? "").ToArray();
+            }
+        }
+
+        return fields.ToList();
+    }
+
+    /// <summary>
+    /// Fits a submitted string onto the type the var was declared with, so a form cannot turn an
+    /// int var into a string and break every later expression that compares it.
+    /// </summary>
+    private static object? CoerceToVarType(object? current, string[] values)
+    {
+        // A declared list var takes every submitted value (multi-select, checkbox group).
+        // Everything else takes the last one, which lets a hidden companion field give a checkbox
+        // a "false" default that the checkbox overrides when it is ticked.
+        if (current is System.Collections.IList)
+        {
+            return values.Select(v => (object?)SanitiseSubmittedText(v)).ToList();
+        }
+
+        var raw = values.LastOrDefault() ?? "";
+        return current switch
+        {
+            bool => raw is "on" or "true" or "True" or "1" or "yes",
+            long or int => long.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var i) ? i : 0L,
+            _ => SanitiseSubmittedText(raw)
+        };
+    }
+
+    /// <summary>
+    /// Submitted text ends up in dialog titles, markdown and HTML embed bodies, so angle brackets
+    /// and double quotes are dropped rather than escaped — an escape would render literally in the
+    /// markdown contexts, and a stray quote would break an embed that prefills a form
+    /// <c>value="…"</c> attribute with the value.
+    /// </summary>
+    private static string SanitiseSubmittedText(string value)
+    {
+        var stripped = new string(value.Where(c => c is not ('<' or '>' or '"')).ToArray()).Trim();
+        return stripped.Length <= MaxSubmittedFieldLength ? stripped : stripped[..MaxSubmittedFieldLength];
+    }
+
+    /// <summary>
+    /// The page the browser lands on after an embedded form is submitted. The form navigates the
+    /// embed (or, if Arbeidsflate renders the embed inline, the whole tab), so this doubles as the
+    /// way back to the dialog.
+    /// </summary>
+    private ContentResult SubmissionPage(
+        string heading,
+        string bodyHtml,
+        PlaybookBlueprint blueprint,
+        int statusCode = StatusCodes.Status200OK)
+    {
+        var back = environments.TryResolve(blueprint.EnvironmentKey, out var environment)
+            ? $"""<p><a href="{environment.InboxUrl(blueprint.DialogId)}" target="_top">Back to the dialog</a> — reload it to see the new transmission.</p>"""
+            : "<p>Reload the dialog to see the new transmission.</p>";
+
+        return new ContentResult
+        {
+            ContentType = "text/html",
+            StatusCode = statusCode,
+            Content = $"""
+                       <div style="font-family: system-ui, sans-serif; color: #1a1a1a; padding: 16px; line-height: 1.5;">
+                         <h2 style="margin-top: 0;">{HtmlEscape(heading)}</h2>
+                         {bodyHtml}
+                         {back}
+                       </div>
+                       """
+        };
+    }
+
+    private static string HtmlEscape(string value) => System.Net.WebUtility.HtmlEncode(value);
 
     private static string FormatVars(IReadOnlyDictionary<string, object?> vars)
     {

@@ -1,5 +1,5 @@
 playbook:
-  party: urn:altinn:person:identifier-no:08895699684
+  party: urn:altinn:person:identifier-no:23905497111
   service-resource: urn:altinn:resource:ttd-dialogporten-automated-tests
   language: en
   start: start

@@ -359,13 +359,82 @@ fce:
 - Allowed media types: `text/markdown` (default), `text/plain`, `text/html`. Anything else is a
   compile error.
 - Every referenced name must be defined (compile error otherwise). Defined-but-unused is allowed.
-- Served from `{baseUri}/fce/named/{stateId}/{name}`, authenticated with the dialog token, under
-  `X-Content-Type-Options: nosniff` and a strict CSP (`sandbox; default-src 'none';
-  style-src 'unsafe-inline'`) — so `text/html` bodies get **no scripts and no external assets**.
+- Served from `{baseUri}/fce/named/{stateId}/{name}`, authenticated with the dialog token, under a
+  deliberately wide-open CSP (`default-src *` with `'unsafe-inline'`/`'unsafe-eval'`, no `sandbox`
+  directive) — so a `text/html` body may use inline styles, inline scripts, `data:` URIs, remote
+  images and fonts, and nested iframes. This is a demo-grade setting: an FCE body is trusted code,
+  and whatever renders it decides what actually survives (Arbeidsflate sanitises the HTML it gets).
 - The body is templated **at iframe load time** against the current session vars, so it always
   reflects live state.
 - Every compiled FCE URL gets a random `_cb=…` query parameter, because Arbeidsflate only reloads
   an iframe when its URL changes and the same named FCE can be re-referenced by a later stage.
+
+### 8.1 Embedded forms
+
+An `text/html` embed can post back to the service provider, which turns the embed into a real input
+surface: the submitted fields land in session vars and a stage of your choosing runs as if a GUI
+action had been clicked. Four placeholders are resolved when the embed body is served — before
+`{vars.X}`/`{if:}` — and they are what make this possible:
+
+| Placeholder | Expands to |
+|---|---|
+| `{baseUri}` | this service's base URI |
+| `{stateId}` | the playbook's state id |
+| `{cursor:STAGE}` | the cursor index of STAGE |
+| `{formAction:STAGE}` | `{baseUri}/mutate/form/{stateId}/{cursor of STAGE}` |
+
+An unknown stage name in the last two is a compile error, so a form can't point at a stage that
+isn't there.
+
+```yaml
+  vars:
+    contact_name: ""
+    contact_copy: false
+
+  fce:
+    contact-form:
+      media-type: text/html
+      content: |
+        <form method="post" action="{formAction:received}" target="_self">
+          <input name="contact_name" value="{vars.contact_name}">
+          <!-- an unticked checkbox posts nothing, so a hidden companion supplies the default -->
+          <input type="hidden" name="contact_copy" value="false">
+          <input type="checkbox" name="contact_copy" value="true" {if:contact_copy}checked{end}>
+          <button type="submit">Send</button>
+        </form>
+```
+
+What `POST /mutate/form/{stateId}/{cursor}` does, in order:
+
+1. **Assigns declared vars.** A submitted field is kept only if its name matches a var declared
+   under `vars:` — everything else is ignored and logged. Names starting with `_` are never
+   assignable. Values are coerced to the var's declared type: a `bool` var accepts
+   `on`/`true`/`1`/`yes`, an int var parses (falling back to `0`), a list var takes *all* submitted
+   values (multi-select, checkbox group), and everything else takes the last value and is trimmed —
+   with `<`, `>` and `"` stripped and the length capped at 500 characters.
+2. **Runs the stage at `{cursor}`**, effects, routers, transmissions, activity and all.
+3. **Returns a small HTML page** with what was accepted and a link back to the dialog in
+   Arbeidsflate.
+
+The obvious use is a form that posts to a stage carrying a transmission whose `content:` renders the
+submitted values, so the dialog ends up holding a receipt of what was sent — see
+`sample-contact-form.playbook.yaml`.
+
+Three things to know:
+
+- **The endpoint is anonymous.** A form submitted by the browser carries no dialog token, so the
+  `stateId` in the URL is the only thing gating it: anyone holding it can advance the dialog.
+  Fine for a demo, not a pattern to copy into a real service.
+- **The dialog does not refresh itself.** After submitting, the browser sits on the confirmation
+  page; the new transmission shows up when the dialog is reloaded.
+- **A named embed has one body, not one per submission.** Every transmission referencing
+  `submission-html` renders that body against the *current* vars, so submitting twice makes the
+  first transmission show the second submission's data. For a per-submission snapshot you need a
+  transmission whose `contentReference` carries the data itself, which the DSL does not express.
+- **Whether the form submits at all is up to Arbeidsflate.** It sanitises embed HTML and controls
+  the frame the embed renders in — if forms are stripped or the frame disallows them, nothing
+  happens. `GET` with a query string is accepted by the same endpoint as a fallback, so a plain
+  link (`<a href="{formAction:received}?contact_name=Ada">`) can drive the playbook too.
 
 YAML anchors are a good fit for a status bar shared by every stage:
 
@@ -412,6 +481,7 @@ inventory contains "crystal"
 | `{vars.NAME}` | The variable's display form. An unknown name is left **literally** in the output — that's your typo signal. |
 | `{if:EXPR}…{else}…{end}` | Conditional block. Nestable; `{else}` optional. A malformed block renders `[template error: …]` inline. |
 | `{baseUri}`, `{stateId}` | The service base URI and this run's state id. |
+| `{cursor:STAGE}`, `{formAction:STAGE}` | **FCE bodies only** — a stage's cursor index, and the URL an embedded form posts to (see [§8.1](#81-embedded-forms)). |
 
 Display forms: bool → `true`/`false`, int → decimal, null → empty string, list → comma-separated
 (`"key, amulet"`).
@@ -475,6 +545,9 @@ as `actorName`.
 4. **Bootstrap.** The start stage's patches are compiled against the *initial* vars and PATCHed.
    Effects and `goto` rules do **not** run here.
 5. **Click.** Each GUI action POSTs `{baseUri}/mutate/{stateId}/{cursor}` with the dialog token.
+   An embedded form (see [§8.1](#81-embedded-forms)) instead posts to
+   `{baseUri}/mutate/form/{stateId}/{cursor}` without a token, assigns declared vars from the
+   submitted fields, and then joins the same pipeline at step 6.
 6. **Mutate.** `MutateController` verifies the token's dialog id, applies the stage's effects,
    walks the `goto` chain, persists the vars, compiles the settled stage's patches (resolving
    `$…` commands into mutate URLs, and substituting `{vars.…}` / `{if:…}` / `{baseUri}` /

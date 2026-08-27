@@ -71,6 +71,7 @@ internal static class Lint
     private static readonly Regex GotoVarRe = new(@"\$gotovar=", RegexOptions.Compiled);
     private static readonly Regex NextRe = new(@"""\$next""", RegexOptions.Compiled);
     private static readonly Regex PrevRe = new(@"""\$previous""", RegexOptions.Compiled);
+    private static readonly Regex FceRefRe = new(@"/fce/named/\{stateId\}/([^""?]+)", RegexOptions.Compiled);
 
     public static string NameOf(DslCompileResult r, int cursor) =>
         r.Blueprint.StageCursors.FirstOrDefault(kv => kv.Value == cursor).Key ?? $"#{cursor}";
@@ -142,6 +143,17 @@ internal static class Lint
             }
             if (NextRe.IsMatch(raw)) outs.Add(i + 1);
             if (PrevRe.IsMatch(raw)) outs.Add(i - 1);
+
+            // An HTML embed on this stage can carry a form posting to {formAction:STAGE}, which is
+            // a real edge out of the stage even though no guiAction points there.
+            foreach (Match m in FceRefRe.Matches(raw))
+            {
+                if (!bp.FceContents.TryGetValue(m.Groups[1].Value, out var fce)) continue;
+                foreach (var target in EmbedPlaceholders.ReferencedStages(fce.Content))
+                {
+                    if (bp.StageCursors.TryGetValue(target, out var targetCursor)) outs.Add(targetCursor);
+                }
+            }
             if (GotoVarRe.IsMatch(raw)) dynamicTargets = true;
 
             foreach (var t in outs.Where(t => t < 0 || t >= stageCount).ToList())

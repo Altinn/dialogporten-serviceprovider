@@ -100,6 +100,16 @@ GET {baseUrl}/attachment/arbitrary-name.zip
 GET {baseUrl}/attachment/my-document.docx 
 ```
 
+### Playbook form sink
+
+`POST /mutate/form/{stateId}/{cursor}` accepts an ordinary form submission (or a `GET` query
+string) from inside an HTML front channel embed: submitted fields whose names match variables
+declared by the playbook are written into its session state, the stage at `{cursor}` is then run
+like any other playbook stage, and a small HTML confirmation page is returned. A form submitted by
+the browser carries no dialog token, so this endpoint is **anonymous** — the `stateId` in the URL is
+the only thing gating it. Embeds address it through the `{formAction:STAGE}` placeholder; see
+`docs/playbook-dsl.md` §8.1.
+
 ### Front Channel Embeds (FCEs)
 
 Front channel embeds are akin to "iframes" that can be embedded in the dialog frontend. The FCEs are loaded using a GET

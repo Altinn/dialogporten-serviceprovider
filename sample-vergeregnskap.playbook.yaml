@@ -1,0 +1,478 @@
+playbook:
+  party: urn:altinn:person:identifier-no:23905497111
+  service-resource: urn:altinn:resource:ttd-dialogporten-automated-tests
+  language: nb
+  start: brev
+
+  initial:
+    title: Vergeregnskap 2025 – Overformynderiet i Nordvik
+    summary: Demo av en toveis saksdialog med innsending, mangelbrev, korrigering og vedtak.
+
+  # Saksdata og flagg. Beløp er deklarert som strenger slik at de kan skrives med tusenskille;
+  # de brukes kun til visning. Flaggene driver tidslinjen i `saksgang`-embedden.
+  vars:
+    sak_nr: "2026/1187"
+    vergemaal_nr: "VM-2019-4412"
+    regnskapsaar: 2025
+    vergehaver: "Ingrid Mathisen"
+    vergehaver_fodt: "1938"
+    saksbehandler: "Kari Nordbø"
+    frist: "30.09.2026"
+    frist_korrigering: "05.09.2026"
+    saldo_ib: "1 250 000"
+    saldo_ub: "1 084 000"
+    inntekter: "412 500"
+    utgifter: "578 500"
+    uttak: "85 000"
+    uttak_dato: "14.03.2025"
+    konto_nr: "1234.56.78901"
+    innsendt_dato: ""
+    korrigert_dato: ""
+    vedtak_dato: ""
+    vedtak_nr: ""
+    innsendt: false
+    forespoersel_mottatt: false
+    korrigering_sendt: false
+    vedtak_fattet: false
+
+  stages:
+    # ---------------------------------------------------------------------------------------
+    # 1. Brevet fra Overformynderiet. Dette er startsteget, så effektene under kjører IKKE ved
+    #    opprettelse – de er der for å nullstille tidslinjen når "Kjør demoen på nytt" (restart,
+    #    markør 0) tar deg tilbake hit.
+    # ---------------------------------------------------------------------------------------
+    brev:
+      title: "Vergeregnskap {vars.regnskapsaar} – sak {vars.sak_nr}"
+      summary: "Overformynderiet ber deg som verge for {vars.vergehaver} levere vergeregnskap for {vars.regnskapsaar}. Frist {vars.frist}."
+      status: RequiresAttention
+      extended-status: Krever handling
+      content: saksgang
+      effects:
+        - set innsendt = false
+        - set forespoersel_mottatt = false
+        - set korrigering_sendt = false
+        - set vedtak_fattet = false
+        - set innsendt_dato = ""
+        - set korrigert_dato = ""
+        - set vedtak_dato = ""
+        - set vedtak_nr = ""
+      additional-info: |
+        Brevet ligger som en melding i dialogen. Knappen under simulerer at du åpner det
+        eksterne rapporteringsskjemaet og sender det inn med én gang – selve skjemaet er
+        utenfor denne demoen.
+      transmissions:
+        - type: Information
+          title: "Pålegg om å levere vergeregnskap for {vars.regnskapsaar}"
+          summary: "Sak {vars.sak_nr} – vergemål {vars.vergemaal_nr}. Frist for innsending er {vars.frist}."
+          content: brev-html
+      activity:
+        type: Information
+        description: Pålegg om rapporteringsplikt sendt til vergen.
+      actions:
+        - Åpne rapporteringsskjemaet (eksternt) → skjema-sendt
+
+    # ---------------------------------------------------------------------------------------
+    # 2–3. Skjemaet er sendt inn. Saken ligger til behandling, og den sekundære knappen
+    #      simulerer saksbehandlerens neste trekk.
+    # ---------------------------------------------------------------------------------------
+    skjema-sendt:
+      title: "Vergeregnskap {vars.regnskapsaar} – til behandling"
+      summary: "Vergeregnskapet ble sendt inn {vars.innsendt_dato}. Overformynderiet behandler saken."
+      status: Awaiting
+      extended-status: Til behandling
+      content: saksgang
+      effects:
+        - set innsendt = true
+        - set innsendt_dato = "12.08.2026"
+      additional-info: |
+        Innsendingen er lagt inn som en melding av typen `Submission` fra deg som verge.
+        Du trenger ikke gjøre noe mer nå. Herfra går saken enten rett til vedtak, eller
+        saksbehandler ber om tilleggsopplysninger dersom noe mangler eller er uklart.
+        Knappene under finnes bare for å drive demoen videre – de representerer
+        saksbehandleren, ikke deg.
+      transmissions:
+        - type: Submission
+          from: Verge
+          title: "Innsendt vergeregnskap for {vars.regnskapsaar}"
+          summary: "Oppstilling og saldoutskrift for {vars.vergehaver}, mottatt {vars.innsendt_dato}."
+          content: innsending-html
+      activity: FormSubmitted
+      actions:
+        # De to utfallene av saksbehandlingen. Forespørselen er et sporvalg som utløses av
+        # mangler i innsendingen, ikke et obligatorisk trinn – derfor kan demoen også gå
+        # rett til vedtak herfra.
+        - label: (saksbehandler ber om tilleggsopplysninger)
+          target: forespoersel
+          priority: secondary
+        - label: (saksbehandler godkjenner uten merknad)
+          target: vedtak
+          priority: tertiary
+
+    # ---------------------------------------------------------------------------------------
+    # 4. Saksbehandleren ber om tilleggsopplysninger. Meldingen viser tilbake til innsendingen
+    #    i teksten – DSL-en kan ikke sette `relatedTransmissionId`.
+    # ---------------------------------------------------------------------------------------
+    forespoersel:
+      title: "Mangler ved vergeregnskapet – sak {vars.sak_nr}"
+      summary: "{vars.saksbehandler} ber om bilag for uttaket på kr {vars.uttak} og bekreftelse på at konto {vars.konto_nr} er sperret."
+      status: RequiresAttention
+      extended-status: Mangler opplysninger
+      content: saksgang
+      effects:
+        - set forespoersel_mottatt = true
+      additional-info: |
+        Forespørselen er en melding av typen `Request` fra Overformynderiet, og den viser til
+        innsendingen fra {vars.innsendt_dato}. Fristen for å svare er **{vars.frist_korrigering}**.
+      transmissions:
+        - type: Request
+          title: "Forespørsel om tilleggsopplysninger – sak {vars.sak_nr}"
+          summary: "Viser til vergeregnskap mottatt {vars.innsendt_dato}. Svarfrist {vars.frist_korrigering}."
+          content: mangelbrev-html
+      activity:
+        type: Information
+        description: Saksbehandler har bedt om tilleggsopplysninger.
+      actions:
+        - Send inn korrigering og tilleggsopplysninger → korrigering
+
+    # ---------------------------------------------------------------------------------------
+    # 5. Korrigeringen sendes, og saken går til ny behandling. Igjen en sekundær simuleringsknapp.
+    # ---------------------------------------------------------------------------------------
+    korrigering:
+      title: "Vergeregnskap {vars.regnskapsaar} – korrigering til behandling"
+      summary: "Tilleggsopplysninger og korrigert oppstilling ble sendt inn {vars.korrigert_dato}."
+      status: Awaiting
+      extended-status: Til ny behandling
+      content: saksgang
+      effects:
+        - set korrigering_sendt = true
+        - set korrigert_dato = "28.08.2026"
+      additional-info: |
+        Korrigeringen er lagt inn som en melding av typen `Correction`. Saken er komplett og
+        ligger hos {vars.saksbehandler} for endelig avgjørelse.
+      transmissions:
+        - type: Correction
+          from: Verge
+          title: "Tilleggsopplysninger og korrigert oppstilling"
+          summary: "Bilag for uttaket {vars.uttak_dato} og bankbekreftelse for konto {vars.konto_nr}."
+          content: korrigering-html
+      activity: FormSubmitted
+      actions:
+        - label: (send vedtaksbrev)
+          target: vedtak
+          priority: secondary
+
+    # ---------------------------------------------------------------------------------------
+    # Vedtaket.
+    # ---------------------------------------------------------------------------------------
+    vedtak:
+      title: "Vedtak – vergeregnskap {vars.regnskapsaar} er godkjent"
+      summary: "Overformynderiet har godkjent vergeregnskapet for {vars.vergehaver}. Vedtak {vars.vedtak_nr} av {vars.vedtak_dato}."
+      status: Completed
+      extended-status: Vedtak fattet
+      content: saksgang
+      effects:
+        - set vedtak_fattet = true
+        - set vedtak_dato = "03.09.2026"
+        - set vedtak_nr = "2026/1187-7"
+      additional-info: |
+        Vedtaksbrevet ligger som en melding av typen `Decision`. Klagefristen er tre uker fra
+        du mottok vedtaket.
+      transmissions:
+        - type: Decision
+          title: "Vedtak om godkjenning av vergeregnskap {vars.regnskapsaar}"
+          summary: "Vedtak {vars.vedtak_nr} av {vars.vedtak_dato}. Klagefrist tre uker."
+          content: vedtaksbrev-html
+      activity:
+        type: Information
+        description: Vedtak fattet og sendt til vergen.
+      actions:
+        - Bekreft at vedtaket er lest → kvittert
+
+    kvittert:
+      title: "Sak {vars.sak_nr} er avsluttet"
+      summary: "Rapporteringsplikten for {vars.regnskapsaar} er oppfylt. Neste vergeregnskap har frist 30.04.2027."
+      status: Completed
+      extended-status: Avsluttet
+      content: saksgang
+      additional-info: |
+        Hele saksgangen ligger som meldinger i dialogen: pålegg, innsending{if:korrigering_sendt},
+        forespørsel om tilleggsopplysninger, korrigering{end} og vedtak.
+      transmissions:
+        - type: Acceptance
+          from: Verge
+          title: Bekreftet mottak av vedtak
+          summary: "Vedtak {vars.vedtak_nr} er lest og bekreftet mottatt."
+      activity: DialogClosed
+      actions:
+        - Kjør demoen på nytt → restart
+
+  fce:
+    # Hovedinnholdet på hvert steg. Den settes eksplisitt på alle steg slik at Arbeidsflate
+    # laster iframen på nytt (hver kompilering gir en ny `_cb`-parameter) og tidslinjen under
+    # gjenspeiler dagens tilstand.
+    saksgang:
+      media-type: text/html
+      content: |
+        <div style="font-family: system-ui, sans-serif; color: #1a1a1a; padding: 8px 4px; max-width: 720px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <img
+              alt="Overformynderiet i Nordvik"
+              width="48"
+              height="48"
+              src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI3MiIgaGVpZ2h0PSI3MiIgdmlld0JveD0iMCAwIDcyIDcyIj48cmVjdCB3aWR0aD0iNzIiIGhlaWdodD0iNzIiIHJ4PSIxNCIgZmlsbD0iIzFFNDA1QSIvPjxwYXRoIGQ9Ik0zNiAxNiBMNTIgMjQgVjM4IEMzMiA1OCAzNiA1NiAzNiA1NiBDMzYgNTYgMjAgNDggMjAgMzggVjI0IFoiIGZpbGw9IiNGOUM2NkIiLz48cGF0aCBkPSJNMjggMzYgTDM0IDQyIEw0NiAzMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMUU0MDVBIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPgo=">
+            <div>
+              <div style="font-size: 18px; font-weight: 600;">Overformynderiet i Nordvik kommune</div>
+              <div style="color: #555;">Sak {vars.sak_nr} &middot; Vergemål {vars.vergemaal_nr} &middot; {vars.vergehaver} (f. {vars.vergehaver_fodt})</div>
+            </div>
+          </div>
+
+          <h3 style="margin: 0 0 8px;">Saksgang</h3>
+          <ol style="list-style: none; padding: 0; margin: 0; font-size: 14px;">
+            <li style="padding: 10px 12px; border-left: 4px solid #1E405A; background: #eef3f9; margin-bottom: 6px;">
+              <strong>Pålegg om rapportering sendt</strong><br>
+              <span style="color: #555;">Frist for innsending: {vars.frist}</span>
+            </li>
+            <li style="padding: 10px 12px; border-left: 4px solid {if:innsendt}#1E405A{else}#c9d6e4{end}; background: {if:innsendt}#eef3f9{else}#fafafa{end}; margin-bottom: 6px;">
+              <strong>Vergeregnskap innsendt</strong><br>
+              <span style="color: #555;">{if:innsendt}Mottatt {vars.innsendt_dato}{if:!vedtak_fattet} – til kontroll hos Overformynderiet{end}{else}Ikke innsendt ennå{end}</span>
+            </li>
+            <!-- Forespørsel og korrigering er ikke faste trinn: de finnes bare i saksgangen
+                 dersom innsendingen faktisk hadde mangler, og rendres derfor betinget. -->
+            {if:forespoersel_mottatt}
+            <li style="padding: 10px 12px; border-left: 4px solid #C77700; background: #fdf3e3; margin-bottom: 6px;">
+              <strong>Forespørsel om tilleggsopplysninger</strong>
+              <span style="font-size: 12px; color: #7a5200; border: 1px solid #C77700; border-radius: 10px; padding: 1px 8px; margin-left: 6px;">avvik</span><br>
+              <span style="color: #555;">{vars.saksbehandler} ber om bilag og bankbekreftelse. Svarfrist {vars.frist_korrigering}</span>
+            </li>
+            {end}
+            {if:korrigering_sendt}
+            <li style="padding: 10px 12px; border-left: 4px solid #C77700; background: #fdf3e3; margin-bottom: 6px;">
+              <strong>Korrigering og tilleggsopplysninger</strong>
+              <span style="font-size: 12px; color: #7a5200; border: 1px solid #C77700; border-radius: 10px; padding: 1px 8px; margin-left: 6px;">avvik</span><br>
+              <span style="color: #555;">Mottatt {vars.korrigert_dato}</span>
+            </li>
+            {end}
+            <li style="padding: 10px 12px; border-left: 4px solid {if:vedtak_fattet}#2C7A4B{else}#c9d6e4{end}; background: {if:vedtak_fattet}#eaf5ee{else}#fafafa{end};">
+              <strong>Vedtak</strong><br>
+              <span style="color: #555;">{if:vedtak_fattet}Godkjent {vars.vedtak_dato} – vedtak {vars.vedtak_nr}{else}Ikke fattet{end}</span>
+            </li>
+          </ol>
+        </div>
+
+    brev-html:
+      media-type: text/html
+      content: |
+        <div style="font-family: system-ui, sans-serif; color: #1a1a1a; padding: 8px 4px; max-width: 720px;">
+          <div style="color: #555; font-size: 13px;">Overformynderiet i Nordvik kommune &middot; Postboks 214, 8370 Nordvik</div>
+          <h2 style="margin: 8px 0 4px;">Pålegg om å levere vergeregnskap for {vars.regnskapsaar}</h2>
+          <div style="color: #555; font-size: 13px; margin-bottom: 16px;">
+            Vår ref. {vars.sak_nr} &middot; Vergemål {vars.vergemaal_nr} &middot; Dato 05.08.2026
+          </div>
+
+          <p>
+            Du er oppnevnt som verge for <strong>{vars.vergehaver}</strong> (f. {vars.vergehaver_fodt}).
+            Som verge med ansvar for de økonomiske interessene til vergehaver har du
+            rapporteringsplikt, og du må levere vergeregnskap for regnskapsåret
+            <strong>{vars.regnskapsaar}</strong>.
+          </p>
+
+          <p>Regnskapet skal inneholde:</p>
+          <ul>
+            <li>oppstilling over inntekter og utgifter i perioden 01.01.{vars.regnskapsaar}–31.12.{vars.regnskapsaar},</li>
+            <li>saldoutskrift fra alle konti vergehaver disponerer, ved inngangen og utgangen av året,</li>
+            <li>bilag for alle enkeltuttak over kr 20 000,</li>
+            <li>oversikt over fast eiendom, verdipapirer og andre formuesgoder.</li>
+          </ul>
+
+          <p style="padding: 10px 12px; background: #fdf3e3; border-left: 4px solid #C77700;">
+            <strong>Frist for innsending: {vars.frist}.</strong> Regnskapet leveres i det elektroniske
+            rapporteringsskjemaet. Ved manglende levering kan Overformynderiet kreve regnskapet
+            framlagt ved tvangsmulkt, eller vurdere om vergeoppdraget skal endres.
+          </p>
+
+          <p style="margin-bottom: 4px;">Med hilsen</p>
+          <p style="margin-top: 0;">
+            {vars.saksbehandler}<br>
+            <span style="color: #555;">saksbehandler, Overformynderiet i Nordvik kommune</span>
+          </p>
+        </div>
+
+    innsending-html:
+      media-type: text/html
+      content: |
+        <div style="font-family: system-ui, sans-serif; color: #1a1a1a; padding: 8px 4px; max-width: 720px;">
+          <h3 style="margin-top: 0;">Vergeregnskap {vars.regnskapsaar} – innsendt {vars.innsendt_dato}</h3>
+          <p style="color: #555;">Vergehaver {vars.vergehaver} &middot; vergemål {vars.vergemaal_nr}</p>
+          <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
+            <tbody>
+              <tr>
+                <th style="text-align: left; padding: 8px; border: 1px solid #c9d6e4; background: #eef3f9; width: 45%;">Saldo pr. 01.01.{vars.regnskapsaar}</th>
+                <td style="padding: 8px; border: 1px solid #c9d6e4; text-align: right;">kr {vars.saldo_ib}</td>
+              </tr>
+              <tr>
+                <th style="text-align: left; padding: 8px; border: 1px solid #c9d6e4; background: #eef3f9;">Sum inntekter (pensjon, renter)</th>
+                <td style="padding: 8px; border: 1px solid #c9d6e4; text-align: right;">kr {vars.inntekter}</td>
+              </tr>
+              <tr>
+                <th style="text-align: left; padding: 8px; border: 1px solid #c9d6e4; background: #eef3f9;">Sum utgifter (institusjon, husleie, øvrig)</th>
+                <td style="padding: 8px; border: 1px solid #c9d6e4; text-align: right;">kr {vars.utgifter}</td>
+              </tr>
+              <tr>
+                <th style="text-align: left; padding: 8px; border: 1px solid #c9d6e4; background: #eef3f9;">Saldo pr. 31.12.{vars.regnskapsaar}</th>
+                <td style="padding: 8px; border: 1px solid #c9d6e4; text-align: right; font-weight: 600;">kr {vars.saldo_ub}</td>
+              </tr>
+              <tr>
+                <th style="text-align: left; padding: 8px; border: 1px solid #c9d6e4; background: #eef3f9;">Vedlegg</th>
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">Saldoutskrift konto {vars.konto_nr}, oppstilling inntekter/utgifter</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="color: #555; font-size: 13px;">
+            Skjemaet ble fylt ut og sendt inn i den eksterne rapporteringsløsningen. Denne meldingen
+            er kvitteringen som ble lagt tilbake i dialogen.
+          </p>
+        </div>
+
+    mangelbrev-html:
+      media-type: text/html
+      content: |
+        <div style="font-family: system-ui, sans-serif; color: #1a1a1a; padding: 8px 4px; max-width: 720px;">
+          <div style="color: #555; font-size: 13px;">Overformynderiet i Nordvik kommune</div>
+          <h2 style="margin: 8px 0 4px;">Forespørsel om tilleggsopplysninger</h2>
+          <div style="color: #555; font-size: 13px; margin-bottom: 16px;">
+            Vår ref. {vars.sak_nr} &middot; Dato 20.08.2026 &middot; Saksbehandler {vars.saksbehandler}
+          </div>
+
+          <p>
+            Vi viser til vergeregnskap for {vars.regnskapsaar} mottatt {vars.innsendt_dato}.
+            Før regnskapet kan godkjennes trenger vi følgende:
+          </p>
+
+          <table style="border-collapse: collapse; width: 100%; font-size: 14px; margin-bottom: 16px;">
+            <thead>
+              <tr style="background: #eef3f9;">
+                <th style="text-align: left; padding: 8px; border: 1px solid #c9d6e4; width: 32px;">#</th>
+                <th style="text-align: left; padding: 8px; border: 1px solid #c9d6e4;">Det vi mangler</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">1</td>
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">
+                  Bilag for uttaket på <strong>kr {vars.uttak}</strong> fra konto {vars.konto_nr} den
+                  {vars.uttak_dato}. Uttaket er over beløpsgrensen på kr 20 000 og må dokumenteres.
+                </td>
+              </tr>
+              <tr style="background: #fafafa;">
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">2</td>
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">
+                  Skriftlig bekreftelse fra banken på at konto {vars.konto_nr} er sperret for
+                  vergehaver, slik vedtaket om vergemål forutsetter.
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">3</td>
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">
+                  Forklaring på differansen mellom oppgitte utgifter (kr {vars.utgifter}) og
+                  fakturagrunnlaget fra institusjonen, som utgjør kr 493 500.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p style="padding: 10px 12px; background: #fdf3e3; border-left: 4px solid #C77700;">
+            <strong>Svarfrist: {vars.frist_korrigering}.</strong> Du svarer ved å sende inn en
+            korrigering fra denne dialogen.
+          </p>
+        </div>
+
+    korrigering-html:
+      media-type: text/html
+      content: |
+        <div style="font-family: system-ui, sans-serif; color: #1a1a1a; padding: 8px 4px; max-width: 720px;">
+          <h3 style="margin-top: 0;">Svar på forespørsel – innsendt {vars.korrigert_dato}</h3>
+          <p style="color: #555;">Sak {vars.sak_nr} &middot; svar på forespørsel av 20.08.2026</p>
+          <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
+            <thead>
+              <tr style="background: #eef3f9;">
+                <th style="text-align: left; padding: 8px; border: 1px solid #c9d6e4; width: 32px;">#</th>
+                <th style="text-align: left; padding: 8px; border: 1px solid #c9d6e4;">Svar fra vergen</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">1</td>
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">
+                  Uttaket på kr {vars.uttak} den {vars.uttak_dato} gjelder kjøp og montering av
+                  elektrisk pleieseng. Faktura 40218 fra Nordvik Helseutstyr AS er lastet opp.
+                </td>
+              </tr>
+              <tr style="background: #fafafa;">
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">2</td>
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">
+                  Bekreftelse fra Nordvik Sparebank datert 26.08.2026 på at konto {vars.konto_nr}
+                  er sperret for vergehaver, er lastet opp.
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">3</td>
+                <td style="padding: 8px; border: 1px solid #c9d6e4;">
+                  Differansen på kr 85 000 er nettopp sengekjøpet, som ble ført utenfor
+                  institusjonsutgiftene. Korrigert oppstilling følger vedlagt; sluttsaldo
+                  kr {vars.saldo_ub} er uendret.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+    vedtaksbrev-html:
+      media-type: text/html
+      content: |
+        <div style="font-family: system-ui, sans-serif; color: #1a1a1a; padding: 8px 4px; max-width: 720px;">
+          <div style="color: #555; font-size: 13px;">Overformynderiet i Nordvik kommune</div>
+          <h2 style="margin: 8px 0 4px;">Vedtak om godkjenning av vergeregnskap {vars.regnskapsaar}</h2>
+          <div style="color: #555; font-size: 13px; margin-bottom: 16px;">
+            Vedtak {vars.vedtak_nr} &middot; Dato {vars.vedtak_dato} &middot; Vergemål {vars.vergemaal_nr}
+          </div>
+
+          <p style="padding: 12px; background: #eaf5ee; border-left: 4px solid #2C7A4B;">
+            <strong>Vedtak:</strong> Vergeregnskapet for {vars.vergehaver} for regnskapsåret
+            {vars.regnskapsaar} godkjennes.
+          </p>
+
+          <h3 style="margin-bottom: 4px;">Begrunnelse</h3>
+          {if:korrigering_sendt}
+          <p>
+            Etter at tilleggsopplysningene ble mottatt {vars.korrigert_dato} er regnskapet
+            fullstendig dokumentert. Uttaket på kr {vars.uttak} er dokumentert med faktura, konto
+            {vars.konto_nr} er bekreftet sperret, og differansen mot institusjonens fakturagrunnlag
+            er avklart. Sluttsaldo pr. 31.12.{vars.regnskapsaar} er kr {vars.saldo_ub}.
+            Overformynderiet finner at midlene er forvaltet i vergehavers interesse.
+          </p>
+          {else}
+          <p>
+            Regnskapet er kontrollert mot innsendt saldoutskrift og bilag, og er fullstendig.
+            Sluttsaldo pr. 31.12.{vars.regnskapsaar} er kr {vars.saldo_ub}. Overformynderiet finner
+            at midlene er forvaltet i vergehavers interesse, og har ingen merknader.
+          </p>
+          {end}
+
+          <h3 style="margin-bottom: 4px;">Klageadgang</h3>
+          <p>
+            Vedtaket kan påklages innen tre uker fra det er mottatt. Klagen sendes Overformynderiet
+            i Nordvik kommune, som forbereder saken for Statsforvalteren.
+          </p>
+
+          <h3 style="margin-bottom: 4px;">Neste rapportering</h3>
+          <p>
+            Vergeregnskap for 2026 har frist 30.04.2027. Du får varsel i denne innboksen når
+            skjemaet er tilgjengelig.
+          </p>
+
+          <p style="margin-bottom: 4px;">Med hilsen</p>
+          <p style="margin-top: 0;">
+            {vars.saksbehandler}<br>
+            <span style="color: #555;">saksbehandler, Overformynderiet i Nordvik kommune</span>
+          </p>
+        </div>

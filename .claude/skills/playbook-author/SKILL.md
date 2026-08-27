@@ -26,6 +26,8 @@ writing anything non-trivial — this file is the working procedure plus a synta
    | `sample-cyoa.playbook.yaml` | Pure branching, many endings, no vars (18 stages) |
    | `sample-game.playbook.yaml` | Vars, effects, `when:`, dice, random targets (9 stages) |
    | `sample-dungeon.playbook.yaml` | Everything: routers, `@var()`, shared combat subsystem, `{if:}` blocks (31 stages) |
+   | `sample-html-embed.playbook.yaml` | `text/html` FCEs: tables, `<img>` (3 stages) |
+   | `sample-contact-form.playbook.yaml` | An HTML form in an FCE posting back into session vars (3 stages) |
 
 2. **Sketch the stage graph before writing YAML.** Name every stage, list its exits, and mark
    which stages mutate state. Stage order in the file sets cursor indices — put `start` first.
@@ -122,6 +124,9 @@ playbook:
 
 **Templating** in title/summary/extended-status/additional-info/action labels/transmission text/
 FCE bodies: `{vars.NAME}` · `{if:EXPR}…{else}…{end}` · `{baseUri}` · `{stateId}`.
+**FCE bodies only:** `{cursor:STAGE}` · `{formAction:STAGE}` — the URL an embedded
+`<form method="post">` posts to in order to assign declared vars from its fields and run STAGE
+(anonymous; see docs §8.1).
 
 ## The five mistakes that actually happen
 

@@ -20,7 +20,8 @@ public sealed record DslCompileResult(
 public static class DslCompiler
 {
     private const string FceMediaTypeDefault = "text/markdown";
-    private const string MainContentReferenceMediaType = "application/vnd.dialogporten.frontchannelembed-url;type=text/markdown";
+    private const string FceMediaTypeHtml = "text/html";
+    private const string ContentReferenceMediaTypePrefix = "application/vnd.dialogporten.frontchannelembed-url;type=";
 
     public static DslCompileResult Compile(string yaml)
     {
@@ -43,13 +44,14 @@ public static class DslCompiler
         foreach (var (name, fce) in fceContents)
         {
             ValidateTemplateBlocks(fce.Content, declaredVarNames, $"fce['{name}']");
+            ValidateEmbedPlaceholders(fce.Content, cursorByName, $"fce['{name}']");
         }
 
         var patches = new JsonArray();
         var stageBehaviors = new List<StageBehavior>();
         foreach (var (_, stage) in stagesInOrder)
         {
-            var (ops, behavior) = CompileStage(stage, language, cursorByName, declaredVarNames);
+            var (ops, behavior) = CompileStage(stage, language, cursorByName, declaredVarNames, fceContents);
             var stageNode = JsonNode.Parse(JsonSerializer.Serialize(ops));
             patches.Add(stageNode);
             stageBehaviors.Add(behavior);
@@ -207,7 +209,8 @@ public static class DslCompiler
     }
 
     private static (List<JsonPatchOperations_Operation> ops, StageBehavior behavior) CompileStage(
-        StageSource stage, string lang, Dictionary<string, int> cursorByName, HashSet<string> declaredVars)
+        StageSource stage, string lang, Dictionary<string, int> cursorByName, HashSet<string> declaredVars,
+        IReadOnlyDictionary<string, FceContent> fceContents)
     {
         var ops = new List<JsonPatchOperations_Operation>();
 
@@ -269,14 +272,14 @@ public static class DslCompiler
         {
             var fceUrl = $"{{baseUri}}/fce/named/{{stateId}}/{stage.Content}";
             ops.Add(MakeOp("add", "/content/mainContentReference",
-                WrappedLocalisedContent(MainContentReferenceMediaType, fceUrl, lang)));
+                WrappedLocalisedContent(ContentReferenceMediaType(stage.Content, fceContents), fceUrl, lang)));
         }
 
         if (stage.Transmissions != null)
         {
             foreach (var tx in stage.Transmissions)
             {
-                ops.Add(MakeOp("add", "/transmissions/-", CompileTransmission(tx, lang)));
+                ops.Add(MakeOp("add", "/transmissions/-", CompileTransmission(tx, lang, fceContents)));
             }
         }
 
@@ -433,6 +436,22 @@ public static class DslCompiler
         }
     }
 
+    /// <summary>
+    /// Checks the stage names in an embed body's <c>{formAction:STAGE}</c>/<c>{cursor:STAGE}</c>
+    /// placeholders, so a form posting to a stage that does not exist fails at upload rather than
+    /// rendering a dead form.
+    /// </summary>
+    private static void ValidateEmbedPlaceholders(string? body, Dictionary<string, int> cursorByName, string context)
+    {
+        foreach (var stage in EmbedPlaceholders.ReferencedStages(body))
+        {
+            if (!cursorByName.ContainsKey(stage))
+            {
+                throw new DslCompilationException($"{context}: '{stage}' is not a defined stage name");
+            }
+        }
+    }
+
     /// <summary>Matches the computed-target syntax <c>@var(NAME)</c>.</summary>
     private static bool TryParseVarTarget(string target, out string varName)
     {
@@ -482,6 +501,22 @@ public static class DslCompiler
         }
     }
 
+    /// <summary>
+    /// The contentReference on the dialog declares which media type the embed body is served as, and
+    /// arbeidsflate picks its renderer from it - so an embed declared `media-type: text/html` has to be
+    /// referenced as html, or it is parsed as markdown and its markup shows up as literal text.
+    /// Only markdown and html are accepted there, so text/plain - which renders correctly as markdown -
+    /// is referenced as markdown.
+    /// </summary>
+    private static string ContentReferenceMediaType(string fceName, IReadOnlyDictionary<string, FceContent> fceContents)
+    {
+        var served = fceContents.TryGetValue(fceName, out var fce) ? fce.MediaType : FceMediaTypeDefault;
+        var referenced = string.Equals(served, FceMediaTypeHtml, StringComparison.OrdinalIgnoreCase)
+            ? FceMediaTypeHtml
+            : FceMediaTypeDefault;
+        return ContentReferenceMediaTypePrefix + referenced;
+    }
+
     private static JsonNode WrappedLocalisedContent(string mediaType, string value, string lang) =>
         new JsonObject
         {
@@ -489,7 +524,8 @@ public static class DslCompiler
             ["value"] = new JsonArray { new JsonObject { ["languageCode"] = lang, ["value"] = value } }
         };
 
-    private static JsonNode CompileTransmission(TransmissionSource tx, string lang)
+    private static JsonNode CompileTransmission(TransmissionSource tx, string lang,
+        IReadOnlyDictionary<string, FceContent> fceContents)
     {
         var sender = string.IsNullOrEmpty(tx.From) || string.Equals(tx.From, "ServiceOwner", StringComparison.Ordinal)
             ? (JsonNode)new JsonObject { ["actorType"] = "ServiceOwner" }
@@ -503,7 +539,8 @@ public static class DslCompiler
         if (!string.IsNullOrEmpty(tx.Content))
         {
             var fceUrl = $"{{baseUri}}/fce/named/{{stateId}}/{tx.Content}";
-            content["contentReference"] = WrappedLocalisedContent(MainContentReferenceMediaType, fceUrl, lang);
+            content["contentReference"] =
+                WrappedLocalisedContent(ContentReferenceMediaType(tx.Content, fceContents), fceUrl, lang);
         }
 
         return new JsonObject
